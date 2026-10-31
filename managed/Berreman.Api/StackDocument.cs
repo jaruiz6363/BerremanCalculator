@@ -18,6 +18,20 @@ public sealed class StackLayer
     public required string Material { get; init; }
     public required double ThicknessNm { get; init; }
     public double[] EulerDeg { get; init; } = [0, 0, 0];
+    /// <summary>A helical twist about z through the layer (a cholesteric), or null.</summary>
+    public LayerTwist? Twist { get; init; }
+}
+
+/// <summary>
+/// A twist about z: at depth z into the layer the material, already oriented by its Euler angles,
+/// is turned further about z by φ(z) = φ0 + s·360°·z/P, with s = +1 for a right-handed helix
+/// (φ increasing with z, as Berreman's Eq. 61) and −1 for a left-handed one. P is the pitch: one
+/// full turn. The layer is evaluated as <see cref="Sublayers"/> uniform sublayers, each at the
+/// angle of its midpoint (contract, Section 2).
+/// </summary>
+public sealed record LayerTwist(double PitchNm, int Sense, double StartDeg, int Sublayers)
+{
+    public double AngleDeg(double zNm) => StartDeg + Sense * 360.0 * zNm / PitchNm;
 }
 
 public sealed class StackOuter
@@ -95,7 +109,30 @@ public sealed class StackDocument
                 if (!(t >= 0) || double.IsInfinity(t)) throw new StackFormatException($"{where}.thickness must be zero or positive");
                 if (n["coherent"] is JsonNode c && c.GetValue<bool>() == false)
                     throw new StackFormatException($"{where}: incoherent layers are not implemented yet");
-                layers.Add(new StackLayer { Material = m, ThicknessNm = t * nm, EulerDeg = Euler(n, where) });
+                LayerTwist? twist = null;
+                if (n["twist"] is JsonObject tw)
+                {
+                    var tws = $"{where}.twist";
+                    double pitch = Num(tw["pitch"], $"{tws}.pitch") * nm;
+                    if (!(pitch > 0)) throw new StackFormatException($"{tws}.pitch must be positive");
+                    if (!(t > 0)) throw new StackFormatException($"{where}: a twisted layer needs a positive thickness");
+                    var hand = Str(tw, "handedness", null, tws);
+                    int sense = hand switch
+                    {
+                        "right" => 1,
+                        "left" => -1,
+                        _ => throw new StackFormatException($"{tws}.handedness must be \"right\" or \"left\""),
+                    };
+                    double start = tw.ContainsKey("start_deg") ? Num(tw["start_deg"], $"{tws}.start_deg") : 0;
+                    if (tw.ContainsKey("sublayers") && tw.ContainsKey("sublayers_per_pitch"))
+                        throw new StackFormatException($"{tws}: give sublayers or sublayers_per_pitch, not both");
+                    int count = tw.ContainsKey("sublayers")
+                        ? (int)Num(tw["sublayers"], $"{tws}.sublayers")
+                        : (int)Math.Ceiling(t * nm / pitch * (tw.ContainsKey("sublayers_per_pitch") ? Num(tw["sublayers_per_pitch"], $"{tws}.sublayers_per_pitch") : 64));
+                    if (count < 1 || count > 1_000_000) throw new StackFormatException($"{tws}: {count} sublayers is not a usable count");
+                    twist = new LayerTwist(pitch, sense, start, count);
+                }
+                layers.Add(new StackLayer { Material = m, ThicknessNm = t * nm, EulerDeg = Euler(n, where), Twist = twist });
             }
 
         var sweep = o["sweep"] as JsonObject ?? throw new StackFormatException("\"sweep\" is required");

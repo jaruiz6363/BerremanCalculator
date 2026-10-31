@@ -1,6 +1,12 @@
 // Evaluator.cs — a stack document in, results out, through the contract's call sequence
 // (contract, Section 6): sizes from counts, allocation in C#, bc_plan, scratch per worker,
 // bc_evaluate over disjoint point ranges.
+//
+// THE ENGINE'S LAYERS ARE NOT ALWAYS THE DOCUMENT'S. A twisted (cholesteric) layer becomes many
+// uniform sublayers (contract, Section 2). Results are reported per DOCUMENT layer: the absorption
+// of a twisted layer is the sum over its sublayers. When any layer is twisted, the stack is
+// evaluated a second time with twice the sublayers, and the largest change in R, T or A is
+// reported, so the discretisation error is visible rather than assumed.
 
 using System.Numerics;
 using Berreman.Native;
@@ -16,7 +22,7 @@ public sealed record PointResult(
     double Xi,
     Complex[] Jones,            // r_pp r_ps r_sp r_ss t_pp t_ps t_sp t_ss (first subscript incident)
     double[] Power,             // R_p T_p A_p R_s T_s A_s; for anisotropic outer media, modes 0 and 1
-    double[] LayerAbsorption,   // [incident wave][layer]
+    double[] LayerAbsorption,   // [incident wave][document layer]
     BcPointDiagnostics Diagnostics)
 {
     public BcStatus Status => (BcStatus)Diagnostics.Status;
@@ -39,23 +45,69 @@ public sealed class EvaluationResult
     public required StackDocument Document { get; init; }
     public required IReadOnlyList<PointResult> Points { get; init; }
     public required BcStatus Status { get; init; }
+
+    /// <summary>
+    /// When the stack has twisted layers: the largest change in any R, T or A when the number of
+    /// sublayers is doubled. Null when nothing was discretised.
+    /// </summary>
+    public double? SublayerChange { get; init; }
 }
 
 public static class Evaluator
 {
     public static EvaluationResult Evaluate(StackDocument doc, int? workers = null)
     {
-        int nLayers = doc.Layers.Count, nMedia = nLayers + 2;
+        var result = Core(doc, workers, 1);
+        if (!doc.Layers.Any(l => l.Twist is not null)) return result;
+
+        var finer = Core(doc, workers, 2);
+        double change = 0;
+        for (int p = 0; p < result.Points.Count; ++p)
+            for (int k = 0; k < 6; ++k)
+            {
+                double a = result.Points[p].Power[k], b = finer.Points[p].Power[k];
+                if (double.IsFinite(a) && double.IsFinite(b)) change = Math.Max(change, Math.Abs(a - b));
+            }
+        return new EvaluationResult { Document = doc, Points = result.Points, Status = result.Status, SublayerChange = change };
+    }
+
+    /// <summary>One medium as the engine sees it: a material, its rotation (null for none), its thickness, and the document layer it came from (−1 for the outer media).</summary>
+    private readonly record struct EngineMedium(Material Mat, double[,]? Rotation, double ThicknessNm, int Source);
+
+    private static double[,]? Euler(double[] e) =>
+        e[0] == 0 && e[1] == 0 && e[2] == 0 ? null : MaterialMatrix.EulerRotation(e[0], e[1], e[2]);
+
+    private static List<EngineMedium> Expand(StackDocument doc, int refine)
+    {
+        var media = new List<EngineMedium> { new(doc.Materials[doc.Incident.Material], Euler(doc.Incident.EulerDeg), 0, -1) };
+        for (int k = 0; k < doc.Layers.Count; ++k)
+        {
+            var l = doc.Layers[k];
+            var mat = doc.Materials[l.Material];
+            if (l.Twist is not { } tw)
+            {
+                media.Add(new(mat, Euler(l.EulerDeg), l.ThicknessNm, k));
+                continue;
+            }
+            int n = tw.Sublayers * refine;
+            double h = l.ThicknessNm / n;
+            var e = MaterialMatrix.EulerRotation(l.EulerDeg[0], l.EulerDeg[1], l.EulerDeg[2]);
+            for (int j = 0; j < n; ++j)
+                media.Add(new(mat, MaterialMatrix.Mul(MaterialMatrix.EulerRotation(tw.AngleDeg((j + 0.5) * h), 0, 0), e), h, k));
+        }
+        media.Add(new(doc.Materials[doc.Exit.Material], Euler(doc.Exit.EulerDeg), 0, -1));
+        return media;
+    }
+
+    private static EvaluationResult Core(StackDocument doc, int? workers, int refine)
+    {
+        var media = Expand(doc, refine);
+        int nMedia = media.Count, nLayers = nMedia - 2, nDocLayers = doc.Layers.Count;
         int nSpectral = doc.Spectral.Length * doc.AzimuthsDeg.Length;
 
         // ---- M per (wavelength, azimuth), media in order: incident, layers, exit ---------------
         var m = new PinnedBuffer<Complex>((long)nSpectral * nMedia * 36);
         var wavelength = new PinnedBuffer<double>(nSpectral);
-        // Media in order, each with the thickness its model may need (0 for the outer media).
-        var media = new List<(Material Mat, double[] Euler, double Thickness)>
-            { (doc.Materials[doc.Incident.Material], doc.Incident.EulerDeg, 0) };
-        media.AddRange(doc.Layers.Select(l => (doc.Materials[l.Material], l.EulerDeg, l.ThicknessNm)));
-        media.Add((doc.Materials[doc.Exit.Material], doc.Exit.EulerDeg, 0));
 
         // The incident index per wavelength, for angles: ξ = n sin θ.
         var nIncident = new double[doc.Spectral.Length];
@@ -63,7 +115,13 @@ public static class Evaluator
         for (int w = 0; w < doc.Spectral.Length; ++w)
         {
             double lambda = Units.ToWavelengthNm(doc.Spectral[w], doc.SpectralUnit);
-            var atLambda = media.Select(x => x.Mat.At(lambda, x.Thickness)).ToArray();
+            // A twisted layer's sublayers share one material: evaluate it once per wavelength.
+            var cache = new Dictionary<(Material, double), MaterialMatrix>();
+            var atLambda = media.Select(x =>
+            {
+                if (!cache.TryGetValue((x.Mat, x.ThicknessNm), out var v)) cache[(x.Mat, x.ThicknessNm)] = v = x.Mat.At(lambda, x.ThicknessNm);
+                return v;
+            }).ToArray();
 
             if (doc.AnglesDeg is not null)
             {
@@ -77,13 +135,14 @@ public static class Evaluator
             {
                 int s = w * doc.AzimuthsDeg.Length + a;
                 wavelength[s] = lambda;
-                var sample = MaterialMatrix.EulerRotation(doc.AzimuthsDeg[a], 0, 0);
+                double az = doc.AzimuthsDeg[a];
+                var sample = MaterialMatrix.EulerRotation(az, 0, 0);
                 for (int k = 0; k < nMedia; ++k)
                 {
-                    var e = media[k].Euler;
-                    var placed = (e[0] == 0 && e[1] == 0 && e[2] == 0 && doc.AzimuthsDeg[a] == 0)
-                        ? atLambda[k]
-                        : atLambda[k].Rotated(MaterialMatrix.Mul(sample, MaterialMatrix.EulerRotation(e[0], e[1], e[2])));
+                    var r = media[k].Rotation;
+                    var placed = r is null
+                        ? (az == 0 ? atLambda[k] : atLambda[k].Rotated(sample))
+                        : atLambda[k].Rotated(az == 0 ? r : MaterialMatrix.Mul(sample, r));
                     placed.M.CopyTo(m.Span.Slice((s * nMedia + k) * 36, 36));
                 }
             }
@@ -105,7 +164,7 @@ public static class Evaluator
             }
 
         var thickness = new PinnedBuffer<double>(nLayers);
-        for (int k = 0; k < nLayers; ++k) thickness[k] = doc.Layers[k].ThicknessNm;
+        for (int k = 0; k < nLayers; ++k) thickness[k] = media[k + 1].ThicknessNm;
 
         var jones = new PinnedBuffer<Complex>((long)nPoints * 8);
         var power = new PinnedBuffer<double>((long)nPoints * 6);
@@ -155,12 +214,19 @@ public static class Evaluator
         {
             int s = pointSpectral[p], w = s / doc.AzimuthsDeg.Length, a = s % doc.AzimuthsDeg.Length;
             int i = p % incidence.Length;
+
+            /* Absorption per document layer: the sum over its engine layers. */
+            var layerAbs = new double[2 * nDocLayers];
+            for (int j = 0; j < 2; ++j)
+                for (int k = 0; k < nLayers; ++k)
+                    layerAbs[j * nDocLayers + media[k + 1].Source] += absorption[((long)p * 2 + j) * nLayers + k];
+
             points[p] = new PointResult(
                 doc.Spectral[w], wavelength[s], doc.AzimuthsDeg[a],
                 doc.AnglesDeg?[i], pointXi[p],
                 jones.Span.Slice(p * 8, 8).ToArray(),
                 power.Span.Slice(p * 6, 6).ToArray(),
-                nLayers > 0 ? absorption.Span.Slice(p * 2 * nLayers, 2 * nLayers).ToArray() : [],
+                layerAbs,
                 diagnostics[p]);
         }
         return new EvaluationResult { Document = doc, Points = points, Status = status };

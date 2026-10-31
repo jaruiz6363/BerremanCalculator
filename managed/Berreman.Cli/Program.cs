@@ -87,6 +87,8 @@ static int Evaluate(string path, string[] options)
         if (doc.Title != "") Console.WriteLine(doc.Title);
         if (doc.Source != "") Console.WriteLine($"Source: {doc.Source}");
         Console.WriteLine(table.ToText());
+        if (result.SublayerChange is { } dc)
+            Console.WriteLine($"Sublayers: doubling them changes R, T and A by at most {dc:G3}.");
     }
 
     int failed = result.Points.Count(p => p.Status != Berreman.Native.BcStatus.Ok);

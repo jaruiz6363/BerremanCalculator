@@ -79,12 +79,15 @@ Check(output.ToString().Contains("-32700"), "unparseable input is a parse error"
 Berreman.Native.Tests.ApiTests.Run();
 Berreman.Native.Tests.ClosedFormTests.Run();
 Berreman.Native.Tests.PasslerTests.Run();
+Berreman.Native.Tests.CholestericTests.Run();
 checks += Berreman.Native.Tests.ApiTests.Checks;
 failures += Berreman.Native.Tests.ApiTests.Failures;
 checks += Berreman.Native.Tests.ClosedFormTests.Checks;
 failures += Berreman.Native.Tests.ClosedFormTests.Failures;
 checks += Berreman.Native.Tests.PasslerTests.Checks;
 failures += Berreman.Native.Tests.PasslerTests.Failures;
+checks += Berreman.Native.Tests.CholestericTests.Checks;
+failures += Berreman.Native.Tests.CholestericTests.Failures;
 
 Console.WriteLine($"{checks} checks, {failures} failures");
 return failures == 0 ? 0 : 1;

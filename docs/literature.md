@@ -25,7 +25,7 @@ The formulation the program is built on. Its conventions: exp(−iωt), Gaussian
 | Orthorhombic slab, principal axes along x, y, z | Δ (37), P(h) in closed form (41), eigenvalues and modes (42–44) | Closed form |
 | Optically active isotropic medium (Drude) | Δ (47), secular equation (48–51); normal incidence (52–55) | Closed form |
 | Faraday rotation (Born) | Δ (56), roots (57–59), modes (60) | Closed form |
-| Cholesteric liquid crystal, Oseen–de Vries, normal incidence | Δ(z) (62), eigenvalues (70), the reflection band near ω ≈ cβ/√ε (71) | Closed form |
+| Cholesteric liquid crystal, Oseen–de Vries, normal incidence | Δ(z) (62), eigenvalues (70), the reflection band near ω ≈ cβ/√ε (71) | Closed form. **Eq. 70 as printed has δ²/ε where his Eqs. 68–69 give δ²;** the tests confirm Eqs. 68–69 (see samples/README.md). |
 | A slab of zero thickness | (87–90) reduce to Fresnel's equations | Closed form |
 
 The optically active example needs ρ and ρ'; the contract's 6×6 material matrix carries them.
@@ -330,9 +330,9 @@ Berreman's Δ forms (Eqs. 37, 47 and 56, and the general Eqs. 21 and 24) are che
 tests.
 
 **Still to do:**
-- **From item 1 below:** Berreman's cholesteric (Eqs. 62 and 70); Park's Eqs. 5, 12 and 13;
+- **From item 1 below:** Park's Eqs. 5, 12 and 13;
   Catarina's polar Kerr film; Lakhtakia's half space.
-- **Items 2–5:** everything after Mansuripur, except Passler's Figs. 2–4 (done).
+- **Items 2–5:** everything after Mansuripur, except Passler's Figs. 2–4 and Ting's Fig. 2 (done). Park's Fig. 1 needs its dispersive ε, outer media and polarisation.
 - **Costa's Jaumann absorber:** it needs the position of its two sheets, which the paper leaves
   open.
 

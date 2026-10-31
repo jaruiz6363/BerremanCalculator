@@ -167,7 +167,8 @@ public sealed class McpServer
                         arguments["absorption"]?.GetValue<bool>() ?? false);
                     int failed = result.Points.Count(p => p.Status != Berreman.Native.BcStatus.Ok);
                     var head = (doc.Title != "" ? doc.Title + "\n" : "") + (doc.Source != "" ? "Source: " + doc.Source + "\n" : "")
-                             + (failed > 0 ? $"{failed} of {result.Points.Count} points failed; see the status column.\n" : "");
+                             + (failed > 0 ? $"{failed} of {result.Points.Count} points failed; see the status column.\n" : "")
+                             + (result.SublayerChange is { } dc ? $"Sublayers: doubling them changes R, T and A by at most {dc:G3}.\n" : "");
                     return (head + table.ToCsv(), false);
                 }
                 catch (StackFormatException e) { return (e.Message, true); }

@@ -113,6 +113,29 @@ The outer media may be rotated too.
 
 `"coherent": false` is refused until incoherent layers are built.
 
+### Twisted layers (cholesterics)
+
+A layer may twist about z through its thickness:
+
+```json
+{ "material": "LC", "thickness": 4056, "euler_deg": [90, 90, 0],
+  "twist": { "pitch": 338, "handedness": "right", "start_deg": 0, "sublayers_per_pitch": 128 } }
+```
+
+- **The twist.** At depth z into the layer, the material, already turned by `euler_deg`, is turned
+  further about z by φ(z) = start_deg ± 360° · z/pitch.
+- **Pitch and handedness.** The pitch is one full turn. `"right"` makes φ increase with z, a
+  right-handed helix as in Berreman's Eq. 61; `"left"` makes it decrease.
+- **Sublayers.** The layer is evaluated as uniform sublayers, each at the angle of its midpoint.
+  Give `sublayers_per_pitch` (default 64) or a total `sublayers`.
+- **The check.** Every stack with a twisted layer is evaluated twice, the second time with double
+  the sublayers. The largest change in R, T or A is reported with the results. The midpoint rule
+  is second order, so the error of the coarser evaluation is about 4/3 of that change.
+- **Absorption** is reported for the twisted layer as a whole.
+
+For a nematic director lying in the plane of the layer, give the material as uniaxial (`no`, `ne`),
+whose optic axis is its principal z. Then `euler_deg` [90, 90, 0] turns that axis to x.
+
 ## Sweep
 
 | Key | Meaning |

@@ -19,8 +19,37 @@ precision the paper gives them.
 | [literature/passler-2017/gan-sic-otto.json](literature/passler-2017/gan-sic-otto.json) | the same, Fig. 3 | Modes near 680, 810–820 and 1000 cm⁻¹ | 663 (broad), 819, 997 |
 | [literature/passler-2017/sic-gan-sic-otto.json](literature/passler-2017/sic-gan-sic-otto.json) | the same, Fig. 4 | Mode (ii) at the upper GaN edge, two modes around 900, one near 1000 cm⁻¹ | 771, 881 and 937, 996 |
 
+| [literature/ting-2006/cholesteric-fig2.json](literature/ting-2006/cholesteric-fig2.json) | Ting, Lin, Liao and Fuh, *Opt. Express* **14**, 5594 (2006), Fig. 2 | A band centred at n̄P = 525.6 nm, width ΔnP = 41.2 nm, peak about 0.5 unpolarised | Peak 0.495; half-height centre 525.8 nm; R still at 0.91 and 0.90 of the plateau at n_oP = 505.0 and n_eP = 546.2 nm, and down to 0.07 and 0.01 10 nm outside. Doubling the sublayers changes R by 6 × 10⁻⁴. |
+
 The closed-form samples have values chosen where the paper gives only the formula; their `notes`
 say so.
+
+## Cholesterics
+
+At normal incidence a helix is uniform in a frame that turns with it. So the exact transfer matrix
+is S(φ(d)) exp(i k₀ d Δ_rot) S(φ₀)ᵀ, with Δ_rot = Δ₀ + i(β/k₀)G constant. The tests compute it
+independently and compare the sublayer result with it:
+- **Convergence.** At 16, 32, 64 and 128 sublayers per pitch the error is 2.6 × 10⁻², 6.5 × 10⁻³,
+  1.6 × 10⁻³ and 4.1 × 10⁻⁴. That is exactly the factor of 4 per doubling of the midpoint rule.
+- **The reported doubling change** is about three-quarters of the true error, as a second-order
+  method predicts.
+- **Handedness.** At the band centre one circular polarisation is reflected (0.989) and the other is
+  not (0.0004), and reversing the helix exchanges them.
+
+**Berreman's Eq. 70 as printed has a misprint.** Its eigenvalues contain δ²/ε where his own
+Eqs. 68–69 give δ²:
+- Eqs. 68–69 give κ² = ε + m² ± √(4εm² + δ²), which is de Vries's result.
+- The test evaluates det(Δ_rot − κ) at both: 7 × 10⁻¹⁵ for Eqs. 68–69, and 2 × 10⁻² for Eq. 70 as
+  printed.
+
+Ting's Fig. 2 leaves out four inputs, and the sample assumes them:
+- the angle (normal incidence);
+- the polarisation (unpolarised);
+- the outer media (index-matched at 1.555);
+- the handedness. Unpolarised reflection does not depend on it.
+
+Ting's 41.2 nm is the stop band between n_oP and n_eP. The half-height width of a 12-pitch slab is
+wider, 51.5 nm, because of the band's skirts.
 
 ## Passler and Paarmann (2017)
 

@@ -1,0 +1,19 @@
+{
+  "format": "berreman-stack",
+  "version": 1,
+  "title": "Cholesteric liquid crystal, 12 pitches, reflection band",
+  "source": "C.-L. Ting, T.-H. Lin, C.-C. Liao, A. Y. G. Fuh, Opt. Express 14, 5594-5606 (2006), Fig. 2",
+  "notes": "Given: n_e 1.616, n_o 1.494, pitch 338 nm, thickness 12 pitches (128 sublayers per pitch; the program reports how much doubling them changes the result). Not given, and assumed: normal incidence, unpolarised light (the figure's peak near 0.5 suggests it; unpolarised R is the mean of R_p and R_s), right-handed helix (unpolarised R does not depend on it), and outer media of the mean index 1.555 so that only the helix reflects. The paper's approximate band: centre n P = 525.6 nm, width (n_e - n_o) P = 41.2 nm, edges n_o P = 505.0 and n_e P = 546.2 nm. The director starts along x: the material's optic axis (principal z) is turned to x by Euler [90, 90, 0], and the twist turns it about z.",
+  "units": { "length": "nm", "spectral": "nm" },
+  "materials": {
+    "medium": { "n": 1.555 },
+    "LC": { "no": 1.494, "ne": 1.616 }
+  },
+  "incident": { "material": "medium" },
+  "layers": [
+    { "material": "LC", "thickness": 4056, "euler_deg": [90, 90, 0],
+      "twist": { "pitch": 338, "handedness": "right", "start_deg": 0, "sublayers_per_pitch": 128 } }
+  ],
+  "exit": { "material": "medium" },
+  "sweep": { "spectral": { "from": 460, "to": 600, "step": 0.5 }, "angle_deg": 0 }
+}
