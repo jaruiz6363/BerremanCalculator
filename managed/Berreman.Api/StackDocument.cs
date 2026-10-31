@@ -1,0 +1,278 @@
+// StackDocument.cs — the stack file: materials, layers, units and the sweep to evaluate.
+//
+// JSON, read by hand from JsonNode so that every error names the place in the file it came from.
+// The format is in docs/stack-format.md. Version 1.
+//
+// MATERIALS ARE CONSTANTS in version 1 (the same at every wavelength). That covers the closed-form
+// examples, Mansuripur (1990) and the microwave stacks. Dispersive materials come with the
+// examples that need them, and a file that asks for one is refused, not approximated.
+
+using System.Numerics;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+
+namespace Berreman.Api;
+
+public sealed class StackLayer
+{
+    public required string Material { get; init; }
+    public required double ThicknessNm { get; init; }
+    public double[] EulerDeg { get; init; } = [0, 0, 0];
+}
+
+public sealed class StackOuter
+{
+    public required string Material { get; init; }
+    public double[] EulerDeg { get; init; } = [0, 0, 0];
+}
+
+public sealed class StackDocument
+{
+    public string Title { get; init; } = "";
+    public string Source { get; init; } = "";
+    public string Notes { get; init; } = "";
+    public string LengthUnit { get; init; } = "nm";
+    public string SpectralUnit { get; init; } = "nm";
+
+    public required Dictionary<string, MaterialMatrix> Materials { get; init; }
+    public required StackOuter Incident { get; init; }
+    public required StackOuter Exit { get; init; }
+    public required List<StackLayer> Layers { get; init; }
+
+    /// <summary>Spectral values in <see cref="SpectralUnit"/>.</summary>
+    public required double[] Spectral { get; init; }
+    public double[] AzimuthsDeg { get; init; } = [0];
+    /// <summary>Angles of incidence in the incident medium; null when ξ is given instead.</summary>
+    public double[]? AnglesDeg { get; init; }
+    public double[]? Xi { get; init; }
+
+    public static StackDocument Load(string path)
+    {
+        try { return Parse(File.ReadAllText(path)); }
+        catch (FileNotFoundException) { throw new StackFormatException($"no file at {path}"); }
+    }
+
+    public static StackDocument Parse(string json)
+    {
+        JsonNode? root;
+        try { root = JsonNode.Parse(json, documentOptions: new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true }); }
+        catch (JsonException e) { throw new StackFormatException($"not valid JSON: {e.Message}"); }
+        if (root is not JsonObject o) throw new StackFormatException("the file must be a JSON object");
+
+        var format = Str(o, "format", "");
+        if (format != "berreman-stack") throw new StackFormatException("\"format\" must be \"berreman-stack\"");
+        var version = (int)Num(o["version"], "version");
+        if (version != 1) throw new StackFormatException($"version {version} is not supported; this program reads version 1");
+
+        var units = o["units"] as JsonObject ?? new JsonObject();
+        var lengthUnit = Str(units, "length", "nm");
+        var spectralUnit = Str(units, "spectral", "nm");
+        double nm = Units.NmPerLength(lengthUnit);
+        if (!Units.IsSpectralUnit(spectralUnit)) throw new StackFormatException($"units.spectral: '{spectralUnit}' is not a spectral unit");
+
+        var mats = o["materials"] as JsonObject ?? throw new StackFormatException("\"materials\" is required");
+        var materials = new Dictionary<string, MaterialMatrix>();
+        foreach (var (name, node) in mats)
+            materials[name] = MaterialParser.Parse(node, $"materials.{name}");
+
+        StackOuter Outer(string key)
+        {
+            var n = o[key] as JsonObject ?? throw new StackFormatException($"\"{key}\" is required");
+            var m = Str(n, "material", null, key);
+            if (!materials.ContainsKey(m)) throw new StackFormatException($"{key}.material: no material named '{m}'");
+            return new StackOuter { Material = m, EulerDeg = Euler(n, key) };
+        }
+
+        var layers = new List<StackLayer>();
+        if (o["layers"] is JsonArray la)
+            for (int i = 0; i < la.Count; ++i)
+            {
+                var where = $"layers[{i + 1}]";
+                var n = la[i] as JsonObject ?? throw new StackFormatException($"{where} must be an object");
+                var m = Str(n, "material", null, where);
+                if (!materials.ContainsKey(m)) throw new StackFormatException($"{where}.material: no material named '{m}'");
+                var t = Num(n["thickness"], $"{where}.thickness");
+                if (!(t >= 0) || double.IsInfinity(t)) throw new StackFormatException($"{where}.thickness must be zero or positive");
+                if (n["coherent"] is JsonNode c && c.GetValue<bool>() == false)
+                    throw new StackFormatException($"{where}: incoherent layers are not implemented yet");
+                layers.Add(new StackLayer { Material = m, ThicknessNm = t * nm, EulerDeg = Euler(n, where) });
+            }
+
+        var sweep = o["sweep"] as JsonObject ?? throw new StackFormatException("\"sweep\" is required");
+        var spectral = Values(sweep["spectral"], "sweep.spectral");
+        foreach (var v in spectral) Units.ToWavelengthNm(v, spectralUnit);
+        var azimuths = sweep["azimuth_deg"] is null ? new double[] { 0 } : Values(sweep["azimuth_deg"], "sweep.azimuth_deg");
+        double[]? angles = sweep["angle_deg"] is null ? null : Values(sweep["angle_deg"], "sweep.angle_deg");
+        double[]? xi = sweep["xi"] is null ? null : Values(sweep["xi"], "sweep.xi");
+        if ((angles is null) == (xi is null)) throw new StackFormatException("sweep: give exactly one of \"angle_deg\" and \"xi\"");
+        if (angles is not null && angles.Any(a => !(a >= 0 && a < 90)))
+            throw new StackFormatException("sweep.angle_deg: angles must be in [0, 90)");
+
+        return new StackDocument
+        {
+            Title = Str(o, "title", ""),
+            Source = Str(o, "source", ""),
+            Notes = Str(o, "notes", ""),
+            LengthUnit = lengthUnit,
+            SpectralUnit = spectralUnit,
+            Materials = materials,
+            Incident = Outer("incident"),
+            Exit = Outer("exit"),
+            Layers = layers,
+            Spectral = spectral,
+            AzimuthsDeg = azimuths,
+            AnglesDeg = angles,
+            Xi = xi,
+        };
+    }
+
+    // ---- small readers ------------------------------------------------------------------------
+
+    internal static string Str(JsonObject o, string key, string? fallback, string where = "")
+    {
+        var n = o[key];
+        if (n is null)
+            return fallback ?? throw new StackFormatException($"{(where == "" ? "" : where + ".")}{key} is required");
+        try { return n.GetValue<string>(); }
+        catch (Exception) { throw new StackFormatException($"{(where == "" ? "" : where + ".")}{key} must be a string"); }
+    }
+
+    internal static double Num(JsonNode? n, string where)
+    {
+        if (n is null) throw new StackFormatException($"{where} is required");
+        try { return n.GetValue<double>(); }
+        catch (Exception) { throw new StackFormatException($"{where} must be a number"); }
+    }
+
+    private static double[] Euler(JsonObject n, string where)
+    {
+        if (n["euler_deg"] is not JsonArray a) return [0, 0, 0];
+        if (a.Count != 3) throw new StackFormatException($"{where}.euler_deg must be [phi, theta, psi]");
+        return [Num(a[0], $"{where}.euler_deg[1]"), Num(a[1], $"{where}.euler_deg[2]"), Num(a[2], $"{where}.euler_deg[3]")];
+    }
+
+    /// <summary>A number, an array of numbers, or {"from", "to", "step"} / {"from", "to", "count"}.</summary>
+    internal static double[] Values(JsonNode? n, string where)
+    {
+        switch (n)
+        {
+            case null: throw new StackFormatException($"{where} is required");
+            case JsonValue: return [Num(n, where)];
+            case JsonArray a: return a.Select((x, i) => Num(x, $"{where}[{i + 1}]")).ToArray();
+            case JsonObject r:
+            {
+                double from = Num(r["from"], $"{where}.from"), to = Num(r["to"], $"{where}.to");
+                int count;
+                if (r["count"] is JsonNode c) count = (int)Num(c, $"{where}.count");
+                else
+                {
+                    double step = Num(r["step"], $"{where}.step");
+                    if (!(step > 0)) throw new StackFormatException($"{where}.step must be positive");
+                    count = (int)Math.Floor(Math.Abs(to - from) / step + 1e-9) + 1;
+                }
+                if (count < 1 || count > 10_000_000) throw new StackFormatException($"{where}: {count} values is not a usable count");
+                if (count == 1) return [from];
+                return Enumerable.Range(0, count).Select(i => from + (to - from) * i / (count - 1.0)).ToArray();
+            }
+            default: throw new StackFormatException($"{where} must be a number, an array or a range");
+        }
+    }
+}
+
+/// <summary>Material definitions in the stack file (docs/stack-format.md, "Materials").</summary>
+public static class MaterialParser
+{
+    public static MaterialMatrix Parse(JsonNode? node, string where)
+    {
+        if (node is not JsonObject o) throw new StackFormatException($"{where} must be an object");
+        foreach (var key in new[] { "table", "sellmeier", "cauchy", "drude", "lorentz" })
+            if (o.ContainsKey(key))
+                throw new StackFormatException($"{where}: dispersive materials ('{key}') are not implemented yet; give constants");
+
+        var eps = Tensor(o, where, "eps", "n", "eps_r", "tan_delta", "no", "ne", "nx", "ny", "nz") ?? MaterialMatrix.Scalar(1);
+        var mu = Tensor(o, where, "mu", null, "mu_r", "tan_delta_mu", null, null, null, null, null) ?? MaterialMatrix.Scalar(1);
+        var rho = o.ContainsKey("rho") ? Matrix3(o["rho"], $"{where}.rho") : null;
+        var rhoPrime = o.ContainsKey("rho_prime") ? Matrix3(o["rho_prime"], $"{where}.rho_prime") : null;
+
+        var m = MaterialMatrix.FromBlocks(eps, mu, rho, rhoPrime);
+        var convention = o["convention"] is null ? "exp(-iwt)" : StackDocument.Str(o, "convention", null, where);
+        return convention switch
+        {
+            "exp(-iwt)" => m,
+            "exp(+jwt)" => m.Conjugated(),
+            _ => throw new StackFormatException($"{where}.convention must be \"exp(-iwt)\" or \"exp(+jwt)\""),
+        };
+    }
+
+    /// <summary>
+    /// One of the ways to give ε (or μ). Exactly one may be used:
+    ///   eps: complex scalar or 3×3     n: complex index, ε = n²
+    ///   eps_r with optional tan_delta: ε = ε′ (1 + i tan δ) in exp(−iωt)
+    ///   no, ne: uniaxial indices, axis along z      nx, ny, nz: biaxial indices
+    /// </summary>
+    private static Complex[,]? Tensor(JsonObject o, string where, string direct, string? index, string real, string tan,
+                                      string? no, string? ne, string? nx, string? ny, string? nz)
+    {
+        var given = new List<string>();
+        if (o.ContainsKey(direct)) given.Add(direct);
+        if (index is not null && o.ContainsKey(index)) given.Add(index);
+        if (o.ContainsKey(real)) given.Add(real);
+        if (no is not null && (o.ContainsKey(no) || o.ContainsKey(ne!))) given.Add($"{no}/{ne}");
+        if (nx is not null && (o.ContainsKey(nx) || o.ContainsKey(ny!) || o.ContainsKey(nz!))) given.Add($"{nx}/{ny}/{nz}");
+        if (given.Count > 1) throw new StackFormatException($"{where}: give only one of {string.Join(", ", given)}");
+        if (given.Count == 0)
+        {
+            if (o.ContainsKey(tan)) throw new StackFormatException($"{where}.{tan} needs {real}");
+            return null;
+        }
+
+        if (o.ContainsKey(direct))
+            return o[direct] is JsonArray a && a.Count == 3 && a[0] is JsonArray r && r.Count == 3
+                ? Matrix3(o[direct], $"{where}.{direct}")
+                : MaterialMatrix.Scalar(Cplx(o[direct], $"{where}.{direct}"));
+        if (index is not null && o.ContainsKey(index))
+        {
+            var n = Cplx(o[index], $"{where}.{index}");
+            return MaterialMatrix.Scalar(n * n);
+        }
+        if (o.ContainsKey(real))
+        {
+            var e = StackDocument.Num(o[real], $"{where}.{real}");
+            var t = o.ContainsKey(tan) ? StackDocument.Num(o[tan], $"{where}.{tan}") : 0.0;
+            return MaterialMatrix.Scalar(new Complex(e, e * t));
+        }
+        if (no is not null && (o.ContainsKey(no) || o.ContainsKey(ne!)))
+        {
+            var a = Cplx(o[no], $"{where}.{no}");
+            var b = Cplx(o[ne!], $"{where}.{ne}");
+            return MaterialMatrix.Diagonal(a * a, a * a, b * b);
+        }
+        var x = Cplx(o[nx!], $"{where}.{nx}");
+        var y = Cplx(o[ny!], $"{where}.{ny}");
+        var z = Cplx(o[nz!], $"{where}.{nz}");
+        return MaterialMatrix.Diagonal(x * x, y * y, z * z);
+    }
+
+    /// <summary>A real number, or [re, im].</summary>
+    public static Complex Cplx(JsonNode? n, string where)
+    {
+        if (n is JsonArray a)
+        {
+            if (a.Count != 2) throw new StackFormatException($"{where} must be a number or [re, im]");
+            return new Complex(StackDocument.Num(a[0], where + "[1]"), StackDocument.Num(a[1], where + "[2]"));
+        }
+        return StackDocument.Num(n, where);
+    }
+
+    private static Complex[,] Matrix3(JsonNode? n, string where)
+    {
+        if (n is not JsonArray rows || rows.Count != 3) throw new StackFormatException($"{where} must be a 3×3 array");
+        var m = new Complex[3, 3];
+        for (int i = 0; i < 3; ++i)
+        {
+            if (rows[i] is not JsonArray row || row.Count != 3) throw new StackFormatException($"{where}[{i + 1}] must have 3 entries");
+            for (int j = 0; j < 3; ++j) m[i, j] = Cplx(row[j], $"{where}[{i + 1}][{j + 1}]");
+        }
+        return m;
+    }
+}

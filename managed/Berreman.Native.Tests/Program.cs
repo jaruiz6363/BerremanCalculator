@@ -74,6 +74,12 @@ var output = new StringWriter();
 server.Serve(new StringReader("not json\n"), output);
 Check(output.ToString().Contains("-32700"), "unparseable input is a parse error");
 
+// ---- the API and the first literature example ------------------------------------------------
+
+Berreman.Native.Tests.ApiTests.Run();
+checks += Berreman.Native.Tests.ApiTests.Checks;
+failures += Berreman.Native.Tests.ApiTests.Failures;
+
 Console.WriteLine($"{checks} checks, {failures} failures");
 return failures == 0 ? 0 : 1;
 

@@ -26,8 +26,14 @@ It is tested against closed forms (see the [engine design](docs/engine-design.md
 Fields against depth are not built yet. A request for them is refused with a distinct status
 rather than computed wrongly.
 
-The C# API does not yet build stacks from materials. The CLI, the MCP server and the GUI only
-report the engine's status.
+The C# API reads [stack files](docs/stack-format.md). Materials are constants in this version, and
+dispersive materials are refused until they are built.
+- `berreman evaluate <file>` prints or writes a table.
+- The MCP tool `evaluate_stack` returns the same table.
+- The GUI only reports the engine's status.
+
+The first literature example, Mansuripur (1990), reproduces the paper's figures. See
+[samples](samples/README.md).
 
 The tests come before each part of the engine, as listed in the [engine design](docs/engine-design.md).
 
@@ -40,6 +46,8 @@ The tests come before each part of the engine, as listed in the [engine design](
 | [Examples from the literature](docs/literature.md) | The papers to reproduce, what each gives, and the order. |
 | [Engine design](docs/engine-design.md) | How one point is computed, why it is stable, and the tests written before the code. |
 | [Derivation of Δ](docs/derivation-delta.md) | Berreman's 4×4 matrix from Maxwell's equations, in the program's conventions, with the checks. |
+| [The stack file](docs/stack-format.md) | The file the CLI and MCP server evaluate: materials, layers, units and the sweep. |
+| [Samples](samples/README.md) | The examples from the literature, and how closely each is reproduced. |
 
 ## Shape
 

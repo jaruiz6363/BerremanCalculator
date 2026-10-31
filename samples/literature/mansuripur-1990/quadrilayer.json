@@ -1,0 +1,33 @@
+{
+  "format": "berreman-stack",
+  "version": 1,
+  "title": "Magneto-optic quadrilayer at 830 nm",
+  "source": "M. Mansuripur, J. Appl. Phys. 67, 6466-6475 (1990), Section VI and Figs. 2-3",
+  "notes": "Every input is printed in the paper. The paper uses exp[i(k.r - wt)] and n + ik, as this program does, so nothing is converted. Its stated results: at normal incidence about 91% of the incident power is absorbed in the MO layer, 3% in the aluminium, and 6% is reflected (Fig. 3); |r_ps| = |r_sp| at every angle (Fig. 2a). The second SiOx layer is 'another quarter-wave-thick layer', so 143.2 nm like the first.",
+  "units": { "length": "nm", "spectral": "nm" },
+  "materials": {
+    "air": { "n": 1 },
+    "SiOx": { "n": 1.449 },
+    "MO": {
+      "eps": [
+        [[-4.8984, 19.415], [0.4322, 0.0058], 0],
+        [[-0.4322, -0.0058], [-4.8984, 19.415], 0],
+        [0, 0, [-4.8984, 19.415]]
+      ]
+    },
+    "Al": { "n": [2.75, 8.31] },
+    "glass": { "n": 1.5 }
+  },
+  "incident": { "material": "air" },
+  "layers": [
+    { "material": "SiOx", "thickness": 143.2 },
+    { "material": "MO", "thickness": 20 },
+    { "material": "SiOx", "thickness": 143.2 },
+    { "material": "Al", "thickness": 500 }
+  ],
+  "exit": { "material": "glass" },
+  "sweep": {
+    "spectral": 830,
+    "angle_deg": { "from": 0, "to": 85, "step": 5 }
+  }
+}

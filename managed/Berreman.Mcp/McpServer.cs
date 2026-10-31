@@ -86,7 +86,8 @@ public sealed class McpServer
                     var name = (request["params"] as JsonObject)?["name"]?.GetValue<string>();
                     if (name is null) return Error(id, -32602, "tools/call needs params.name");
 
-                    var (text, failed) = Call(name);
+                    var arguments = (request["params"] as JsonObject)?["arguments"] as JsonObject ?? new JsonObject();
+                    var (text, failed) = Call(name, arguments);
                     return Result(id, new JsonObject
                     {
                         ["content"] = new JsonArray(new JsonObject { ["type"] = "text", ["text"] = text }),
@@ -112,7 +113,8 @@ public sealed class McpServer
         ["serverInfo"] = new JsonObject { ["name"] = "berreman", ["version"] = "0.0.0" },
         ["instructions"] =
             "Berreman 4x4 evaluator for stratified, possibly anisotropic, media. It evaluates "
-            + "stacks and never optimises them. Only engine_status exists so far.",
+            + "stacks and never optimises them. evaluate_stack runs a stack file (format in docs/stack-format.md); "
+            + "engine_status reports whether the engine loads.",
     };
 
     // ---- tools -----------------------------------------------------------------------------
@@ -123,12 +125,53 @@ public sealed class McpServer
             ["name"] = "engine_status",
             ["description"] = "Whether the native engine loads, its ABI version, and what it can do.",
             ["inputSchema"] = new JsonObject { ["type"] = "object", ["properties"] = new JsonObject() },
+        },
+        new JsonObject
+        {
+            ["name"] = "evaluate_stack",
+            ["description"] =
+                "Evaluate a stack file (docs/stack-format.md) and return a CSV table: R, T, A for each "
+                + "incident wave at every point of the file's sweep, with optional Jones coefficients, "
+                + "Psi/Delta and per-layer absorption. Give either 'path' to a file or 'stack' as the "
+                + "file's JSON text.",
+            ["inputSchema"] = new JsonObject
+            {
+                ["type"] = "object",
+                ["properties"] = new JsonObject
+                {
+                    ["path"] = new JsonObject { ["type"] = "string", ["description"] = "Path to a stack JSON file." },
+                    ["stack"] = new JsonObject { ["type"] = "string", ["description"] = "The stack JSON itself, instead of a path." },
+                    ["jones"] = new JsonObject { ["type"] = "boolean" },
+                    ["ellipsometry"] = new JsonObject { ["type"] = "boolean" },
+                    ["absorption"] = new JsonObject { ["type"] = "boolean" },
+                },
+            },
         });
 
-    private static (string Text, bool Failed) Call(string name)
+    private static (string Text, bool Failed) Call(string name, JsonObject arguments)
     {
         switch (name)
         {
+            case "evaluate_stack":
+            {
+                try
+                {
+                    var path = arguments["path"]?.GetValue<string>();
+                    var json = arguments["stack"]?.GetValue<string>();
+                    if ((path is null) == (json is null)) return ("give exactly one of 'path' and 'stack'", true);
+                    var doc = path is not null ? StackDocument.Load(path) : StackDocument.Parse(json!);
+                    var result = Evaluator.Evaluate(doc);
+                    var table = ResultTable.Build(result,
+                        arguments["jones"]?.GetValue<bool>() ?? false,
+                        arguments["ellipsometry"]?.GetValue<bool>() ?? false,
+                        arguments["absorption"]?.GetValue<bool>() ?? false);
+                    int failed = result.Points.Count(p => p.Status != Berreman.Native.BcStatus.Ok);
+                    var head = (doc.Title != "" ? doc.Title + "\n" : "") + (doc.Source != "" ? "Source: " + doc.Source + "\n" : "")
+                             + (failed > 0 ? $"{failed} of {result.Points.Count} points failed; see the status column.\n" : "");
+                    return (head + table.ToCsv(), false);
+                }
+                catch (StackFormatException e) { return (e.Message, true); }
+            }
             case "engine_status":
             {
                 var r = EngineStatus.Probe();

@@ -20,6 +20,11 @@
     <ProjectReference Include="..\Berreman.Mcp\Berreman.Mcp.csproj" />
   </ItemGroup>
 
+  <!-- The literature samples the suite checks, embedded so there is no path to get wrong. -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\samples\literature\mansuripur-1990\quadrilayer.json" LogicalName="mansuripur-1990.json" />
+  </ItemGroup>
+
   <Import Project="..\NativeLibrary.targets" />
 
 </Project>
