@@ -1,0 +1,17 @@
+{
+  "format": "berreman-stack",
+  "version": 1,
+  "title": "A slab with eps = mu on glass",
+  "source": "Y. Ra'di, C. R. Simovski, S. A. Tretyakov, Phys. Rev. Applied 3, 037001 (2015), Section V A 1",
+  "notes": "A medium with eps = mu has the impedance of free space, so its front face reflects nothing at normal incidence, whatever its loss. The stack's reflection is then only the back face's, carried through the slab twice: r_pp = 0.2 e^{2i delta} and r_ss = -0.2 e^{2i delta} with delta = k0 eps d, on glass of index 1.5. Values chosen.",
+  "units": { "length": "mm", "spectral": "GHz" },
+  "materials": {
+    "air": { "n": 1 },
+    "matched": { "eps": [3, 0.4], "mu": [3, 0.4] },
+    "glass": { "n": 1.5 }
+  },
+  "incident": { "material": "air" },
+  "layers": [ { "material": "matched", "thickness": 2 } ],
+  "exit": { "material": "glass" },
+  "sweep": { "spectral": { "from": 5, "to": 15, "step": 1 }, "angle_deg": 0 }
+}

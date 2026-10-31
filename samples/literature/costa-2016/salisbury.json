@@ -1,0 +1,21 @@
+{
+  "format": "berreman-stack",
+  "version": 1,
+  "title": "Salisbury screen: a 377-ohm sheet a quarter wave above a metal plane",
+  "source": "F. Costa, A. Monorchio, G. Manara, IEEE EMC Magazine 5(2), 67-74 (2016), Fig. 5(a) and Table 1",
+  "notes": "Costa gives a 5 mm air spacer on a ground plane, and states 377 ohm/sq for a Salisbury screen in general but not for Fig. 5(a) itself; 377 is assumed. The ground plane is copper (5.8e7 S/m, 0.1 mm thick: many skin depths). The sheet is a 1 um layer of the resistive_sheet model. For a perfect conductor and an infinitely thin sheet, R = c^2 / (4 + c^2) with c = cot(k0 d): the test checks that to 1e-3. Costa's Table 1 gives a -15 dB fractional bandwidth of 45.4%; the ideal formula gives 44.2%, which suggests a sheet resistance other than 377 for that figure.",
+  "units": { "length": "mm", "spectral": "GHz" },
+  "materials": {
+    "air": { "n": 1 },
+    "sheet": { "model": "resistive_sheet", "ohm_per_square": 377 },
+    "copper": { "model": "conductor", "sigma_s_per_m": 5.8e7 }
+  },
+  "incident": { "material": "air" },
+  "layers": [
+    { "material": "sheet", "thickness": 0.001 },
+    { "material": "air", "thickness": 5 },
+    { "material": "copper", "thickness": 0.1 }
+  ],
+  "exit": { "material": "air" },
+  "sweep": { "spectral": { "from": 5, "to": 25, "step": 0.01 }, "angle_deg": 0 }
+}

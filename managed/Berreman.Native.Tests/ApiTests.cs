@@ -27,6 +27,17 @@ internal static class ApiTests
         }
     }
 
+    /// <summary>A sample from samples/literature, embedded in this assembly.</summary>
+    public static StackDocument Sample(string relative)
+    {
+        var asm = Assembly.GetExecutingAssembly();
+        var name = asm.GetManifestResourceNames()
+            .FirstOrDefault(n => n.Replace('\\', '/').EndsWith("samples/" + relative, StringComparison.Ordinal))
+            ?? throw new InvalidOperationException($"sample {relative} is not embedded");
+        using var s = asm.GetManifestResourceStream(name)!;
+        return StackDocument.Parse(new StreamReader(s).ReadToEnd());
+    }
+
     public static void Run()
     {
         UnitsRoundTrip();
@@ -89,9 +100,9 @@ internal static class ApiTests
 
         /* exp(+jωt) data is conjugated on entry. */
         var d = StackDocument.Parse(ok.Replace("\"g\": { \"n\": 1.5 }", "\"g\": { \"eps_r\": 4, \"tan_delta\": 0.01, \"convention\": \"exp(+jwt)\" }"));
-        Near(d.Materials["g"][0, 0].Imaginary, -0.04, 1e-15, "exp(+jωt) data is conjugated");
+        Near(d.Materials["g"].At(500, 0)[0, 0].Imaginary, -0.04, 1e-15, "exp(+jωt) data is conjugated");
         d = StackDocument.Parse(ok.Replace("\"g\": { \"n\": 1.5 }", "\"g\": { \"eps_r\": 4, \"tan_delta\": 0.01 }"));
-        Near(d.Materials["g"][0, 0].Imaginary, 0.04, 1e-15, "ε′ with tan δ in exp(−iωt): ε″ = ε′ tan δ");
+        Near(d.Materials["g"].At(500, 0)[0, 0].Imaginary, 0.04, 1e-15, "ε′ with tan δ in exp(−iωt): ε″ = ε′ tan δ");
     }
 
     private static void FresnelThroughTheApi()
@@ -120,8 +131,7 @@ internal static class ApiTests
     /// </summary>
     private static void MansuripurQuadrilayer()
     {
-        using var s = Assembly.GetExecutingAssembly().GetManifestResourceStream("mansuripur-1990.json")!;
-        var doc = StackDocument.Parse(new StreamReader(s).ReadToEnd());
+        var doc = Sample("mansuripur-1990/quadrilayer.json");
         var r = Evaluator.Evaluate(doc);
         Check(r.Status == BcStatus.Ok, "Mansuripur quadrilayer evaluates");
 

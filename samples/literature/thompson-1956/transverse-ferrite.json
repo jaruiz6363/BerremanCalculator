@@ -1,0 +1,16 @@
+{
+  "format": "berreman-stack",
+  "version": 1,
+  "title": "Reflection from a ferrite half-space biased in its surface",
+  "source": "G. H. B. Thompson, J. Brit. IRE, June 1956, pp. 311-328, Eq. 13; resonance at 1 GHz and 4 pi Ms = 1000 G from J. D. Adam et al., Ch. 7 of Modern Ferrites Vol. 2 (IEEE/Wiley, 2023), Fig. 7.5",
+  "notes": "Bias along +y (Euler [0, -90, 0] takes the principal z to y). At normal incidence the s wave (E along the bias, h across it) sees the extraordinary permeability mu_eff = (mu^2 - kappa^2) / mu (Thompson Eq. 13), and is totally reflected where a lossless mu_eff is negative. The p wave sees mu = 1. Values are Adam's: 1 GHz, 4 pi Ms = 1000 G; eps is chosen. The sweep is in frequency at a fixed internal field of 100 Oe.",
+  "units": { "length": "mm", "spectral": "GHz" },
+  "materials": {
+    "air": { "n": 1 },
+    "ferrite": { "model": "ferrite", "four_pi_ms_gauss": 1000, "h0_oe": 100, "alpha": 0, "gamma_mhz_per_oe": 2.8, "eps_r": 15 }
+  },
+  "incident": { "material": "air" },
+  "layers": [],
+  "exit": { "material": "ferrite", "euler_deg": [0, -90, 0] },
+  "sweep": { "spectral": { "from": 0.5, "to": 3.0, "step": 0.05 }, "angle_deg": 0 }
+}

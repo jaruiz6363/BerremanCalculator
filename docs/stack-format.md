@@ -37,9 +37,9 @@ QWOT and FWOT thicknesses (contract, Section 1a) are not in version 1.
 
 ## Materials
 
-Each material is an object in `materials`. In version 1 every material is a constant: the same at
-every wavelength of the sweep. Dispersive materials (`table`, `sellmeier`, …) are refused until they
-are built, never approximated.
+Each material is an object in `materials`. It is either a constant, the same at every wavelength
+of the sweep, or one of the models below. Tabulated and formula dispersion (`table`, `sellmeier`,
+…) is refused until it is built, never approximated.
 
 ε is given in exactly one of these ways:
 
@@ -62,6 +62,20 @@ A complex number is a plain number (real) or `[re, im]`.
 **Convention.** `"convention": "exp(+jwt)"` marks data given with the engineering time dependence
 (ε = ε′ − jε″). It is conjugated on entry. The default is `"exp(-iwt)"`, the program's own
 convention.
+
+### Models
+
+A material with a `model` key is computed at each frequency. Its parameters are physical, so it
+takes no `convention`.
+
+| `model` | Parameters | Gives |
+|---|---|---|
+| `ferrite` | `four_pi_ms_gauss`; `h0_oe` (the internal static field); `alpha` (default 0); `gamma_mhz_per_oe` (default 2.8); ε in any of the ways above | The Polder μ tensor with the bias along the principal z, in the form of Kodera and Caloz (*IEEE AWPL* 17, 2018, Eq. 3), conjugated into exp(−iωt): [[μ, −iκ, 0], [iκ, μ, 0], [0, 0, 1]], μ = 1 + ω₀ω_m/(ω₀² − ω²), κ = ωω_m/(ω₀² − ω²), loss by ω₀ → ω₀ − iαω. Rotate the bias with `euler_deg`. |
+| `conductor` | `sigma_s_per_m`; `eps_background` (default 1) | ε = ε_background + iσ/(ωε₀) |
+| `resistive_sheet` | `ohm_per_square` | A sheet of R_s, represented by the layer holding it: ε = 1 + iZ₀/(R_s k₀ t), with t that layer's thickness. Keep the layer thin; the error is of order k₀t. |
+
+Papers write the Polder tensor with either sign of the off-diagonal term, which reverses the sense
+of Faraday rotation. A paper's own tensor can be entered as a constant `mu` instead of a model.
 
 ## Layers and outer media
 

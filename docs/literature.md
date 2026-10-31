@@ -304,6 +304,26 @@ checks, but no code is taken from them.
 
 ## Order
 
+**Done** (samples and tests; see [samples](../samples/README.md)):
+- Mansuripur's quadrilayer;
+- Berreman's Faraday slab (Eqs. 56–60);
+- Poddar's gyroelectric and gyromagnetic slab;
+- Thompson's transverse-bias ferrite, with Adam's resonance field;
+- Mei's tilted-axis bilayer;
+- Ra'di's ε = μ slab;
+- Costa's Salisbury screen;
+- a Polder ferrite slab against the circular Airy formula.
+
+Berreman's Δ forms (Eqs. 37, 47 and 56, and the general Eqs. 21 and 24) are checked in the native
+tests.
+
+**Still to do:**
+- **From item 1 below:** Berreman's cholesteric (Eqs. 62 and 70); Park's Eqs. 5, 12 and 13;
+  Catarina's polar Kerr film; Lakhtakia's half space.
+- **Items 2–5:** everything after Mansuripur.
+- **Costa's Jaumann absorber:** it needs the position of its two sheets, which the paper leaves
+  open.
+
 1. The closed forms, which test the engine exactly and come first:
    - Berreman's five; Park's Eqs. 5, 12 and 13; Catarina's polar Kerr film; Lakhtakia's half space;
    - Mei's tilted-axis bilayer;

@@ -34,7 +34,7 @@ public sealed class StackDocument
     public string LengthUnit { get; init; } = "nm";
     public string SpectralUnit { get; init; } = "nm";
 
-    public required Dictionary<string, MaterialMatrix> Materials { get; init; }
+    public required Dictionary<string, Material> Materials { get; init; }
     public required StackOuter Incident { get; init; }
     public required StackOuter Exit { get; init; }
     public required List<StackLayer> Layers { get; init; }
@@ -71,7 +71,7 @@ public sealed class StackDocument
         if (!Units.IsSpectralUnit(spectralUnit)) throw new StackFormatException($"units.spectral: '{spectralUnit}' is not a spectral unit");
 
         var mats = o["materials"] as JsonObject ?? throw new StackFormatException("\"materials\" is required");
-        var materials = new Dictionary<string, MaterialMatrix>();
+        var materials = new Dictionary<string, Material>();
         foreach (var (name, node) in mats)
             materials[name] = MaterialParser.Parse(node, $"materials.{name}");
 
@@ -182,12 +182,47 @@ public sealed class StackDocument
 /// <summary>Material definitions in the stack file (docs/stack-format.md, "Materials").</summary>
 public static class MaterialParser
 {
-    public static MaterialMatrix Parse(JsonNode? node, string where)
+    public static Material Parse(JsonNode? node, string where)
     {
         if (node is not JsonObject o) throw new StackFormatException($"{where} must be an object");
         foreach (var key in new[] { "table", "sellmeier", "cauchy", "drude", "lorentz" })
             if (o.ContainsKey(key))
                 throw new StackFormatException($"{where}: dispersive materials ('{key}') are not implemented yet; give constants");
+
+        if (o["model"] is not null)
+        {
+            if (o.ContainsKey("convention"))
+                throw new StackFormatException($"{where}: a model's parameters are physical and have no time convention; remove \"convention\"");
+            var kind = StackDocument.Str(o, "model", null, where);
+            switch (kind)
+            {
+                case "ferrite":
+                {
+                    if (o.ContainsKey("mu") || o.ContainsKey("mu_r")) throw new StackFormatException($"{where}: a ferrite's μ comes from the model");
+                    var e = Tensor(o, where, "eps", "n", "eps_r", "tan_delta", "no", "ne", "nx", "ny", "nz") ?? MaterialMatrix.Scalar(1);
+                    double Req(string k) => StackDocument.Num(o[k], $"{where}.{k}");
+                    var gamma = o.ContainsKey("gamma_mhz_per_oe") ? Req("gamma_mhz_per_oe") : 2.8;
+                    var alpha = o.ContainsKey("alpha") ? Req("alpha") : 0.0;
+                    if (alpha < 0) throw new StackFormatException($"{where}.alpha must not be negative");
+                    return new FerriteMaterial(Req("four_pi_ms_gauss"), Req("h0_oe"), alpha, gamma, e);
+                }
+                case "conductor":
+                {
+                    var sigma = StackDocument.Num(o["sigma_s_per_m"], $"{where}.sigma_s_per_m");
+                    if (!(sigma > 0)) throw new StackFormatException($"{where}.sigma_s_per_m must be positive");
+                    var bg = o.ContainsKey("eps_background") ? Cplx(o["eps_background"], $"{where}.eps_background") : Complex.One;
+                    return new ConductorMaterial(sigma, bg);
+                }
+                case "resistive_sheet":
+                {
+                    var rs = StackDocument.Num(o["ohm_per_square"], $"{where}.ohm_per_square");
+                    if (!(rs > 0)) throw new StackFormatException($"{where}.ohm_per_square must be positive");
+                    return new ResistiveSheetMaterial(rs);
+                }
+                default:
+                    throw new StackFormatException($"{where}.model: '{kind}' is not a model (ferrite, conductor, resistive_sheet)");
+            }
+        }
 
         var eps = Tensor(o, where, "eps", "n", "eps_r", "tan_delta", "no", "ne", "nx", "ny", "nz") ?? MaterialMatrix.Scalar(1);
         var mu = Tensor(o, where, "mu", null, "mu_r", "tan_delta_mu", null, null, null, null, null) ?? MaterialMatrix.Scalar(1);
@@ -198,8 +233,8 @@ public static class MaterialParser
         var convention = o["convention"] is null ? "exp(-iwt)" : StackDocument.Str(o, "convention", null, where);
         return convention switch
         {
-            "exp(-iwt)" => m,
-            "exp(+jwt)" => m.Conjugated(),
+            "exp(-iwt)" => new ConstantMaterial(m),
+            "exp(+jwt)" => new ConstantMaterial(m.Conjugated()),
             _ => throw new StackFormatException($"{where}.convention must be \"exp(-iwt)\" or \"exp(+jwt)\""),
         };
     }

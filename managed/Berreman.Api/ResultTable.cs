@@ -17,8 +17,9 @@ public sealed class ResultTable
         var doc = result.Document;
         var t = new ResultTable();
         bool anyAzimuth = doc.AzimuthsDeg.Length > 1 || doc.AzimuthsDeg[0] != 0;
-        bool isoOuter = doc.Materials[doc.Incident.Material].IsIsotropic(out _, out _)
-                     && doc.Materials[doc.Exit.Material].IsIsotropic(out _, out _);
+        double lambda0 = result.Points.Count > 0 ? result.Points[0].WavelengthNm : 500;
+        bool isoOuter = doc.Materials[doc.Incident.Material].At(lambda0, 0).IsIsotropic(out _, out _)
+                     && doc.Materials[doc.Exit.Material].At(lambda0, 0).IsIsotropic(out _, out _);
         string a = isoOuter ? "p" : "0", b = isoOuter ? "s" : "1";
 
         t.Columns.Add(SpectralName(doc.SpectralUnit));

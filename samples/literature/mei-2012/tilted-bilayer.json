@@ -1,0 +1,20 @@
+{
+  "format": "berreman-stack",
+  "version": 1,
+  "title": "Electromagnetically transparent wall: two slabs with tilted optic axes",
+  "source": "Z. L. Mei, Y. L. Xu, J. Bai, T. J. Cui, Opt. Express 20, 16955-16967 (2012), Eqs. 3, 8-14 and 18",
+  "notes": "Each slab has principal values K and 1/K (K = 5.8341, Eq. 18) in the plane of incidence, with eps_zz = 1 in this program's axes (z normal to the slab; the paper's x). Then eps_xx = 1 + c^2 and eps_xz = c with c = (K - 1)/sqrt(K), and the p (TM) block of Delta is the vacuum one plus -xi c times the identity: no reflection at any angle, and a transmitted phase k0 d (cos(theta) - c sin(theta)). The two slabs have opposite c, so the pair transmits exactly as the same thickness of vacuum. Eq. 18b as printed gives slab 2 the same sign of eps_xz as slab 1, which contradicts the paper's own Eqs. 9-14; the consistent sign is used here. eps_yy is not given and does not affect p; it is set to 1. d1 = d2 = 0.44 um at 365 nm (Eq. 18).",
+  "units": { "length": "nm", "spectral": "nm" },
+  "materials": {
+    "air": { "n": 1 },
+    "slab1": { "eps": [[5.005506043777, 0, 2.001376037574], [0, 1, 0], [2.001376037574, 0, 1]] },
+    "slab2": { "eps": [[5.005506043777, 0, -2.001376037574], [0, 1, 0], [-2.001376037574, 0, 1]] }
+  },
+  "incident": { "material": "air" },
+  "layers": [
+    { "material": "slab1", "thickness": 440 },
+    { "material": "slab2", "thickness": 440 }
+  ],
+  "exit": { "material": "air" },
+  "sweep": { "spectral": 365, "angle_deg": { "from": 0, "to": 85, "step": 5 } }
+}

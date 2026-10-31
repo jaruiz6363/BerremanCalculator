@@ -1,0 +1,16 @@
+{
+  "format": "berreman-stack",
+  "version": 1,
+  "title": "Faraday rotation in a gyroelectric slab (Born's model)",
+  "source": "D. W. Berreman, J. Opt. Soc. Am. 62, 502-510 (1972), Eqs. 13 and 56-60",
+  "notes": "Berreman gives the closed form, not numbers; the values here are chosen. eps = [[e, -i g, 0], [i g, e, 0], [0, 0, e]] (his Eq. 13 with gamma -> g). At normal incidence the circular waves see e + g and e - g (his Eqs. 57-60), so the eigenvalues of the transmission Jones matrix are the two circular Airy transmissions. The test checks that.",
+  "units": { "length": "um", "spectral": "nm" },
+  "materials": {
+    "glass": { "n": 1.5 },
+    "faraday": { "eps": [[2.25, [0, -0.01], 0], [[0, 0.01], 2.25, 0], [0, 0, 2.25]] }
+  },
+  "incident": { "material": "glass" },
+  "layers": [ { "material": "faraday", "thickness": 10 } ],
+  "exit": { "material": "glass" },
+  "sweep": { "spectral": { "from": 600, "to": 640, "step": 10 }, "angle_deg": 0 }
+}

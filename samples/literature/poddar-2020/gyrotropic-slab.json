@@ -1,0 +1,19 @@
+{
+  "format": "berreman-stack",
+  "version": 1,
+  "title": "A slab gyrotropic in both eps and mu, at normal incidence",
+  "source": "S. Poddar, MS thesis, University of Wisconsin-Milwaukee (2020), Appendix A (Eqs. A.1-A.151); also arXiv 2205.03560",
+  "notes": "Poddar derives r, t, Faraday and Kerr rotation in closed form and gives no numbers; the values here are chosen. Both tensors have the form [[a, -i b, 0], [i b, a, 0], [0, 0, c]], so they share circular eigenvectors: the circular waves see (eps + g, mu + kappa) and (eps - g, mu - kappa). The test checks the eigenvalues of the transmission Jones matrix against the two circular Airy transmissions. Poddar works in exp(+jwt); the tensors here are already in this program's exp(-iwt).",
+  "units": { "length": "mm", "spectral": "GHz" },
+  "materials": {
+    "air": { "n": 1 },
+    "gyro": {
+      "eps": [[[12, 0.02], [0, -0.5], 0], [[0, 0.5], [12, 0.02], 0], [0, 0, 12]],
+      "mu":  [[[1.2, 0.01], [0, -0.3], 0], [[0, 0.3], [1.2, 0.01], 0], [0, 0, 1]]
+    }
+  },
+  "incident": { "material": "air" },
+  "layers": [ { "material": "gyro", "thickness": 5 } ],
+  "exit": { "material": "air" },
+  "sweep": { "spectral": { "from": 8, "to": 12, "step": 0.5 }, "angle_deg": 0 }
+}

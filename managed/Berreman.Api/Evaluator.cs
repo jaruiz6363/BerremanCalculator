@@ -51,46 +51,57 @@ public static class Evaluator
         // ---- M per (wavelength, azimuth), media in order: incident, layers, exit ---------------
         var m = new PinnedBuffer<Complex>((long)nSpectral * nMedia * 36);
         var wavelength = new PinnedBuffer<double>(nSpectral);
-        var media = new List<(MaterialMatrix M, double[] Euler)> { (doc.Materials[doc.Incident.Material], doc.Incident.EulerDeg) };
-        media.AddRange(doc.Layers.Select(l => (doc.Materials[l.Material], l.EulerDeg)));
-        media.Add((doc.Materials[doc.Exit.Material], doc.Exit.EulerDeg));
+        // Media in order, each with the thickness its model may need (0 for the outer media).
+        var media = new List<(Material Mat, double[] Euler, double Thickness)>
+            { (doc.Materials[doc.Incident.Material], doc.Incident.EulerDeg, 0) };
+        media.AddRange(doc.Layers.Select(l => (doc.Materials[l.Material], l.EulerDeg, l.ThicknessNm)));
+        media.Add((doc.Materials[doc.Exit.Material], doc.Exit.EulerDeg, 0));
+
+        // The incident index per wavelength, for angles: ξ = n sin θ.
+        var nIncident = new double[doc.Spectral.Length];
 
         for (int w = 0; w < doc.Spectral.Length; ++w)
+        {
+            double lambda = Units.ToWavelengthNm(doc.Spectral[w], doc.SpectralUnit);
+            var atLambda = media.Select(x => x.Mat.At(lambda, x.Thickness)).ToArray();
+
+            if (doc.AnglesDeg is not null)
+            {
+                if (!atLambda[0].IsIsotropic(out var eps, out var mu) || eps.Imaginary != 0 || mu.Imaginary != 0 || (eps * mu).Real <= 0)
+                    throw new StackFormatException(
+                        "sweep.angle_deg needs an isotropic, lossless incident medium; for any other, give sweep.xi");
+                nIncident[w] = Math.Sqrt((eps * mu).Real);
+            }
+
             for (int a = 0; a < doc.AzimuthsDeg.Length; ++a)
             {
                 int s = w * doc.AzimuthsDeg.Length + a;
-                wavelength[s] = Units.ToWavelengthNm(doc.Spectral[w], doc.SpectralUnit);
+                wavelength[s] = lambda;
                 var sample = MaterialMatrix.EulerRotation(doc.AzimuthsDeg[a], 0, 0);
                 for (int k = 0; k < nMedia; ++k)
                 {
-                    var (mat, e) = media[k];
+                    var e = media[k].Euler;
                     var placed = (e[0] == 0 && e[1] == 0 && e[2] == 0 && doc.AzimuthsDeg[a] == 0)
-                        ? mat
-                        : mat.Rotated(MaterialMatrix.Mul(sample, MaterialMatrix.EulerRotation(e[0], e[1], e[2])));
+                        ? atLambda[k]
+                        : atLambda[k].Rotated(MaterialMatrix.Mul(sample, MaterialMatrix.EulerRotation(e[0], e[1], e[2])));
                     placed.M.CopyTo(m.Span.Slice((s * nMedia + k) * 36, 36));
                 }
             }
+        }
 
         // ---- points: wavelength, then azimuth, then angle ------------------------------------
         var incidence = doc.AnglesDeg ?? doc.Xi!;
         int nPoints = nSpectral * incidence.Length;
         var pointSpectral = new PinnedBuffer<int>(nPoints);
         var pointXi = new PinnedBuffer<double>(nPoints);
-        var incident = doc.Materials[doc.Incident.Material];
-        double nIncident = 0;
-        if (doc.AnglesDeg is not null)
-        {
-            if (!incident.IsIsotropic(out var eps, out var mu) || eps.Imaginary != 0 || mu.Imaginary != 0 || (eps * mu).Real <= 0)
-                throw new StackFormatException(
-                    "sweep.angle_deg needs an isotropic, lossless incident medium; for any other, give sweep.xi");
-            nIncident = Math.Sqrt((eps * mu).Real);
-        }
         for (int s = 0; s < nSpectral; ++s)
             for (int i = 0; i < incidence.Length; ++i)
             {
                 int p = s * incidence.Length + i;
                 pointSpectral[p] = s;
-                pointXi[p] = doc.AnglesDeg is null ? incidence[i] : nIncident * Math.Sin(incidence[i] * Math.PI / 180);
+                pointXi[p] = doc.AnglesDeg is null
+                    ? incidence[i]
+                    : nIncident[s / doc.AzimuthsDeg.Length] * Math.Sin(incidence[i] * Math.PI / 180);
             }
 
         var thickness = new PinnedBuffer<double>(nLayers);
