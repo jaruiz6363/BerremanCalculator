@@ -111,12 +111,32 @@ Its "T" is |t|², which it says is not the transmittance.
 
 | Example | Inputs | Check |
 |---|---|---|
-| Figs. 2–4: Otto geometry (KRS5 prism, air gap, sample) at 30°, p-polarised, gaps 2, 3.5, 5.5, 7.5 µm: bare 6H-SiC; 2 µm GaN on SiC; 700 nm SiC / 2 µm GaN / SiC. Reflectance against wavenumber, and \|E_x\| against depth | **Incomplete**: no ε∞ or damping, ω_TO,∥ and ω_LO,∥ only as figure labels, prism index only "≈ 2.4" | Curves; mode positions stated (for example the SiC surface phonon polariton dip near 910 cm⁻¹) |
-| Fig. 5: α-quartz, c along x, y or z, 350–600 cm⁻¹ | **Incomplete**: multi-oscillator data from Gervais and Piriou (1975) | Curves |
+| Figs. 2–4: Otto geometry (KRS5 prism, air gap, sample) at 30°, p-polarised, gaps 2, 3.5, 5.5, 7.5 µm: bare 6H-SiC; 2 µm GaN on SiC; 700 nm SiC / 2 µm GaN / SiC. Reflectance against wavenumber, and \|E_x\| against depth | Incomplete in the paper (no ε∞ or damping, prism index only "≈ 2.4"); **complete with the authors' code**, below | Curves; mode positions stated (for example the SiC surface phonon polariton dip near 910 cm⁻¹) |
+| Fig. 5: α-quartz, c along x, y or z, 350–600 cm⁻¹ | Incomplete in the paper (data from Gervais and Piriou, 1975); **tabulated in the authors' code** | Curves |
 
-The missing parameters are in the authors' published Matlab code (Zenodo 10.5281/zenodo.400486) and
-in the papers it cites: Paarmann et al., *Phys. Rev. B* **94**, 134312 (2016) for SiC; Kasic et
-al., *Phys. Rev. B* **62**, 7365 (2000) for GaN.
+**The missing parameters are in the authors' Matlab code** (Zenodo, concept DOI
+10.5281/zenodo.601496; four versions, 2017-06 to 2019-10, licence CC BY-NC 4.0). They are the same
+in every version, so the erratum did not change them. The figures used:
+
+| Material | Model | Parameters (cm⁻¹ unless stated) |
+|---|---|---|
+| 6H-SiC, ordinary (in-plane) | ε∞ (ω² − ω_L² + iγ_L ω)/(ω² − ω_T² + iγ_T ω) | ε∞ 6.56, ω_T 794.78, ω_L 967.93, γ_T = γ_L = 2.535 |
+| 6H-SiC, extraordinary (c axis) | ε∞ [1 + Σ_j (ω_Tj² − ω_Lj²)/(ω² − ω_Tj² + iγ_j ω)], three terms | ε∞ 6.78; main ω_T 783.67, ω_L 962.0, γ 2.535; weak modes ω_T/ω_L 881.0/881.2 and 886/886.1333, γ 1.3 |
+| GaN, ordinary | as SiC ordinary | ε∞ 5.04, ω_T 560.1, ω_L 742.1, γ_T = γ_L = 4.0 |
+| GaN, extraordinary | as SiC ordinary | ε∞ 5.01, ω_T 537, ω_L 732.5, γ_T = γ_L = 4.0 |
+| KRS5 prism | n tabulated against wavenumber, interpolated (pchip) | a table, not a formula |
+| α-quartz (Fig. 5) | ε_o and ε_e tabulated, 0–1499 cm⁻¹ | a table, not a formula |
+
+The +iγω terms give Im ε > 0, so the code's convention is exp(−iωt), as ours. The SiC and GaN films
+are c-cut: the c axis is along z. The code's test script reproduces Figs. 2–4 exactly: 350–1400
+cm⁻¹, 30°, gaps 2, 3.5, 5.5 and 7.5 µm, the stacks KRS5 / vacuum gap / SiC, KRS5 / gap / 2 µm GaN
+/ SiC, and KRS5 / gap / 0.7 µm SiC / 2 µm GaN / SiC.
+
+Oscillator parameters are facts and are cited here. The code itself is non-commercial and is not
+copied. The KRS5 and quartz tables are not copied into the repository either. **Open:** a KRS5
+index from a source the repository can carry. The code may be run as an independent check, and the
+2019 version's material library (about 20 polar crystals, including hBN, MoO₃, AlN and Al₂O₃) is a
+source of further examples.
 
 ### Lakhtakia (2018)
 
@@ -163,7 +183,6 @@ plasma slabs, anisotropic radome walls and chiral slabs are the likely subjects.
 | Paper | Why | Availability |
 |---|---|---|
 | The erratum to Passler and Paarmann, *JOSA B* **36**, 3246 (2019) | Corrects their transfer matrix and fields for birefringent films | Journal |
-| Paarmann et al., *Phys. Rev. B* **94**, 134312 (2016); Kasic et al., *Phys. Rev. B* **62**, 7365 (2000) | The SiC and GaN dielectric functions behind Passler's figures | Journal; the parameters may also be in the Zenodo code |
 | P. Yeh, "Electromagnetic propagation in birefringent layered media," *J. Opt. Soc. Am.* **69**, 742 (1979) | Passler's Euler-angle convention is defined in its Eq. 2 | Journal; citation as Passler gives it |
 | P. Yeh, "Optics of anisotropic layered media: a new 4×4 matrix algebra," *Surf. Sci.* **96**, 41 (1980). | The other classic 4×4 formulation. | Citation not yet confirmed |
 | M. Schubert, "Polarization-dependent optical parameters of arbitrarily anisotropic homogeneous layered systems," *Phys. Rev. B* **53**, 4265 (1996). | Generalised ellipsometry: Ψ, Δ and the normalised Jones elements for anisotropic samples. | Citation not yet confirmed |
@@ -176,8 +195,8 @@ checks, but no code is taken from them.
 1. The closed forms: Berreman's five, Park's Eqs. 5, 12 and 13, Catarina's polar Kerr film,
    Lakhtakia's half space, and the two microwave tests. These test the engine exactly and come
    first.
-2. Mansuripur's quadrilayer, whose inputs are complete, then Passler and Paarmann once the missing
-   parameters are in hand.
+2. Mansuripur's quadrilayer, whose inputs are complete, then Passler and Paarmann, whose inputs are
+   complete with the authors' code.
 3. The cholesteric curves of Ting (Fig. 2 first) and Park (Fig. 1), which test sublayer
    discretisation, with the missing inputs stated.
 4. Schubert's generalised ellipsometry, which tests the derived outputs.
