@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Berreman.Gui", "Berreman.Gu
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Berreman.Native.Tests", "Berreman.Native.Tests\Berreman.Native.Tests.csproj", "{0DFA2D62-1FDA-4625-B183-76C6A1F1B1B6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Berreman.Gui.Core", "Berreman.Gui.Core\Berreman.Gui.Core.csproj", "{E173FBC5-4AB7-4903-B6C7-A13CCA538BA8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -97,6 +99,18 @@ Global
 		{0DFA2D62-1FDA-4625-B183-76C6A1F1B1B6}.Release|x64.Build.0 = Release|Any CPU
 		{0DFA2D62-1FDA-4625-B183-76C6A1F1B1B6}.Release|x86.ActiveCfg = Release|Any CPU
 		{0DFA2D62-1FDA-4625-B183-76C6A1F1B1B6}.Release|x86.Build.0 = Release|Any CPU
+		{E173FBC5-4AB7-4903-B6C7-A13CCA538BA8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E173FBC5-4AB7-4903-B6C7-A13CCA538BA8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E173FBC5-4AB7-4903-B6C7-A13CCA538BA8}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{E173FBC5-4AB7-4903-B6C7-A13CCA538BA8}.Debug|x64.Build.0 = Debug|Any CPU
+		{E173FBC5-4AB7-4903-B6C7-A13CCA538BA8}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E173FBC5-4AB7-4903-B6C7-A13CCA538BA8}.Debug|x86.Build.0 = Debug|Any CPU
+		{E173FBC5-4AB7-4903-B6C7-A13CCA538BA8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E173FBC5-4AB7-4903-B6C7-A13CCA538BA8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E173FBC5-4AB7-4903-B6C7-A13CCA538BA8}.Release|x64.ActiveCfg = Release|Any CPU
+		{E173FBC5-4AB7-4903-B6C7-A13CCA538BA8}.Release|x64.Build.0 = Release|Any CPU
+		{E173FBC5-4AB7-4903-B6C7-A13CCA538BA8}.Release|x86.ActiveCfg = Release|Any CPU
+		{E173FBC5-4AB7-4903-B6C7-A13CCA538BA8}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

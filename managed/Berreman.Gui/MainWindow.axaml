@@ -1,11 +1,57 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:Berreman.Gui"
         x:Class="Berreman.Gui.MainWindow"
         Title="BerremanCalculator"
-        Width="640" Height="360">
-  <StackPanel Margin="24" Spacing="12">
-    <TextBlock Text="BerremanCalculator" FontSize="22" FontWeight="SemiBold" />
-    <TextBlock Text="A Berreman 4×4 evaluator for stratified media. Nothing is implemented yet." TextWrapping="Wrap" />
-    <TextBlock x:Name="EngineText" FontFamily="Consolas,Menlo,monospace" TextWrapping="Wrap" />
-  </StackPanel>
+        Width="1280" Height="800" MinWidth="720" MinHeight="480">
+
+  <DockPanel>
+    <!-- Toolbar -->
+    <Border DockPanel.Dock="Top" Padding="8,6" BorderBrush="#DDD" BorderThickness="0,0,0,1">
+      <StackPanel Orientation="Horizontal" Spacing="6">
+        <Button x:Name="OpenButton" Content="Open…" ToolTip.Tip="Open a stack file (Ctrl+O)" />
+        <Button x:Name="SaveButton" Content="Save" ToolTip.Tip="Save the stack file (Ctrl+S)" />
+        <Button x:Name="SaveAsButton" Content="Save as…" />
+        <ComboBox x:Name="SampleBox" MinWidth="320" PlaceholderText="Open a sample from the literature…" />
+        <Button x:Name="EvaluateButton" Content="Evaluate (F5)" FontWeight="SemiBold" />
+        <Button x:Name="ExportButton" Content="Export CSV…" ToolTip.Tip="Write every point, with the Jones coefficients, Ψ/Δ and per-layer absorption" />
+      </StackPanel>
+    </Border>
+
+    <!-- Status -->
+    <Border DockPanel.Dock="Bottom" Padding="8,4" BorderBrush="#DDD" BorderThickness="0,1,0,0">
+      <SelectableTextBlock x:Name="StatusText" TextWrapping="Wrap" Text="Ready." />
+    </Border>
+
+    <Grid ColumnDefinitions="2*,Auto,3*">
+      <!-- The stack file -->
+      <DockPanel Grid.Column="0" Margin="8">
+        <StackPanel DockPanel.Dock="Top" Spacing="2" Margin="0,0,0,6">
+          <TextBlock x:Name="DocTitle" FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap" Text="No stack open" />
+          <SelectableTextBlock x:Name="DocSource" Foreground="#555" TextWrapping="Wrap" />
+        </StackPanel>
+        <TextBox x:Name="Editor" AcceptsReturn="True" AcceptsTab="False" TextWrapping="NoWrap"
+                 FontFamily="Cascadia Mono,Consolas,Menlo,DejaVu Sans Mono,monospace" FontSize="12"
+                 ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                 Watermark="A stack file (docs/stack-format.md). Open one, or pick a sample." />
+      </DockPanel>
+
+      <GridSplitter Grid.Column="1" Width="5" ResizeDirection="Columns" Background="#EEE" />
+
+      <!-- Results -->
+      <DockPanel Grid.Column="2" Margin="8">
+        <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,6">
+          <TextBlock Text="Show:" VerticalAlignment="Center" Margin="0,0,8,0" />
+          <CheckBox x:Name="ShowR" Content="R" IsChecked="True" Margin="0,0,8,0" />
+          <CheckBox x:Name="ShowT" Content="T" IsChecked="True" Margin="0,0,8,0" />
+          <CheckBox x:Name="ShowA" Content="A" Margin="0,0,20,0" />
+          <CheckBox x:Name="ShowP" Content="p (mode 0)" IsChecked="True" Margin="0,0,8,0" />
+          <CheckBox x:Name="ShowS" Content="s (mode 1)" IsChecked="True" Margin="0,0,8,0" />
+          <CheckBox x:Name="ShowMean" Content="mean (unpolarised)" Margin="0,0,20,0" />
+          <CheckBox x:Name="ShowEllipsometry" Content="Ψ, Δ" />
+        </WrapPanel>
+        <local:SpectrumPlot x:Name="Plot" />
+      </DockPanel>
+    </Grid>
+  </DockPanel>
 </Window>

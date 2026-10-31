@@ -31,7 +31,7 @@ it evaluates as sublayers and checks by doubling them. Materials are constants, 
 phonon oscillators, tables) or models (ferrite, conductor, resistive sheet).
 - `berreman evaluate <file>` prints or writes a table.
 - The MCP tool `evaluate_stack` returns the same table.
-- The GUI only reports the engine's status.
+- The GUI edits a stack file, evaluates it, and plots R, T, A and Ψ/Δ.
 
 Seventeen literature samples are reproduced: Mansuripur (1990), nine closed forms, three of Passler
 and Paarmann's (2017) infrared Otto-geometry examples, Ting's (2006) cholesteric, and three
@@ -50,6 +50,7 @@ The tests come before each part of the engine, as listed in the [engine design](
 | [Engine design](docs/engine-design.md) | How one point is computed, why it is stable, and the tests written before the code. |
 | [Derivation of Δ](docs/derivation-delta.md) | Berreman's 4×4 matrix from Maxwell's equations, in the program's conventions, with the checks. |
 | [The stack file](docs/stack-format.md) | The file the CLI and MCP server evaluate: materials, layers, units and the sweep. |
+| [User guide](docs/user-guide.md) | The GUI, the command line and the MCP server. |
 | [Samples](samples/README.md) | The examples from the literature, and how closely each is reproduced. |
 
 ## Shape
@@ -95,6 +96,7 @@ samples/    the examples from the literature
 | `managed/Berreman.Api` | the API the three programs share |
 | `managed/Berreman.Cli` | `berreman`, the command line |
 | `managed/Berreman.Mcp` | `berreman-mcp`, the MCP server (stdio) |
+| `managed/Berreman.Gui.Core` | the testable half of the GUI: plot arithmetic, the choice of curves, the sample list |
 | `managed/Berreman.Gui` | `berreman-gui` (Avalonia) |
 | `managed/Berreman.Native.Tests` | the managed test suite |
 

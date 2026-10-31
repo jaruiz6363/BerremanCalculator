@@ -18,6 +18,7 @@
     <ProjectReference Include="..\Berreman.Native\Berreman.Native.csproj" />
     <ProjectReference Include="..\Berreman.Api\Berreman.Api.csproj" />
     <ProjectReference Include="..\Berreman.Mcp\Berreman.Mcp.csproj" />
+    <ProjectReference Include="..\Berreman.Gui.Core\Berreman.Gui.Core.csproj" />
   </ItemGroup>
 
   <!-- The literature samples the suite checks, embedded so there is no path to get wrong. -->
