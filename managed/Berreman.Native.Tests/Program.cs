@@ -45,7 +45,7 @@ var report = EngineStatus.Probe();
 Check(report.Loaded, $"the native engine loads ({report.Summary})");
 Equal(report.NativeAbi, (int?)NativeMethods.AbiVersion, "native ABI matches the binding");
 Equal(report.PlanStatus, (BcStatus?)BcStatus.Ok, "bc_plan accepts a trivial problem");
-Equal(report.EvaluateStatus, (BcStatus?)BcStatus.NotImplemented, "bc_evaluate is loud while unbuilt");
+Equal(report.EvaluateStatus, (BcStatus?)BcStatus.Ok, "bc_evaluate evaluates a vacuum stack");
 
 EvaluateLeavesOutputsUntouched();
 
@@ -86,8 +86,8 @@ static JsonObject Request(int id, string method, JsonObject? parameters = null)
     return r;
 }
 
-// Rule 5 from C#: every output is filled with a sentinel, and after a NOT_IMPLEMENTED call every
-// element must still be the sentinel.
+// Rule 5 from C#: fields against depth are not built yet. Every output is filled with a sentinel,
+// and after the NOT_IMPLEMENTED call every element must still be the sentinel.
 unsafe void EvaluateLeavesOutputsUntouched()
 {
     var m = new PinnedBuffer<Complex>(3 * 36);

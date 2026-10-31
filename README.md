@@ -14,15 +14,21 @@ One shared API drives three programs:
 - **the command line**, for scripts;
 - **an MCP server**, so an AI assistant can set up and evaluate stacks with the program.
 
-**Status: the engine is being written.** Everything builds and the pieces are connected, but
-evaluation does not run yet:
-- The first engine parts are written and tested:
-  - Berreman's Δ for any material;
-  - the modes of isotropic outer media;
-  - the boundary solve at the front of the stack.
-- `bc_evaluate` still reports that evaluation is not implemented. The sweep through the layers comes
-  next.
-- The CLI, the MCP server and the GUI each report the engine's status.
+**Status: the engine evaluates, from C++ only.** The native engine computes any stack of layers,
+of any material, between **isotropic** outer media. It returns:
+- the Jones coefficients;
+- reflectance, transmittance and absorptance;
+- the absorption in each layer;
+- per-point diagnostics.
+
+It is tested against closed forms (see the [engine design](docs/engine-design.md), Section 6).
+
+Not yet built, and refused with a distinct status rather than computed wrongly:
+- anisotropic outer media;
+- fields against depth.
+
+The C# API does not yet build stacks from materials. The CLI, the MCP server and the GUI only
+report the engine's status.
 
 The tests come before each part of the engine, as listed in the [engine design](docs/engine-design.md).
 

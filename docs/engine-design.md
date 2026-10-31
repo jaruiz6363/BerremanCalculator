@@ -113,8 +113,15 @@ only.
    This is a 4×4 linear system, solved by LU with partial pivoting for both incident waves at once.
    r is the Jones reflection matrix.
 4. **Transmission.** If each step k gives P_k W_{k+1} = W_k R_k, then c at the front relates to the
-   transmitted amplitudes by t = R_N⁻¹ ⋯ R₁⁻¹ c, applied in the forward direction as a sequence of 2×2
-   triangular solves.
+   transmitted amplitudes by t = R_N⁻¹ ⋯ R₁⁻¹ c.
+   - **As built, the engine accumulates the product of the inverses**, L = R₁⁻¹ R₂⁻¹ ⋯, one per
+     layer. L maps the amplitudes at a layer's front to those at its back, so it is bounded by the
+     physics: it underflows towards zero through an opaque layer, which is the right answer, and
+     it never overflows.
+   - The product of the R's themselves, as first planned, overflows in a polariser. There, one wave
+     grows by e^{a} sweeping backward while the other passes, and the overflow would have discarded
+     a transmitted wave that is really there.
+   - The polariser test in Section 6 checks this case.
 
 **Why this is stable.** Re-orthonormalising after every bounded step is Godunov's method for
 shooting through stiff linear differential equations (S. Godunov, *Uspehi Mat. Nauk* **16**, 171
@@ -146,9 +153,25 @@ revisited," *SIAM J. Matrix Anal. Appl.* **26**, 1179–1193 (2005), Tables 2.1�
 - The costs are 4, 5 and 6 matrix products plus one solve.
 
 Evaluating r_m unscaled whenever ‖A‖₁ ≤ θ_m is exactly what his Algorithm 2.3 does, so the design
-is covered by the paper. It starts with m = 9 and β = 1. Section 6 measures accuracy and cost at
-β = 1 and 2 with m = 9, and at β = 5.37 with m = 13, before the final choice is written here. Degree
-9 is not covered above β = 2.098.
+is covered by the paper. Degree 9 is not covered above β = 2.098.
+
+**The choice, measured: m = 13 and β = 5.37.** `test_sweep` measured five configurations against
+the block reference:
+- three set cases: 50 waves of dielectric, 200 nm of metal, and an evanescent gap;
+- 400 random isotropic stacks;
+- 300 random lossless general stacks, for energy conservation.
+
+| β, m | worst error, random isotropic / lossless general | time, 50-wave layer |
+|---|---|---|
+| 0.5, 9 | 3.4 × 10⁻¹⁴ / 1.1 × 10⁻¹³ | 95 µs |
+| 1, 9 | 7.5 × 10⁻¹⁴ / 5.4 × 10⁻¹⁴ | 49 µs |
+| 2, 9 | 6.0 × 10⁻¹⁴ / 3.0 × 10⁻¹⁴ | 26 µs |
+| 2.098, 9 | 6.0 × 10⁻¹⁴ / 3.1 × 10⁻¹⁴ | 22 µs |
+| 5.37, 13 | 1.5 × 10⁻¹³ / 1.5 × 10⁻¹⁴ | 10 µs |
+
+Every configuration is at the rounding level, and the largest step is 2–5 times faster on thick
+layers. That is one machine and these stacks. The measurement stays in the test, so a regression in
+any configuration fails the build. `bc_config` in `bc_internal.h` holds the choice.
 
 **Opaque stacks.** If the running R factors exceed about 10²⁵⁰, the transmitted amplitude is below
 10⁻²⁵⁰ of the field at the front. t, T and the fields beyond are set to exactly zero, and the point
@@ -220,6 +243,34 @@ where the legacy code failed.
 3. **Degeneracy and continuity.** A uniaxial layer with its optic axis along z, at normal incidence,
    is exactly degenerate. Tilting the axis by 10⁻ᵏ rad, for k = 1 to 12, must change r and t smoothly,
    with no jump.
+**Tests 2–7 written: `tests/native/test_sweep.cpp`.** The reference multiplies the closed-form
+2×2 propagators of the p and s blocks (Berreman's Eq. 41, written without a branch so it is exact
+at q = 0). It applies to every stack whose Δ splits into those blocks. Results:
+
+| Test | Result |
+|---|---|
+| 400 random isotropic stacks (metals, μ ≠ 1, 0–3 waves) | worst error 2 × 10⁻¹⁴ |
+| One layer 1000 waves thick | 7 × 10⁻¹³ |
+| Optic axis along z | equals n_o exactly |
+| Tilts of 10⁻¹ to 10⁻¹² rad | the change shrinks as θ², monotonically |
+| A layer exactly at q = 0 | equals the reference; continuous to 10⁻⁹ either side |
+| Metal at 0.5, 5 and 50 µm | bulk reflectance; 50 µm flagged opaque with T = 0 |
+| Frustrated total reflection | equals the reference; T falls with the gap |
+| Random Hermitian (lossless) general M | R + T = 1 to 4 × 10⁻¹⁵ |
+| Random lossy general M | Σ layer absorption = 1 − R − T to 2 × 10⁻¹⁵ |
+| A polariser (absorption e⁻⁸⁰) rotated about z | equals R(φ) diag(t_x, t_y) R(φ)ᵀ to 10⁻¹² |
+| The Padé exponential itself | within 7 × 10⁻¹⁴ of a Taylor reference |
+
+Six bugs were planted, one at a time, and every one failed the tests:
+- stepping in the wrong direction;
+- no orthogonalisation (caught by the polariser test only);
+- the layer factor applied on the wrong side;
+- wrong Padé coefficients;
+- the wrong sign of the reflected flux;
+- the four planted in Δ itself.
+
+Test 8 (symmetries) waits for anisotropic outer media.
+
 4. **A defective Δ inside the stack.** A layer exactly at its critical angle (q = 0) must give the
    same result as angles 10⁻ᵏ rad either side.
 5. **Thick metal.** 0.5, 5 and 50 µm of aluminium: R must equal the bulk reflectance, and 50 µm must

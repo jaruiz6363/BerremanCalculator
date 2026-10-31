@@ -5,13 +5,27 @@
 
 #include "berreman.h"
 
-/* Scratch for one worker. Engine design Section 4: the sweep keeps, for every interface, the
- * orthonormal 4x2 basis W (8 complex) and the layer's 2x2 triangular factor R (4 complex). A stack
- * of n layers has n + 1 interfaces. Revised when the sweep is written, and tested against what the
- * sweep actually touches. */
+/* Scratch for one worker. Engine design, Section 4: one record per interface, n_layers + 1 of
+ * them, each holding a 4×2 orthonormal basis W (8 complex) and a 2×2 factor (4 complex). */
+#define BC_RECORD_COMPLEX 12
+
 BC_HD static inline int64_t bc_scratch_bytes(int32_t n_layers)
 {
-    return ((int64_t)n_layers + 1) * 12 * (int64_t)sizeof(bc_complex);
+    return ((int64_t)n_layers + 1) * BC_RECORD_COMPLEX * (int64_t)sizeof(bc_complex);
 }
+
+/* The numerical choices of engine design, Section 3. bc_evaluate uses bc_default_config; the
+ * step-bound measurement (engine design, Section 6, test 7) varies them. */
+typedef struct bc_config
+{
+    double beta;     /* the step bound: ‖k0 h Δ‖₁ ≤ beta */
+    int32_t pade_m;  /* 9 (beta ≤ 2.098) or 13 (beta ≤ 5.372) */
+} bc_config;
+
+static const bc_config bc_default_config = {5.37, 13};
+
+bc_status bc_evaluate_with(const bc_problem* problem, int32_t first_point, int32_t n_points,
+                           void* scratch, int64_t scratch_bytes, bc_output* output,
+                           const bc_config* config);
 
 #endif /* BC_INTERNAL_H */

@@ -14,9 +14,17 @@
  *   4. Double precision throughout.
  *   5. An unimplemented path is LOUD: a distinct status, and output buffers left untouched.
  *
- * STATUS: SKELETON. bc_plan checks its inputs and sizes the scratch. bc_evaluate returns
- * BC_NOT_IMPLEMENTED for every point and writes nothing. The ABI is not frozen: BC_ABI_VERSION 0
- * means it may still change without notice.
+ * STATUS. bc_evaluate computes any stack of layers between ISOTROPIC outer media: Jones, R/T/A,
+ * per-layer absorption and diagnostics. Still loud (rule 5):
+ *   - a point whose incident or exit medium is anisotropic gets BC_NOT_IMPLEMENTED in its
+ *     diagnostics, and its other outputs are untouched;
+ *   - requesting fields against depth makes the whole call return BC_NOT_IMPLEMENTED, touching
+ *     nothing.
+ * The ABI is not frozen: BC_ABI_VERSION 0 means it may still change without notice.
+ *
+ * RETURN VALUE OF bc_evaluate: BC_OK if every point succeeded, otherwise the status of the first
+ * point that did not. Every point is still attempted, and each one's status is in its
+ * diagnostics record.
  */
 
 #ifndef BERREMAN_H
@@ -117,9 +125,12 @@ typedef struct bc_problem
 /* ---------------------------------------------------------------------------------------------
  * Outputs. Any pointer may be null, and that output is then not computed.
  *
- * jones             n_points * 8 complex: r (2x2, row-major) then t (2x2). With isotropic outer
- *                   media the order within each is (pp, ps, sp, ss); with anisotropic ones, the
- *                   media's own modes.
+ * jones             n_points * 8 complex: r (2x2) then t (2x2), each [incident][outgoing]
+ *                   row-major, so (pp, ps, sp, ss) with the FIRST subscript the incident wave
+ *                   (Schubert's order: r_ps is p in, s out). With anisotropic outer media, the
+ *                   media's own modes. t is the amplitude of the exit medium's forward modes at
+ *                   the last interface, per unit incident amplitude at the first; 0 exactly when
+ *                   the point is opaque (below 1e-250).
  * power             n_points * 2 * 3 real: for each incident wave, R, T, A.
  * layer_absorption  n_points * 2 * n_layers real.
  * fields            n_points * 2 * n_depths * 6 complex: (E_x, E_y, E_z, H_x, H_y, H_z), H as
