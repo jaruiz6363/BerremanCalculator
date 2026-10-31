@@ -266,6 +266,10 @@ check.
 - Vinoy and Jha, *Sādhanā* **20**, 815 (1995).
 - Abu Sanad et al., *Phys. Status Solidi A* **221**, 2300828 (2024).
 - Nair and Jha, *IEEE APM* **56**(4), 276 (2014).
+- Uher and Hoefer, "Tunable microwave and millimeter-wave band-pass filters," *IEEE Trans. MTT*
+  **39**, 643–653 (1991). This is a survey of filters in waveguide and planar circuits. It gives the
+  Kittel resonance (its Eq. 10) and the magnetisation and permittivity of several commercial ferrites
+  (Figs. 9–11, Section II-B).
 
 They are devices or waveguides, not layered stacks, or they give formulas without complete examples.
 Some of their oblique-incidence formulas use the angle of incidence where the angle of refraction
