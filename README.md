@@ -33,7 +33,7 @@ phonon oscillators, tables) or models (ferrite, conductor, resistive sheet).
 - The MCP tool `evaluate_stack` returns the same table.
 - The GUI only reports the engine's status.
 
-Fourteen literature samples are reproduced: Mansuripur (1990), six closed forms, three of Passler
+Seventeen literature samples are reproduced: Mansuripur (1990), nine closed forms, three of Passler
 and Paarmann's (2017) infrared Otto-geometry examples, Ting's (2006) cholesteric, and three
 microwave radome walls (Anshin 2024; Peshlov 2006, against measurements). See
 [samples](samples/README.md).

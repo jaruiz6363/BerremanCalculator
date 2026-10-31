@@ -1,0 +1,17 @@
+{
+  "format": "berreman-stack",
+  "version": 1,
+  "title": "Polar Kerr effect of a magnetic film on a substrate",
+  "source": "G. Catarina, N. M. R. Peres, J. Fernandez-Rossier, 2D Mater. 7, 025011 (2020), Appendix B.2, Eqs. B.12-B.16",
+  "notes": "Catarina gives the closed form, not numbers for this case; the values are chosen. Film eps = [[e_xx, e_xy, 0], [-e_xy, e_xx, 0], [0, 0, e_zz]] (Eq. B.12), air above, substrate eps_r below, normal incidence of x-polarised light. Circular waves see n_pm = sqrt(e_xx +/- i e_xy), and r_pm = (1 - h(n_mp)) / (1 + h(n_mp)) with h the film's input admittance (Eqs. B.13-B.16). The paper uses exp(-iwt), as this program does.",
+  "units": { "length": "nm", "spectral": "nm" },
+  "materials": {
+    "air": { "n": 1 },
+    "film": { "eps": [[[4, 2], [0.5, 0.2], 0], [[-0.5, -0.2], [4, 2], 0], [0, 0, [4, 2]]] },
+    "substrate": { "eps": 2.25 }
+  },
+  "incident": { "material": "air" },
+  "layers": [ { "material": "film", "thickness": 10 } ],
+  "exit": { "material": "substrate" },
+  "sweep": { "spectral": { "from": 400, "to": 800, "step": 50 }, "angle_deg": 0 }
+}

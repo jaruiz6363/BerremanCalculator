@@ -330,9 +330,11 @@ Berreman's Δ forms (Eqs. 37, 47 and 56, and the general Eqs. 21 and 24) are che
 tests.
 
 **Still to do:**
-- **From item 1 below:** Park's Eqs. 5, 12 and 13;
-  Catarina's polar Kerr film; Lakhtakia's half space.
-- **Items 2–5:** done for Passler's Figs. 2–4, Ting's Fig. 2, Anshin's radome wall and Peshlov's two walls. Park's Fig. 1 needs its dispersive ε, outer media and polarisation; Schubert's ellipsometry (item 5) remains.
+- **From item 1 below:** Park's Eqs. 5, 12 and 13 (Δ and P(h) closed forms; the engine does not
+  output P(h), so they would be tested through stacks). Catarina, Lakhtakia and Schubert's C6 are
+  done.
+- **Items 2–5:** done for Passler's Figs. 2–4, Ting's Fig. 2, Anshin's radome wall and Peshlov's
+  two walls. Park's Fig. 1 needs its dispersive ε, outer media and polarisation.
 - **Costa's Jaumann absorber:** it needs the position of its two sheets, which the paper leaves
   open.
 

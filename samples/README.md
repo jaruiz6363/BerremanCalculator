@@ -25,8 +25,21 @@ precision the paper gives them.
 | [literature/peshlov-2006/honeycomb-model3.json](literature/peshlov-2006/honeycomb-model3.json) | Peshlov, Dankov and Hadjistamov, EuCAP 2006, Table II and Fig. 11 | **Measured** insertion loss at 12.5 GHz, with error bars, against angle | 7 of 8 measurements inside their error bars. At 65°, s polarisation, −0.72 dB against −0.60 ± 0.10. |
 | [literature/peshlov-2006/twintex.json](literature/peshlov-2006/twintex.json) | the same, Table I and Figs. 5–6 | Only the paper's approximate model | The s wave sees only ε∥ exactly (anisotropic = isotropic ε∥ to 0), which the paper's Fig. 5a does not show. |
 
+| [literature/catarina-2020/polar-kerr-film.json](literature/catarina-2020/polar-kerr-film.json) | Catarina, Peres and Fernández-Rossier, *2D Mater.* **7**, 025011 (2020), Eqs. B.12–B.16 | Closed form: circular reflection coefficients r± and the Kerr rotation of a magnetic film on a substrate | E_x ± iE_y of the reflected wave equal r± to 3 × 10⁻¹⁶, with the same labels; Kerr rotation to 2 × 10⁻¹⁶ |
+| [literature/lakhtakia-2018/magnetoelectric-halfspace.json](literature/lakhtakia-2018/magnetoelectric-halfspace.json) | Lakhtakia, arXiv 1811.05034 (2018), Eqs. 17–29, Fig. 3 parameters | Closed form: reflection by a half space with magnetoelectric gyrotropy (D = ε₀ε_rE − Γ×H, B = μ₀μ_rH + Γ×E) | Reflectances to 1.4 × 10⁻¹⁴ over 0–89°. The test first checks that the transcribed formulas reduce to Fresnel at Γ = 0. |
+| [literature/schubert-1996/biaxial-film.json](literature/schubert-1996/biaxial-film.json) | Schubert, *Phys. Rev. B* **53**, 4265 (1996), Eqs. C2, C5, C6 | Closed form: the ellipsometric ratio ρ = tan Ψ e^{iΔ} of a biaxial film on a biaxial substrate | ρ to 3 × 10⁻¹⁵ (relative), at 0–80°. This confirms the program's p and s signs and Δ at oblique incidence, not only r_pp = −r_ss at normal incidence. |
+
 The closed-form samples have values chosen where the paper gives only the formula; their `notes`
 say so.
+
+**Misprints found while reproducing the closed forms.** In each case the paper's own derivation
+gives the form that agrees, and the test shows the printed form does not:
+
+| Paper | As printed | What the paper's own equations give | Test |
+|---|---|---|---|
+| Berreman (1972), Eq. 70 | δ²/ε in the cholesteric eigenvalues | δ² (his Eqs. 68–69) | det(Δ_rot − κ): 7 × 10⁻¹⁵ against 2 × 10⁻² |
+| Schubert (1996), Eq. C5 | differences in the denominators of r₁₂pp and r₁₂ss, which makes each 1 | sums, as in his r₀₁ | ρ: 3 × 10⁻¹⁵ against an error of 1.7 |
+| Mei et al. (2012), Eq. 18b | the same sign of ε_xz for both slabs | opposite signs (his Eqs. 9–14) | see the Mei sample |
 
 ## Radome walls
 

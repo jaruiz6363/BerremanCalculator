@@ -1,0 +1,17 @@
+{
+  "format": "berreman-stack",
+  "version": 1,
+  "title": "Ellipsometry of a biaxial film on a biaxial substrate, axes aligned",
+  "source": "M. Schubert, Phys. Rev. B 53, 4265-4274 (1996), Appendix C, Eqs. C2, C5 and C6",
+  "notes": "Schubert gives rho = tan(Psi) e^{i Delta} = r_pp / r_ss in Airy form for this case; the values here are chosen. Film principal indices n_x, n_y, n_z; substrate n_x-, n_y-, n_z-; ambient n_a; N_ij = n_i cos(Phi_j) with n_j sin(Phi_j) = n_a sin(Phi_a). Eq. C5 as printed has minus signs in the denominators of r_12pp and r_12ss, which would make both equal to 1; the sums, as in r_01, are what the test confirms. Schubert uses exp(-iwt).",
+  "units": { "length": "nm", "spectral": "nm" },
+  "materials": {
+    "air": { "n": 1 },
+    "film": { "biaxial": { "x": { "n": [1.6, 0.01] }, "y": { "n": [1.7, 0.02] }, "z": { "n": [1.5, 0.005] } } },
+    "substrate": { "biaxial": { "x": { "n": [2.0, 0.05] }, "y": { "n": [2.1, 0.03] }, "z": { "n": [1.9, 0.04] } } }
+  },
+  "incident": { "material": "air" },
+  "layers": [ { "material": "film", "thickness": 300 } ],
+  "exit": { "material": "substrate" },
+  "sweep": { "spectral": { "from": 400, "to": 900, "step": 100 }, "angle_deg": [0, 30, 50, 70, 80] }
+}

@@ -1,0 +1,21 @@
+{
+  "format": "berreman-stack",
+  "version": 1,
+  "title": "Reflection by a half space with magnetoelectric gyrotropy",
+  "source": "A. Lakhtakia, arXiv 1811.05034v1 (2018), Section 3, Eqs. 2 and 17-29; parameters of Fig. 3",
+  "notes": "The medium: D = eps0 eps_r E - Gamma x H, B = mu0 mu_r H + Gamma x E (Eqs. 2). In this program's units (derivation note, Section 1) that is rho = -[g]x and rho' = [g]x with g = c0 Gamma and [g]x the cross-product matrix. Fig. 3's parameters: eps_r = 5 + 0.4i, mu_r = 1.1 + 0.05i, c0 Gamma = (0.9 + 0.01i, 0.3 + 0.01i, 0), plane of incidence at psi0 = 60 degrees, here as a sample azimuth of -60 degrees (the material turned by -60 is the plane turned by +60). Lakhtakia uses exp(-iwt) with dissipation as positive imaginary parts, as this program does. The test compares the reflectances of Eqs. 22-29.",
+  "units": { "length": "nm", "spectral": "nm" },
+  "materials": {
+    "air": { "n": 1 },
+    "me": {
+      "eps": [5, 0.4],
+      "mu": [1.1, 0.05],
+      "rho":       [[0, 0, [-0.3, -0.01]], [0, 0, [0.9, 0.01]], [[0.3, 0.01], [-0.9, -0.01], 0]],
+      "rho_prime": [[0, 0, [0.3, 0.01]], [0, 0, [-0.9, -0.01]], [[-0.3, -0.01], [0.9, 0.01], 0]]
+    }
+  },
+  "incident": { "material": "air" },
+  "layers": [],
+  "exit": { "material": "me" },
+  "sweep": { "spectral": 600, "azimuth_deg": -60, "angle_deg": { "from": 0, "to": 89, "step": 1 } }
+}
