@@ -96,6 +96,13 @@ incident medium | layer 1 | layer 2 | ... | layer N | exit medium
 
 ## 4. How a layer is propagated
 
+> **Superseded in part by [the engine design](engine-design.md).** Individual modes are now computed
+> only in the two outer media. Through the stack, the field is carried as a two-dimensional subspace,
+> propagated by a matrix exponential in bounded steps and re-orthonormalised after each step. This
+> needs no eigenvectors inside the stack, so coincident roots and a defective Δ there are not
+> special cases. The direction rule (point 2 below) still holds for the outer media. The aims below
+> are unchanged; points 1 and 3 describe the earlier plan.
+
 The legacy code found the four modes of a layer from a closed-form quartic, with fixed tolerances
 deciding which roots and eigenvectors to keep. It broke for isotropic layers, where two pairs of
 roots coincide, which is the most common case. The new engine does this:
