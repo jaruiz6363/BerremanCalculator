@@ -43,6 +43,7 @@ internal static class ApiTests
         UnitsRoundTrip();
         RotationKeepsLosslessMediaExactlyHermitian();
         StackFormatRefusesWhatItCannotUse();
+        DispersionLaws();
         FresnelThroughTheApi();
         MansuripurQuadrilayer();
     }
@@ -103,6 +104,45 @@ internal static class ApiTests
         Near(d.Materials["g"].At(500, 0)[0, 0].Imaginary, -0.04, 1e-15, "exp(+jωt) data is conjugated");
         d = StackDocument.Parse(ok.Replace("\"g\": { \"n\": 1.5 }", "\"g\": { \"eps_r\": 4, \"tan_delta\": 0.01 }"));
         Near(d.Materials["g"].At(500, 0)[0, 0].Imaginary, 0.04, 1e-15, "ε′ with tan δ in exp(−iωt): ε″ = ε′ tan δ");
+    }
+
+    private static void DispersionLaws()
+    {
+        /* KRS5, Rodney and Malitson's Sellmeier formula: 2.37069 at 10 µm, the value in Passler's
+         * table at 1000 cm⁻¹; and refused outside its stated range. */
+        var krs5 = Sample("passler-2017/sic-otto.json").Materials["KRS5"];
+        Near(Complex.Sqrt(krs5.At(10_000, 0)[0, 0]).Real, 2.37069, 5e-6, "KRS5 Sellmeier at 10 µm");
+        bool refused = false;
+        try { krs5.At(100_000, 0); } catch (StackFormatException) { refused = true; }
+        Check(refused, "a Sellmeier formula is refused outside its range");
+
+        /* Phonon oscillators in exp(−iωt): Im ε > 0 (absorbing), and Re ε < 0 in the Reststrahlen
+         * band. 6H-SiC ordinary: TO 794.78, LO 967.93 cm⁻¹. */
+        var sic = Sample("passler-2017/sic-otto.json").Materials["SiC"];
+        foreach (var w in new[] { 600.0, 794.78, 850, 967.93, 1200 })
+        {
+            var e = sic.At(1e7 / w, 0)[0, 0];
+            Check(e.Imaginary > 0, $"SiC ε″ > 0 at {w} cm⁻¹");
+        }
+        Check(sic.At(1e7 / 850, 0)[0, 0].Real < 0, "SiC ε′ < 0 inside its Reststrahlen band");
+        Check(sic.At(1e7 / 1200, 0)[0, 0].Real > 0, "SiC ε′ > 0 above it");
+        /* LO: ε′ crosses zero at ω_L in the lossless limit; with γ = 2.535 it is small there. */
+        Near(sic.At(1e7 / 967.93, 0)[0, 0].Real, 0, 0.05, "SiC ε′ ≈ 0 at the LO frequency");
+
+        /* A table: linear interpolation in its own variable, refused outside. */
+        var t = StackDocument.Parse("""
+            { "format": "berreman-stack", "version": 1,
+              "materials": { "a": { "n": 1 },
+                "t": { "table": { "unit": "um", "columns": ["x", "n", "k"], "data": [[1, 1.5, 0], [2, 1.7, 0.2]] } } },
+              "incident": { "material": "a" }, "exit": { "material": "t" }, "layers": [],
+              "sweep": { "spectral": 1500, "angle_deg": 0 } }
+            """).Materials["t"];
+        var n15 = Complex.Sqrt(t.At(1500, 0)[0, 0]);
+        Near(n15.Real, 1.6, 1e-12, "table: n interpolated at 1.5 µm");
+        Near(n15.Imaginary, 0.1, 1e-12, "table: k interpolated at 1.5 µm");
+        refused = false;
+        try { t.At(2500, 0); } catch (StackFormatException) { refused = true; }
+        Check(refused, "a table is refused outside its range, never extrapolated");
     }
 
     private static void FresnelThroughTheApi()

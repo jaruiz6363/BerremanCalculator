@@ -1,0 +1,43 @@
+{
+  "format": "berreman-stack",
+  "version": 1,
+  "title": "Otto geometry on bare 6H-SiC",
+  "source": "N. C. Passler and A. Paarmann, J. Opt. Soc. Am. B 34, 2128 (2017); arXiv 1707.00462v1, Fig. 2(a)",
+  "notes": "Stated: the SiC surface phonon polariton dip near 910 cm-1 at 30 degrees, with critical coupling at a 5.5 um gap among the four gaps shown (2, 3.5, 5.5, 7.5 um); this file uses 5.5. Materials: KRS5 from W. S. Rodney and I. H. Malitson, J. Opt. Soc. Am. 46, 956 (1956), as the Sellmeier formula of the refractiveindex.info database (CC0), which reproduces the KRS5 table in the authors code to its printed digits (2.37069 at 1000 cm-1). 6H-SiC and GaN are c-cut (c axis along z); their oscillator parameters are those of the authors Matlab code (Zenodo, concept DOI 10.5281/zenodo.601496), the same in every version, recorded in docs/literature.md. The code itself is not copied (CC BY-NC). p polarisation is the R_p column. The paper uses exp(-iwt), as this program does.",
+  "units": { "length": "um", "spectral": "cm-1" },
+  "materials": {
+    "KRS5": {
+      "sellmeier": {
+        "unit": "um", "a": 0, "range": [0.577, 39.38],
+        "terms": [
+          { "b": 1.8293958, "c2": 0.0225 }, { "b": 1.6675593, "c2": 0.0625 },
+          { "b": 1.1210424, "c2": 0.1225 }, { "b": 0.04513366, "c2": 0.2025 },
+          { "b": 12.380234, "c2": 27089.737 }
+        ]
+      }
+    },
+    "air": { "n": 1 },
+    "SiC": {
+      "uniaxial": {
+        "ordinary": { "phonon": { "unit": "cm-1", "eps_inf": 6.56,
+          "modes": [ { "to": 794.78, "lo": 967.93, "gamma_to": 2.535, "gamma_lo": 2.535 } ] } },
+        "extraordinary": { "phonon_additive": { "unit": "cm-1", "eps_inf": 6.78,
+          "modes": [ { "to": 783.67, "lo": 962.0, "gamma": 2.535 },
+                     { "to": 881.0, "lo": 881.2, "gamma": 1.3 },
+                     { "to": 886.0, "lo": 886.1333, "gamma": 1.3 } ] } }
+      }
+    },
+    "GaN": {
+      "uniaxial": {
+        "ordinary": { "phonon": { "unit": "cm-1", "eps_inf": 5.04,
+          "modes": [ { "to": 560.1, "lo": 742.1, "gamma_to": 4.0, "gamma_lo": 4.0 } ] } },
+        "extraordinary": { "phonon": { "unit": "cm-1", "eps_inf": 5.01,
+          "modes": [ { "to": 537.0, "lo": 732.5, "gamma_to": 4.0, "gamma_lo": 4.0 } ] } }
+      }
+    }
+  },
+  "incident": { "material": "KRS5" },
+  "layers": [ { "material": "air", "thickness": 5.5 } ],
+  "exit": { "material": "SiC" },
+  "sweep": { "spectral": { "from": 350, "to": 1400, "step": 1 }, "angle_deg": 30 }
+}

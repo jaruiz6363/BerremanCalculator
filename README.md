@@ -26,13 +26,14 @@ It is tested against closed forms (see the [engine design](docs/engine-design.md
 Fields against depth are not built yet. A request for them is refused with a distinct status
 rather than computed wrongly.
 
-The C# API reads [stack files](docs/stack-format.md). Materials are constants or models (ferrite,
-conductor, resistive sheet); tabulated dispersion is refused until it is built.
+The C# API reads [stack files](docs/stack-format.md). Materials are constants, dispersive (Sellmeier,
+phonon oscillators, tables) or models (ferrite, conductor, resistive sheet).
 - `berreman evaluate <file>` prints or writes a table.
 - The MCP tool `evaluate_stack` returns the same table.
 - The GUI only reports the engine's status.
 
-Seven literature samples are reproduced: Mansuripur (1990) and six closed forms. See
+Ten literature samples are reproduced: Mansuripur (1990), six closed forms, and three of Passler
+and Paarmann's (2017) infrared Otto-geometry examples. See
 [samples](samples/README.md).
 
 The tests come before each part of the engine, as listed in the [engine design](docs/engine-design.md).

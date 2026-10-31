@@ -37,9 +37,8 @@ QWOT and FWOT thicknesses (contract, Section 1a) are not in version 1.
 
 ## Materials
 
-Each material is an object in `materials`. It is either a constant, the same at every wavelength
-of the sweep, or one of the models below. Tabulated and formula dispersion (`table`, `sellmeier`,
-…) is refused until it is built, never approximated.
+Each material is an object in `materials`. It is a constant (the same at every wavelength), a
+dispersive material, or one of the models below.
 
 ε is given in exactly one of these ways:
 
@@ -62,6 +61,31 @@ A complex number is a plain number (real) or `[re, im]`.
 **Convention.** `"convention": "exp(+jwt)"` marks data given with the engineering time dependence
 (ε = ε′ − jε″). It is conjugated on entry. The default is `"exp(-iwt)"`, the program's own
 convention.
+
+### Dispersion
+
+A material whose ε depends on wavelength gives one dispersion law for all three principal values,
+or one law per principal axis:
+
+```json
+"KRS5": { "sellmeier": { ... } },
+"SiC":  { "uniaxial": { "ordinary": { "phonon": { ... } }, "extraordinary": { "phonon_additive": { ... } } } },
+"X":    { "biaxial": { "x": { ... }, "y": { ... }, "z": { ... } } }
+```
+
+The uniaxial optic axis, and the biaxial axes, are the principal axes. `euler_deg` turns them. A
+principal value may also be a constant, `{ "n": … }` or `{ "eps": … }`. `mu` is an optional constant
+scalar. Every law has a `unit`, the spectral unit its parameters are in.
+
+| Law | Parameters | ε |
+|---|---|---|
+| `sellmeier` | `unit`; `a` (default 0); `terms`: `[{ "b", "c2" }]` or `[{ "b", "c" }]`; optional `range` [min, max] | n² = 1 + a + Σ b λ² / (λ² − c2), with c2 = c² when a resonance wavelength c is given. This is refractiveindex.info's "formula 2". |
+| `phonon` | `unit`; `eps_inf`; `modes`: `[{ "to", "lo", "gamma_to", "gamma_lo" }]` | ε∞ Π (ω_L² − ω² − iγ_L ω) / (ω_T² − ω² − iγ_T ω), the factorised TO–LO form |
+| `phonon_additive` | `unit`; `eps_inf`; `modes`: `[{ "to", "lo", "gamma" }]` | ε∞ [1 + Σ (ω_T² − ω_L²) / (ω² − ω_T² + iγω)] |
+| `table` | `unit`; `columns`: `["x", "n", "k"]` or `["x", "eps_re", "eps_im"]`; `data`: rows | Linear interpolation in x. A table must be monotonic in x. |
+
+All the laws are in the program's exp(−iωt) convention, with losses positive. Outside a table, or
+outside a formula's `range`, the evaluation is refused rather than extrapolated.
 
 ### Models
 

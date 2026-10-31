@@ -61,6 +61,97 @@ public sealed class FerriteMaterial(double fourPiMsGauss, double h0Oe, double al
     }
 }
 
+/// <summary>A scalar ε(λ): one dispersion law (docs/stack-format.md, "Dispersion").</summary>
+public abstract class Dispersion
+{
+    public abstract Complex Eps(double wavelengthNm);
+}
+
+public sealed class ConstantDispersion(Complex eps) : Dispersion
+{
+    public override Complex Eps(double wavelengthNm) => eps;
+}
+
+/// <summary>
+/// Sellmeier: n² = 1 + A + Σ B_j λ² / (λ² − C_j), with C_j in the unit's square (the
+/// refractiveindex.info "formula 2" form; a resonance wavelength c gives C = c²).
+/// </summary>
+public sealed class SellmeierDispersion(string unit, double a, (double B, double C)[] terms, double[]? range) : Dispersion
+{
+    public override Complex Eps(double wavelengthNm)
+    {
+        double l = Units.FromWavelengthNm(wavelengthNm, unit);
+        if (range is not null && (l < range[0] || l > range[1]))
+            throw new StackFormatException($"{l:G6} {unit} is outside the Sellmeier formula's range [{range[0]}, {range[1]}] {unit}");
+        double l2 = l * l, n2 = 1 + a;
+        foreach (var (b, c) in terms) n2 += b * l2 / (l2 - c);
+        return n2;
+    }
+}
+
+/// <summary>
+/// Phonon oscillators, factorised (TO–LO) form, in exp(−iωt):
+/// ε = ε∞ Π (ω_Lj² − ω² − iγ_Lj ω) / (ω_Tj² − ω² − iγ_Tj ω), frequencies in the given unit (cm-1 usually).
+/// </summary>
+public sealed class FactorisedPhononDispersion(string unit, double epsInf, (double To, double Lo, double GTo, double GLo)[] modes) : Dispersion
+{
+    public override Complex Eps(double wavelengthNm)
+    {
+        double w = Units.FromWavelengthNm(wavelengthNm, unit);
+        Complex e = epsInf;
+        var i = Complex.ImaginaryOne;
+        foreach (var (to, lo, gto, glo) in modes)
+            e *= (lo * lo - w * w - i * glo * w) / (to * to - w * w - i * gto * w);
+        return e;
+    }
+}
+
+/// <summary>
+/// Phonon oscillators, additive form scaled by ε∞, in exp(−iωt):
+/// ε = ε∞ [1 + Σ (ω_Tj² − ω_Lj²) / (ω² − ω_Tj² + iγ_j ω)].
+/// </summary>
+public sealed class AdditivePhononDispersion(string unit, double epsInf, (double To, double Lo, double Gamma)[] modes) : Dispersion
+{
+    public override Complex Eps(double wavelengthNm)
+    {
+        double w = Units.FromWavelengthNm(wavelengthNm, unit);
+        Complex s = 1;
+        var i = Complex.ImaginaryOne;
+        foreach (var (to, lo, g) in modes)
+            s += (to * to - lo * lo) / (w * w - to * to + i * g * w);
+        return epsInf * s;
+    }
+}
+
+/// <summary>
+/// A table of n and k (or ε′ and ε″) against a spectral variable, interpolated linearly in that
+/// variable. Outside the table the evaluation is refused, never extrapolated.
+/// </summary>
+public sealed class TableDispersion(string unit, double[] x, Complex[] values, bool valuesAreIndex) : Dispersion
+{
+    public override Complex Eps(double wavelengthNm)
+    {
+        double v = Units.FromWavelengthNm(wavelengthNm, unit);
+        int n = x.Length;
+        bool ascending = x[n - 1] > x[0];
+        double lo = ascending ? x[0] : x[n - 1], hi = ascending ? x[n - 1] : x[0];
+        if (v < lo || v > hi)
+            throw new StackFormatException($"{v:G6} {unit} is outside the table's range [{lo:G6}, {hi:G6}] {unit}");
+        int k = 0;
+        while (k < n - 2 && (ascending ? x[k + 1] < v : x[k + 1] > v)) ++k;
+        double t = (v - x[k]) / (x[k + 1] - x[k]);
+        var z = values[k] + (values[k + 1] - values[k]) * t;
+        return valuesAreIndex ? z * z : z;
+    }
+}
+
+/// <summary>A material whose principal ε values follow dispersion laws: isotropic, uniaxial (axis z) or biaxial.</summary>
+public sealed class DispersiveMaterial(Dispersion x, Dispersion y, Dispersion z, Complex[,] mu) : Material
+{
+    public override MaterialMatrix At(double wavelengthNm, double thicknessNm) =>
+        MaterialMatrix.FromBlocks(MaterialMatrix.Diagonal(x.Eps(wavelengthNm), y.Eps(wavelengthNm), z.Eps(wavelengthNm)), mu);
+}
+
 /// <summary>A conductor: ε = ε_background + i σ / (ω ε0), with σ in S/m (exp(−iωt)).</summary>
 public sealed class ConductorMaterial(double sigmaSPerM, Complex background) : Material
 {

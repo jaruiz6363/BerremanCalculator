@@ -185,9 +185,28 @@ public static class MaterialParser
     public static Material Parse(JsonNode? node, string where)
     {
         if (node is not JsonObject o) throw new StackFormatException($"{where} must be an object");
-        foreach (var key in new[] { "table", "sellmeier", "cauchy", "drude", "lorentz" })
+        foreach (var key in new[] { "cauchy", "drude", "lorentz" })
             if (o.ContainsKey(key))
-                throw new StackFormatException($"{where}: dispersive materials ('{key}') are not implemented yet; give constants");
+                throw new StackFormatException($"{where}: the dispersion law '{key}' is not implemented yet");
+
+        /* Dispersive: one law for all three principal values, or one per principal axis. */
+        if (DispersionKeys.Any(o.ContainsKey) || o.ContainsKey("uniaxial") || o.ContainsKey("biaxial"))
+        {
+            if (o.ContainsKey("convention"))
+                throw new StackFormatException($"{where}: dispersion laws are in exp(-iwt) with positive losses; remove \"convention\"");
+            var muD = o.ContainsKey("mu") ? MaterialMatrix.Scalar(Cplx(o["mu"], $"{where}.mu")) : MaterialMatrix.Scalar(1);
+            if (o["uniaxial"] is JsonObject u)
+            {
+                var ord = ParseDispersion(u["ordinary"], $"{where}.uniaxial.ordinary");
+                return new DispersiveMaterial(ord, ord, ParseDispersion(u["extraordinary"], $"{where}.uniaxial.extraordinary"), muD);
+            }
+            if (o["biaxial"] is JsonObject b)
+                return new DispersiveMaterial(ParseDispersion(b["x"], $"{where}.biaxial.x"),
+                                              ParseDispersion(b["y"], $"{where}.biaxial.y"),
+                                              ParseDispersion(b["z"], $"{where}.biaxial.z"), muD);
+            var d = ParseDispersion(o, where);
+            return new DispersiveMaterial(d, d, d, muD);
+        }
 
         if (o["model"] is not null)
         {
@@ -286,6 +305,85 @@ public static class MaterialParser
         var y = Cplx(o[ny!], $"{where}.{ny}");
         var z = Cplx(o[nz!], $"{where}.{nz}");
         return MaterialMatrix.Diagonal(x * x, y * y, z * z);
+    }
+
+    private static readonly string[] DispersionKeys = ["sellmeier", "phonon", "phonon_additive", "table"];
+
+    /// <summary>One scalar dispersion law: a constant (n or eps), or one of DispersionKeys.</summary>
+    private static Dispersion ParseDispersion(JsonNode? node, string where)
+    {
+        if (node is not JsonObject o) throw new StackFormatException($"{where} must be an object");
+        var given = DispersionKeys.Where(o.ContainsKey).Concat(new[] { "n", "eps" }.Where(o.ContainsKey)).ToList();
+        if (given.Count != 1) throw new StackFormatException($"{where}: give exactly one of n, eps, {string.Join(", ", DispersionKeys)}");
+        var key = given[0];
+        var w = $"{where}.{key}";
+        if (key == "n") { var n = Cplx(o["n"], w); return new ConstantDispersion(n * n); }
+        if (key == "eps") return new ConstantDispersion(Cplx(o["eps"], w));
+
+        var s = o[key] as JsonObject ?? throw new StackFormatException($"{w} must be an object");
+        var unit = StackDocument.Str(s, "unit", null, w);
+        if (!Units.IsSpectralUnit(unit)) throw new StackFormatException($"{w}.unit: '{unit}' is not a spectral unit");
+        double N(JsonNode? x, string at) => StackDocument.Num(x, at);
+        JsonArray Arr(string k) => s[k] as JsonArray ?? throw new StackFormatException($"{w}.{k} must be an array");
+
+        switch (key)
+        {
+            case "sellmeier":
+            {
+                var terms = Arr("terms").Select((t, i) =>
+                {
+                    var to = t as JsonObject ?? throw new StackFormatException($"{w}.terms[{i + 1}] must be an object");
+                    double b = N(to["b"], $"{w}.terms[{i + 1}].b");
+                    if (to.ContainsKey("c2") == to.ContainsKey("c"))
+                        throw new StackFormatException($"{w}.terms[{i + 1}]: give one of c (a resonance) or c2 (its square)");
+                    double c2 = to.ContainsKey("c2") ? N(to["c2"], $"{w}.terms[{i + 1}].c2") : Math.Pow(N(to["c"], $"{w}.terms[{i + 1}].c"), 2);
+                    return (b, c2);
+                }).ToArray();
+                double[]? range = s["range"] is JsonArray r ? [N(r[0], $"{w}.range[1]"), N(r[1], $"{w}.range[2]")] : null;
+                return new SellmeierDispersion(unit, s.ContainsKey("a") ? N(s["a"], $"{w}.a") : 0, terms, range);
+            }
+            case "phonon":
+            {
+                var modes = Arr("modes").Select((m, i) =>
+                {
+                    var mo = m as JsonObject ?? throw new StackFormatException($"{w}.modes[{i + 1}] must be an object");
+                    var at = $"{w}.modes[{i + 1}]";
+                    return (N(mo["to"], at + ".to"), N(mo["lo"], at + ".lo"), N(mo["gamma_to"], at + ".gamma_to"), N(mo["gamma_lo"], at + ".gamma_lo"));
+                }).ToArray();
+                return new FactorisedPhononDispersion(unit, N(s["eps_inf"], $"{w}.eps_inf"), modes);
+            }
+            case "phonon_additive":
+            {
+                var modes = Arr("modes").Select((m, i) =>
+                {
+                    var mo = m as JsonObject ?? throw new StackFormatException($"{w}.modes[{i + 1}] must be an object");
+                    var at = $"{w}.modes[{i + 1}]";
+                    return (N(mo["to"], at + ".to"), N(mo["lo"], at + ".lo"), N(mo["gamma"], at + ".gamma"));
+                }).ToArray();
+                return new AdditivePhononDispersion(unit, N(s["eps_inf"], $"{w}.eps_inf"), modes);
+            }
+            default:   /* table */
+            {
+                var columns = Arr("columns").Select(c => c!.GetValue<string>()).ToArray();
+                bool index = columns.SequenceEqual(new[] { "x", "n", "k" });
+                if (!index && !columns.SequenceEqual(new[] { "x", "eps_re", "eps_im" }))
+                    throw new StackFormatException($"{w}.columns must be [\"x\", \"n\", \"k\"] or [\"x\", \"eps_re\", \"eps_im\"]");
+                var rows = Arr("data");
+                if (rows.Count < 2) throw new StackFormatException($"{w}.data needs at least two rows");
+                var x = new double[rows.Count];
+                var v = new Complex[rows.Count];
+                for (int i = 0; i < rows.Count; ++i)
+                {
+                    if (rows[i] is not JsonArray row || row.Count != 3) throw new StackFormatException($"{w}.data[{i + 1}] must have 3 entries");
+                    x[i] = N(row[0], $"{w}.data[{i + 1}][1]");
+                    v[i] = new Complex(N(row[1], $"{w}.data[{i + 1}][2]"), N(row[2], $"{w}.data[{i + 1}][3]"));
+                    if (i > 1 && Math.Sign(x[i] - x[i - 1]) != Math.Sign(x[1] - x[0]))
+                        throw new StackFormatException($"{w}.data must be strictly monotonic in x");
+                }
+                if (x[1] == x[0]) throw new StackFormatException($"{w}.data must be strictly monotonic in x");
+                return new TableDispersion(unit, x, v, index);
+            }
+        }
     }
 
     /// <summary>A real number, or [re, im].</summary>

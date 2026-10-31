@@ -133,8 +133,18 @@ cm⁻¹, 30°, gaps 2, 3.5, 5.5 and 7.5 µm, the stacks KRS5 / vacuum gap / SiC,
 / SiC, and KRS5 / gap / 0.7 µm SiC / 2 µm GaN / SiC.
 
 Oscillator parameters are facts and are cited here. The code itself is non-commercial and is not
-copied. The KRS5 and quartz tables are not copied into the repository either. **Open:** a KRS5
-index from a source the repository can carry. The code may be run as an independent check, and the
+copied. The KRS5 and quartz tables are not copied into the repository either.
+
+**KRS5, resolved:** the samples use W. S. Rodney and I. H. Malitson, *J. Opt. Soc. Am.* **46**, 956
+(1956), as the Sellmeier formula of the refractiveindex.info database (CC0). It reproduces the
+code's table to its printed digits (2.37069 at 1000 cm⁻¹).
+
+**Done:** Figs. 2–4 as samples ([samples](../samples/README.md)). The engine matches a closed-form
+p-block calculation for these inputs, and every stated mode frequency is reproduced. The depths in
+Fig. 2(a) imply weaker prism coupling than the published code and data give; see the samples page.
+Fig. 5 (quartz) still needs its data from a source the repository can carry.
+
+The code may be run as an independent check, and the
 2019 version's material library (about 20 polar crystals, including hBN, MoO₃, AlN and Al₂O₃) is a
 source of further examples.
 
@@ -320,7 +330,7 @@ tests.
 **Still to do:**
 - **From item 1 below:** Berreman's cholesteric (Eqs. 62 and 70); Park's Eqs. 5, 12 and 13;
   Catarina's polar Kerr film; Lakhtakia's half space.
-- **Items 2–5:** everything after Mansuripur.
+- **Items 2–5:** everything after Mansuripur, except Passler's Figs. 2–4 (done).
 - **Costa's Jaumann absorber:** it needs the position of its two sheets, which the paper leaves
   open.
 

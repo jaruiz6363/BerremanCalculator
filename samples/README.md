@@ -15,8 +15,45 @@ precision the paper gives them.
 | [literature/radi-2015/matched-slab.json](literature/radi-2015/matched-slab.json) | Ra'di, Simovski and Tretyakov, *Phys. Rev. Applied* **3**, 037001 (2015), Section V A 1 | Closed form: ε = μ reflects nothing | 10⁻¹² |
 | [literature/costa-2016/salisbury.json](literature/costa-2016/salisbury.json) | Costa, Monorchio and Manara, *IEEE EMC Mag.* **5**(2), 67 (2016), Fig. 5(a), Table 1 | A −15 dB bandwidth of 45.4 % | The ideal 377 Ω screen gives 44.2 %, and this sample gives 44.1 %. The paper's figure probably used another sheet resistance; it does not state one. |
 
+| [literature/passler-2017/sic-otto.json](literature/passler-2017/sic-otto.json) | Passler and Paarmann, *J. Opt. Soc. Am. B* **34**, 2128 (2017), Fig. 2 | The SiC SPhP dip near 910 cm⁻¹; critical coupling at a 5.5 µm gap; four curves | Dips at 900, 906, 909, 910 cm⁻¹ against the figure's ≈ 900, 907, 910, 911; deepest at 5.5 µm. Depths: see below. |
+| [literature/passler-2017/gan-sic-otto.json](literature/passler-2017/gan-sic-otto.json) | the same, Fig. 3 | Modes near 680, 810–820 and 1000 cm⁻¹ | 663 (broad), 819, 997 |
+| [literature/passler-2017/sic-gan-sic-otto.json](literature/passler-2017/sic-gan-sic-otto.json) | the same, Fig. 4 | Mode (ii) at the upper GaN edge, two modes around 900, one near 1000 cm⁻¹ | 771, 881 and 937, 996 |
+
 The closed-form samples have values chosen where the paper gives only the formula; their `notes`
-say so. Mei's Eq. 18b is printed with the wrong sign for the second slab, and the sample uses the
+say so.
+
+## Passler and Paarmann (2017)
+
+The inputs are complete once the authors' code is used for the material parameters
+([literature](../docs/literature.md)). The KRS5 prism follows Rodney and Malitson's Sellmeier
+formula, from the CC0 refractiveindex.info database. It equals the KRS5 table in the authors' code
+to the table's printed digits.
+
+**The engine agrees with an independent calculation for these inputs.** All the crystals are
+c-cut, so the p wave stays in its own 2×2 block, which has a closed form. The engine matches it to
+4 × 10⁻¹⁵ over the whole spectrum of all three samples.
+
+**Mode frequencies agree with the paper.** Every frequency the text states is reproduced, and so is
+every dip position in Fig. 2(a). The critical gap is 5.5 µm, as stated.
+
+**Dip depths in Fig. 2(a) do not:**
+
+| Gap | Figure (read off) | Here, Sellmeier prism | Here, prism index 2.4 |
+|---|---|---|---|
+| 2 µm | ≈ 0.77 | 0.83 | 0.81 |
+| 3.5 µm | ≈ 0.41 | 0.55 | 0.48 |
+| 5.5 µm | ≈ 0.0 | 0.05 | 0.01 |
+| 7.5 µm | ≈ 0.39 | 0.24 | 0.42 |
+
+- The figure shows weaker prism coupling than the Sellmeier index gives, at every gap.
+- A prism index of 2.4, the "≈ 2.4" of the paper's text, comes within 0.07 at every gap. So does an
+  angle of 30.5°.
+- The authors' published code computes ξ = √ε_KRS5(ω) sin θ, as this program does, from the same
+  KRS5 data. It should therefore give the Sellmeier column.
+- So the figure appears to have been computed with slightly different prism data or angle than the
+  code that was published. Running the authors' code would settle it.
+
+The tests assert the frequencies and the critical gap. The depths are printed, not asserted. Mei's Eq. 18b is printed with the wrong sign for the second slab, and the sample uses the
 sign the paper's own equations require.
 
 ## Mansuripur (1990)
