@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The MCP server: JSON-RPC over stdio, written by hand as in ThinFilmDesigner, so it restores
+       no package. Everything that computes is behind the API. -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AssemblyName>berreman-mcp</AssemblyName>
+    <RootNamespace>Berreman.Mcp</RootNamespace>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Berreman.Api\Berreman.Api.csproj" />
+  </ItemGroup>
+
+  <Import Project="..\NativeLibrary.targets" />
+
+</Project>

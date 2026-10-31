@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Argument parsing, formatting and exit codes. Every question is answered by the API, so the
+       CLI and the MCP server cannot disagree. -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AssemblyName>berreman</AssemblyName>
+    <RootNamespace>Berreman.Cli</RootNamespace>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Berreman.Api\Berreman.Api.csproj" />
+  </ItemGroup>
+
+  <Import Project="..\NativeLibrary.targets" />
+
+</Project>

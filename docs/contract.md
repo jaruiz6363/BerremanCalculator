@@ -169,8 +169,9 @@ per (wavelength, orientation), not per point, because the angles share it:
 | Buffer | Size (complex doubles unless stated) | Filled by |
 |---|---|---|
 | `M` | (n_layers + 2) × n_wavelength_orientations × 36 | C# |
+| `wavelength` | n_wavelength_orientations, real: the vacuum wavelength of each | C# |
 | `thickness` | n_layers, real | C# |
-| `points` | n_points × (wavelength index, ξ), mixed | C# |
+| `point_spectral`, `point_xi` | n_points each: the wavelength–orientation index (integer) and ξ (real) | C# |
 | `field_depths` | n_depths, real; may be empty | C# |
 | `jones` | n_points × 8 | native |
 | `power` | n_points × 2 incident modes × 3 (R, T, A), real | native |
@@ -180,7 +181,9 @@ per (wavelength, orientation), not per point, because the angles share it:
 | `scratch` | the size `bc_plan` returns, per worker | C# |
 
 Complex numbers are interleaved (re, im), the layout of `System.Numerics.Complex`, so arrays pass
-with no conversion. An output that is not requested gets a null pointer and costs nothing.
+with no conversion. An output that is not requested gets a null pointer and costs nothing. The
+exact layout, including the order of media in `M`, is in `native/include/berreman.h`, which is the
+ABI; where this section and the header disagree, the header is right.
 
 **Status codes.** Every point gets a status: ok, incident medium absorbing, a layer's mode matrix
 singular, or path not implemented. An unimplemented path leaves its outputs untouched.

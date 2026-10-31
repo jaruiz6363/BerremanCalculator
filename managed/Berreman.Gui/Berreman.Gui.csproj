@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Avalonia, so the same window runs on Windows, macOS and Linux. THE ONLY PROJECT THAT RESTORES
+       A PACKAGE; everything else builds with no network. -->
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AssemblyName>berreman-gui</AssemblyName>
+    <RootNamespace>Berreman.Gui</RootNamespace>
+  </PropertyGroup>
+
+  <!-- The same Avalonia version as ThinFilmDesigner. -->
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="11.2.3" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.2.3" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.2.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Berreman.Api\Berreman.Api.csproj" />
+  </ItemGroup>
+
+  <Import Project="..\NativeLibrary.targets" />
+
+</Project>

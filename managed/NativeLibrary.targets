@@ -1,0 +1,17 @@
+<Project>
+
+  <!-- The native library, wherever CMake put it (build/Release, build/Debug, or a single-config
+       build/), copied beside every program that loads it. Shared by every executable project so
+       the pattern is written once. -->
+
+  <ItemGroup>
+    <NativeLibrary Include="$(MSBuildThisFileDirectory)..\build\**\berreman_native.dll" />
+    <NativeLibrary Include="$(MSBuildThisFileDirectory)..\build\**\libberreman_native.so" />
+    <NativeLibrary Include="$(MSBuildThisFileDirectory)..\build\**\libberreman_native.dylib" />
+    <None Include="@(NativeLibrary)">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>%(Filename)%(Extension)</Link>
+    </None>
+  </ItemGroup>
+
+</Project>

@@ -14,8 +14,11 @@ One shared API drives three programs:
 - **the command line**, for scripts;
 - **an MCP server**, so an AI assistant can set up and evaluate stacks with the program.
 
-**Status: being set up. Nothing is implemented yet.** The documents below come first. No engine
-code is written until they are agreed.
+**Status: skeleton.** Everything builds and the pieces are connected, but nothing computes yet:
+- the native engine checks its inputs and reports that evaluation is not implemented;
+- the CLI, the MCP server and the GUI each report the engine's status.
+
+The engine is written next, after the tests in the [engine design](docs/engine-design.md).
 
 ## Documents
 
@@ -55,11 +58,40 @@ only caller-supplied buffers is what a kernel is.
 
 ```
 docs/       documents, the user guide, and the design documents
-native/     C++ evaluation engine
+native/     C++ evaluation engine; native/include/berreman.h is the ABI
 managed/    C#: API, GUI, CLI, MCP server, and their tests
 tests/      the engine's tests, and fixtures both sides read
+tools/      build checks, including the rules above
 samples/    the examples from the literature
 ```
+
+| Project | Builds |
+|---|---|
+| `berreman_native` | the C++ engine, a shared library |
+| `managed/Berreman.Native` | the C# mirror of `berreman.h`, and the pinned buffers C# allocates |
+| `managed/Berreman.Api` | the API the three programs share |
+| `managed/Berreman.Cli` | `berreman`, the command line |
+| `managed/Berreman.Mcp` | `berreman-mcp`, the MCP server (stdio) |
+| `managed/Berreman.Gui` | `berreman-gui` (Avalonia) |
+| `managed/Berreman.Native.Tests` | the managed test suite |
+
+## Building
+
+Needs CMake 3.20 or later, a C++17 compiler and the .NET 8 SDK or later. Build the engine
+first: the C# projects copy the library from `build/`.
+
+```
+cmake -S . -B build
+cmake --build build --config Release
+ctest --test-dir build -C Release
+
+dotnet build managed/BerremanCalculator.sln -c Release
+dotnet run --project managed/Berreman.Native.Tests -c Release
+```
+
+The native tests include `constraints`, which fails the build if native code allocates, uses
+`float`, declares a fixed-size array, throws, or has an inline function without `BC_HD`. Only the
+GUI restores NuGet packages; everything else builds offline.
 
 ## Authors
 

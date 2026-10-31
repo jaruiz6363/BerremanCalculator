@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The managed suite: an executable with no test framework, as in ThinFilmDesigner, so it builds
+       with no network. Exit code 0 means every check passed. -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <RootNamespace>Berreman.Native.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Berreman.Native\Berreman.Native.csproj" />
+    <ProjectReference Include="..\Berreman.Api\Berreman.Api.csproj" />
+    <ProjectReference Include="..\Berreman.Mcp\Berreman.Mcp.csproj" />
+  </ItemGroup>
+
+  <Import Project="..\NativeLibrary.targets" />
+
+</Project>

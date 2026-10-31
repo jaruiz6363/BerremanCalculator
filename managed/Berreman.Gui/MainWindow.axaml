@@ -1,0 +1,11 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Berreman.Gui.MainWindow"
+        Title="BerremanCalculator"
+        Width="640" Height="360">
+  <StackPanel Margin="24" Spacing="12">
+    <TextBlock Text="BerremanCalculator" FontSize="22" FontWeight="SemiBold" />
+    <TextBlock Text="A Berreman 4×4 evaluator for stratified media. Nothing is implemented yet." TextWrapping="Wrap" />
+    <TextBlock x:Name="EngineText" FontFamily="Consolas,Menlo,monospace" TextWrapping="Wrap" />
+  </StackPanel>
+</Window>
