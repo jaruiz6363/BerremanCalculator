@@ -22,6 +22,8 @@ code is written until they are agreed.
 | | |
 |---|---|
 | [Scope](docs/scope.md) | What the program computes, what it does not, and the order of work. |
+| [The contract](docs/contract.md) | Conventions, the material model, the outputs, and how C# and C++ divide the work and the memory. |
+| [Examples from the literature](docs/literature.md) | The papers to reproduce, what each gives, and the order. |
 
 ## Shape
 
