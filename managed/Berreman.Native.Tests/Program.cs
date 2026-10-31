@@ -80,6 +80,7 @@ Berreman.Native.Tests.ApiTests.Run();
 Berreman.Native.Tests.ClosedFormTests.Run();
 Berreman.Native.Tests.PasslerTests.Run();
 Berreman.Native.Tests.CholestericTests.Run();
+Berreman.Native.Tests.RadomeTests.Run();
 checks += Berreman.Native.Tests.ApiTests.Checks;
 failures += Berreman.Native.Tests.ApiTests.Failures;
 checks += Berreman.Native.Tests.ClosedFormTests.Checks;
@@ -88,6 +89,8 @@ checks += Berreman.Native.Tests.PasslerTests.Checks;
 failures += Berreman.Native.Tests.PasslerTests.Failures;
 checks += Berreman.Native.Tests.CholestericTests.Checks;
 failures += Berreman.Native.Tests.CholestericTests.Failures;
+checks += Berreman.Native.Tests.RadomeTests.Checks;
+failures += Berreman.Native.Tests.RadomeTests.Failures;
 
 Console.WriteLine($"{checks} checks, {failures} failures");
 return failures == 0 ? 0 : 1;

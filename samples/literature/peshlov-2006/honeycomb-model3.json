@@ -1,0 +1,28 @@
+{
+  "format": "berreman-stack",
+  "version": 1,
+  "title": "Honeycomb A-sandwich radome, six uniaxial layers (Model 3)",
+  "source": "V. N. Peshlov, P. I. Dankov, B. Hadjistamov, Proc. EuCAP 2006, Nice (ESA SP-626), Table II and Fig. 11",
+  "notes": "Table II, Model 3: six layers, each uniaxial with its axis normal to the wall: eps_par = eps'_par (1 - j tan d_par) in the plane, eps_perp normal to it, in exp(+jwt), converted here. Free space on both sides. 'Normal polarisation' (NP, E normal to the plane of incidence) is s here; 'parallel' (PP) is p. Insertion loss IL = 20 log|t| = 10 log T for identical outer media. Fig. 11 gives MEASURED IL at 12.5 GHz against angle, with error bars; the paper's own model approximates the anisotropic propagation (its Eqs. 1, 2 and 6), so the comparison here is with the measurements.",
+  "units": { "length": "mm", "spectral": "GHz" },
+  "materials": {
+    "air": { "n": 1 },
+    "coating":     { "eps": [[[3.4, -0.0578], 0, 0], [0, [3.4, -0.0578], 0], [0, 0, [3.6, -0.072]]],   "convention": "exp(+jwt)" },
+    "skin_top":    { "eps": [[[3.45, -0.05175], 0, 0], [0, [3.45, -0.05175], 0], [0, 0, [3.24, -0.04536]]], "convention": "exp(+jwt)" },
+    "fillet_top":  { "eps": [[[1.22, -0.01098], 0, 0], [0, [1.22, -0.01098], 0], [0, 0, [1.08, -0.00324]]], "convention": "exp(+jwt)" },
+    "core":        { "eps": [[[1.051, -0.00162905], 0, 0], [0, [1.051, -0.00162905], 0], [0, 0, [1.065, -0.0026625]]], "convention": "exp(+jwt)" },
+    "fillet_bot":  { "eps": [[[1.41, -0.01551], 0, 0], [0, [1.41, -0.01551], 0], [0, 0, [1.12, -0.00448]]],  "convention": "exp(+jwt)" },
+    "skin_bot":    { "eps": [[[3.60, -0.0504], 0, 0], [0, [3.60, -0.0504], 0], [0, 0, [3.30, -0.0429]]],   "convention": "exp(+jwt)" }
+  },
+  "incident": { "material": "air" },
+  "layers": [
+    { "material": "coating",    "thickness": 0.16 },
+    { "material": "skin_top",   "thickness": 0.23 },
+    { "material": "fillet_top", "thickness": 0.21 },
+    { "material": "core",       "thickness": 4.5 },
+    { "material": "fillet_bot", "thickness": 0.23 },
+    { "material": "skin_bot",   "thickness": 0.17 }
+  ],
+  "exit": { "material": "air" },
+  "sweep": { "spectral": 12.5, "angle_deg": { "from": 0, "to": 70, "step": 5 } }
+}

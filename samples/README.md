@@ -21,8 +21,31 @@ precision the paper gives them.
 
 | [literature/ting-2006/cholesteric-fig2.json](literature/ting-2006/cholesteric-fig2.json) | Ting, Lin, Liao and Fuh, *Opt. Express* **14**, 5594 (2006), Fig. 2 | A band centred at n̄P = 525.6 nm, width ΔnP = 41.2 nm, peak about 0.5 unpolarised | Peak 0.495; half-height centre 525.8 nm; R still at 0.91 and 0.90 of the plateau at n_oP = 505.0 and n_eP = 546.2 nm, and down to 0.07 and 0.01 10 nm outside. Doubling the sublayers changes R by 6 × 10⁻⁴. |
 
+| [literature/anshin-2024/sandwich-radome.json](literature/anshin-2024/sandwich-radome.json) | Anshin, Politiko, Dyakonov and Pyzanov, RMC 2024, Figs. 3–5 | The paper's calculated \|T\| (dB), 2–24 GHz, 0–60°, p and s | Every dip within 0.04 dB and 0.2 GHz of the figure, except at 40° (0.15 dB, 0.2 GHz) and the deep 60° s dip (−8.65 against −8.98 dB, 19.5 against 19.9 GHz). The paper gives its thicknesses only approximately. |
+| [literature/peshlov-2006/honeycomb-model3.json](literature/peshlov-2006/honeycomb-model3.json) | Peshlov, Dankov and Hadjistamov, EuCAP 2006, Table II and Fig. 11 | **Measured** insertion loss at 12.5 GHz, with error bars, against angle | 7 of 8 measurements inside their error bars. At 65°, s polarisation, −0.72 dB against −0.60 ± 0.10. |
+| [literature/peshlov-2006/twintex.json](literature/peshlov-2006/twintex.json) | the same, Table I and Figs. 5–6 | Only the paper's approximate model | The s wave sees only ε∥ exactly (anisotropic = isotropic ε∥ to 0), which the paper's Fig. 5a does not show. |
+
 The closed-form samples have values chosen where the paper gives only the formula; their `notes`
 say so.
+
+## Radome walls
+
+**Anshin (2024)** prints every input: two fibreglass skins and a syntactic-foam core, with ε′ and
+ε″ for each and thicknesses to "≈". The paper's curves are its own calculations and measurements,
+which it says agree within 0.2 dB. The sample is compared with the calculated curves, read off the
+figures enlarged.
+
+**Peshlov (2006)** gives six-layer uniaxial data for a honeycomb radome (Table II, Model 3), and
+measured insertion loss with error bars (Fig. 11). The paper's own model approximates anisotropic
+propagation: its Eqs. 2–3 use ε⊥ for the phase of both polarisations. So the sample is compared
+with the measurements, not with the paper's curves.
+
+At 65° in s polarisation the exact result, −0.72 dB, lies 0.02 dB outside the measured
+−0.60 ± 0.10. The paper's own Model 3 curve passes through that measurement.
+
+For the one-layer TWINTEX panel the paper has no measurements. The exact result shows something its
+Fig. 5a does not: an s wave, with E in the plane of the wall, sees only ε∥. So the anisotropic panel
+is identical, for s, to the isotropic panel of ε∥, the paper's Model 3i.
 
 ## Cholesterics
 

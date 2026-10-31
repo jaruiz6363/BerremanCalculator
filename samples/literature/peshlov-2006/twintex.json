@@ -1,0 +1,16 @@
+{
+  "format": "berreman-stack",
+  "version": 1,
+  "title": "One-layer TWINTEX radome panel, uniaxial (Model 1a)",
+  "source": "V. N. Peshlov, P. I. Dankov, B. Hadjistamov, Proc. EuCAP 2006, Nice (ESA SP-626), Table I and Figs. 5-6",
+  "notes": "Table I: d = 1.90 mm, eps'_par 3.25, eps'_perp 2.85, tan d_par 0.0062, tan d_perp 0.0045, in exp(+jwt), converted here. The paper gives no measurements for this panel, only its own approximate model. For the s wave (the paper's NP), E lies in the plane of the wall and sees only eps_par, so the exact s result equals the isotropic eps_par panel (the paper's Model 3i); the test checks that.",
+  "units": { "length": "mm", "spectral": "GHz" },
+  "materials": {
+    "air": { "n": 1 },
+    "twintex": { "eps": [[[3.25, -0.02015], 0, 0], [0, [3.25, -0.02015], 0], [0, 0, [2.85, -0.012825]]], "convention": "exp(+jwt)" }
+  },
+  "incident": { "material": "air" },
+  "layers": [ { "material": "twintex", "thickness": 1.9 } ],
+  "exit": { "material": "air" },
+  "sweep": { "spectral": { "from": 2, "to": 15, "step": 0.5 }, "angle_deg": [0, 30, 60] }
+}

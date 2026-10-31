@@ -33,8 +33,9 @@ phonon oscillators, tables) or models (ferrite, conductor, resistive sheet).
 - The MCP tool `evaluate_stack` returns the same table.
 - The GUI only reports the engine's status.
 
-Eleven literature samples are reproduced: Mansuripur (1990), six closed forms, three of Passler
-and Paarmann's (2017) infrared Otto-geometry examples, and Ting's (2006) cholesteric. See
+Fourteen literature samples are reproduced: Mansuripur (1990), six closed forms, three of Passler
+and Paarmann's (2017) infrared Otto-geometry examples, Ting's (2006) cholesteric, and three
+microwave radome walls (Anshin 2024; Peshlov 2006, against measurements). See
 [samples](samples/README.md).
 
 The tests come before each part of the engine, as listed in the [engine design](docs/engine-design.md).
