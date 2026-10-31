@@ -79,6 +79,60 @@ Conventions: exp(−iωt), as ours. ε = [[εxx, εxy, 0], [−εxy, εxx, 0], [
 Its MoS₂ figures need a conductivity model the paper does not give in closed form, so they are not
 used.
 
+### Mansuripur (1990)
+
+M. Mansuripur, "Analysis of multilayer thin-film structures containing magneto-optic and
+anisotropic media at oblique incidence using 2×2 matrices," *J. Appl. Phys.* **67**, 6466–6475
+(1990).
+
+An independent formulation: a 2×2 reflection-matrix recursion, dielectric tensors only (μ = 1).
+Conventions: exp[i(k·r − ωt)], n + ik. **Every input of its example is printed**, which makes it
+the best numerical test in hand.
+
+| Example | Inputs | Check |
+|---|---|---|
+| Magneto-optic quadrilayer at 830 nm, from air: SiOx quarter wave (143.2 nm implied) / MO film 20 nm, ε = −4.8984 + 19.415i, ε_xy = −ε_yx = 0.4322 + 0.0058i / SiOx 143.2 nm, n = 1.449 / Al 500 nm, 2.75 + 8.31i / glass, n = 1.5 | complete | |
+| Fig. 3: power against depth at normal incidence | | **Numbers**: about 91 % absorbed in the MO layer, 3 % in the aluminium, 6 % reflected |
+| Fig. 2: \|r_pp\|, \|r_ss\|, \|r_ps\| = \|r_sp\| against angle, 0–90°, polar magnetisation | | Curve; also the Kerr rotation and ellipticity, whose sign convention is not stated |
+| Fig. 4: Kerr rotation against the magnetisation's polar angle | | Stated proportional to cos Θ_M |
+| Fig. 5: longitudinal magnetisation, \|r_ps\| largest at 65° | | Curve, and a stated angle; the azimuth is not stated |
+| Appendix A: the rotated polar magneto-optic tensor | | Closed form |
+
+### Passler and Paarmann (2017)
+
+N. C. Passler and A. Paarmann, "Generalized 4×4 matrix formalism for light propagation in
+anisotropic stratified media: study of surface phonon polaritons in polar dielectric
+heterostructures," *J. Opt. Soc. Am. B* **34**, 2128 (2017); read as arXiv 1707.00462v1 (July
+2017), which predates the erratum, *JOSA B* **36**, 3246 (2019).
+
+Conventions: exp(−iωt); field vector (E_x, H_y, E_y, −H_x), as ours. Its treatment of coincident
+roots holds only for μ a scalar and no optical activity, so it does not cover the whole contract.
+Its "T" is |t|², which it says is not the transmittance.
+
+| Example | Inputs | Check |
+|---|---|---|
+| Figs. 2–4: Otto geometry (KRS5 prism, air gap, sample) at 30°, p-polarised, gaps 2, 3.5, 5.5, 7.5 µm: bare 6H-SiC; 2 µm GaN on SiC; 700 nm SiC / 2 µm GaN / SiC. Reflectance against wavenumber, and \|E_x\| against depth | **Incomplete**: no ε∞ or damping, ω_TO,∥ and ω_LO,∥ only as figure labels, prism index only "≈ 2.4" | Curves; mode positions stated (for example the SiC surface phonon polariton dip near 910 cm⁻¹) |
+| Fig. 5: α-quartz, c along x, y or z, 350–600 cm⁻¹ | **Incomplete**: multi-oscillator data from Gervais and Piriou (1975) | Curves |
+
+The missing parameters are in the authors' published Matlab code (Zenodo 10.5281/zenodo.400486) and
+in the papers it cites: Paarmann et al., *Phys. Rev. B* **94**, 134312 (2016) for SiC; Kasic et
+al., *Phys. Rev. B* **62**, 7365 (2000) for GaN.
+
+### Lakhtakia (2018)
+
+A. Lakhtakia, "Planewave response of a simple Lorentz-nonreciprocal medium with magnetoelectric
+gyrotropy," arXiv 1811.05034v1 (2018).
+
+A medium with D = ε₀ε_r E − Γ × H and B = μ₀μ_r H + Γ × E: isotropic ε and μ with magnetoelectric
+coupling, so it tests the ρ and ρ' blocks of the 6×6 matrix, at any angle and azimuth.
+Conventions: exp(−iωt) implied by ζ = ζ' + iζ'' with ζ'' > 0 dissipative. Its p and s vectors
+(Eq. 11) give the same signs of r_p as the contract's.
+
+| Example | Check |
+|---|---|
+| Reflection by a half space (Section 3) | Closed form, through the auxiliary fields of its Eq. 3 |
+| Reflection and transmission by a slab (Section 4) | Closed form or numbers, to be read |
+
 ### Not usable as solver tests
 
 - R.-C. Ma, L.-L. Gao, T. Zhang and Y. Jin, Proc. SPIE 10452, 104525A (2017). It uses a
@@ -89,12 +143,28 @@ used.
 - M. S. Heimburger, "A Magneto-Optical Kerr Effect Study," BS thesis, College of William and Mary
   (2015). Measurements only.
 
+## Microwaves
+
+The engine is scale-free, so a microwave stack is the same calculation at a longer wavelength. What
+microwaves add is materials: complex μ, the gyrotropic μ tensor of a magnetised ferrite, and
+constants given as ε′ and tan δ. Tests that need no particular paper:
+
+- **Faraday rotation in a ferrite magnetised along z**, at normal incidence: the two circular
+  modes see μ ± κ of the Polder tensor, so the rotation is a closed form. This is Berreman's
+  Faraday example with the gyrotropy moved from ε to μ, and tests the μ block.
+- **Absorbers with magnetic loss** (a Dallenbach layer on metal): an isotropic stack with ε and μ
+  both complex. The 2×2 result is exact, so this tests μ ≠ 1 against an independent formula.
+
+Published microwave examples with complete inputs are still to be found. Ferrite and magnetised
+plasma slabs, anisotropic radome walls and chiral slabs are the likely subjects.
+
 ## To obtain
 
 | Paper | Why | Availability |
 |---|---|---|
-| N. C. Passler and A. Paarmann, "Generalized 4×4 matrix formalism for light propagation in anisotropic stratified media: study of surface phonon polaritons in polar dielectric heterostructures," *J. Opt. Soc. Am. B* **34**, 2128 (2017), with the erratum in *JOSA B* **36**, 3246 (2019). | A modern formulation that addresses the isotropic-layer degeneracy and gives fields against depth. Its examples include hyperbolic media and the Otto geometry. The erratum corrects birefringent films. | Open: arXiv 1707.00462 |
-| M. Mansuripur, "Analysis of multilayer thin-film structures containing magneto-optic and anisotropic media at oblique incidence using 2×2 matrices," *J. Appl. Phys.* **67**, 6466–6475 (1990). | Magneto-optic and birefringent multilayers at oblique incidence, by an independent formulation. | Open: on the author's website |
+| The erratum to Passler and Paarmann, *JOSA B* **36**, 3246 (2019) | Corrects their transfer matrix and fields for birefringent films | Journal |
+| Paarmann et al., *Phys. Rev. B* **94**, 134312 (2016); Kasic et al., *Phys. Rev. B* **62**, 7365 (2000) | The SiC and GaN dielectric functions behind Passler's figures | Journal; the parameters may also be in the Zenodo code |
+| P. Yeh, "Electromagnetic propagation in birefringent layered media," *J. Opt. Soc. Am.* **69**, 742 (1979) | Passler's Euler-angle convention is defined in its Eq. 2 | Journal; citation as Passler gives it |
 | P. Yeh, "Optics of anisotropic layered media: a new 4×4 matrix algebra," *Surf. Sci.* **96**, 41 (1980). | The other classic 4×4 formulation. | Citation not yet confirmed |
 | M. Schubert, "Polarization-dependent optical parameters of arbitrarily anisotropic homogeneous layered systems," *Phys. Rev. B* **53**, 4265 (1996). | Generalised ellipsometry: Ψ, Δ and the normalised Jones elements for anisotropic samples. | Citation not yet confirmed |
 
@@ -103,10 +173,11 @@ checks, but no code is taken from them.
 
 ## Order
 
-1. The closed forms: Berreman's five, Park's Eqs. 5, 12 and 13, and Catarina's polar Kerr film.
-   These test the engine exactly and come first.
-2. Passler and Paarmann, and Mansuripur: numerical examples at oblique incidence, with absorbing,
-   magneto-optic and birefringent layers.
+1. The closed forms: Berreman's five, Park's Eqs. 5, 12 and 13, Catarina's polar Kerr film,
+   Lakhtakia's half space, and the two microwave tests. These test the engine exactly and come
+   first.
+2. Mansuripur's quadrilayer, whose inputs are complete, then Passler and Paarmann once the missing
+   parameters are in hand.
 3. The cholesteric curves of Ting (Fig. 2 first) and Park (Fig. 1), which test sublayer
    discretisation, with the missing inputs stated.
 4. Schubert's generalised ellipsometry, which tests the derived outputs.

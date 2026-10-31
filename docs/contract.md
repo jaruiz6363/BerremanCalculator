@@ -16,7 +16,7 @@ These are stated with every result the program writes.
 | Complex index | ñ = n + ik, with k ≥ 0 for an absorbing medium; ε = ñ² for an isotropic medium. |
 | Axes | z is normal to the layers and points from the incident medium into the stack. The first interface is at z = 0. The plane of incidence is the x–z plane. |
 | Tangential wavevector | ξ = k_x / k₀, the same in every medium. For an isotropic incident medium, ξ = n_inc sin θ. |
-| Units | Lengths in nanometres, wavelengths in vacuum. The magnetic field is normalised as H̃ = Z₀H, so E and H̃ have the same units and every material constant is dimensionless. |
+| Units | The engine is scale-free: only k₀d, the vacuum wavenumber times the thickness, enters, so it takes thicknesses and vacuum wavelengths in any one length unit. The units a person sees are C#'s business (Section 1a). The magnetic field is normalised as H̃ = Z₀H, so E and H̃ have the same units and every material constant is dimensionless. |
 | Field vector | ψ = (E_x, H̃_y, E_y, −H̃_x), Berreman's ordering (his Eq. 23), so dψ/dz = i k₀ Δ ψ. |
 | Other conventions | Data from papers that use exp(+iωt), and so n − ik, is converted by complex conjugation of the material constants when it is entered. The sample file records the source's convention. |
 
@@ -31,6 +31,27 @@ angles (φ, θ, ψ): ε_lab = R ε_principal Rᵀ with R = R_z(φ) R_x(θ) R_z(�
 optical-activity tensors. An azimuth of the plane of incidence is a rotation of the whole sample
 about z, applied the same way. **Open:** the sense of each rotation is fixed when the first
 uniaxial example is reproduced, and is then written here with a figure.
+
+## 1a. Units shown and typed
+
+The program covers the ultraviolet to microwaves, so the units are wider than ThinFilmDesigner's.
+Each is a display setting saved with the stack. It changes how numbers are shown, never the stack.
+
+| Setting | Choices |
+|---|---|
+| Spectral axis | Wavelength (nm, µm, mm, cm, m), frequency (GHz, THz), wavenumber (cm⁻¹), photon energy (eV) |
+| Length (thicknesses) | nm, µm, mm, cm, m |
+| Layer thickness | Physical, QWOT (4nd/λ) or FWOT (nd/λ) at a reference, as ThinFilmDesigner; a layer may name its own unit |
+| Reference for QWOT and FWOT | In the spectral axis's unit |
+| Angles | Degrees |
+
+For a uniaxial layer, n in QWOT and FWOT is the ordinary index at the reference. **Open:** what n
+is for a biaxial or general layer: one principal index chosen by the user, or the index of the mode
+actually propagating.
+
+**Material constants in the microwave form** are accepted as well as n and k: ε′ with the loss
+tangent tan δ = ε″/ε′, and μ′ with tan δ_μ, including tensors (for example a magnetised ferrite's
+μ tensor). C# converts them to the 6×6 matrix (Section 2) in the exp(−iωt) convention.
 
 ## 2. The material model
 
@@ -50,7 +71,7 @@ with ε, μ, ρ, ρ' each 3×3 complex and dimensionless. This one form covers:
 | General anisotropic | ε as nine complex numbers |
 | Magneto-optic (Faraday, Kerr) | off-diagonal ε, as Berreman's Eq. 13 |
 | Optically active | ρ and ρ', as Berreman's Eq. 12 |
-| Magnetic | μ ≠ I |
+| Magnetic | μ ≠ I, including the gyrotropic μ tensor of a magnetised ferrite (microwaves) |
 
 **The C++ engine sees only M.** Dispersion formulas, tables, Euler rotation and the material
 types above are all C#, so the engine has one code path for every material. Material data uses
