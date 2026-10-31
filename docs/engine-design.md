@@ -243,6 +243,15 @@ where the legacy code failed.
 3. **Degeneracy and continuity.** A uniaxial layer with its optic axis along z, at normal incidence,
    is exactly degenerate. Tilting the axis by 10⁻ᵏ rad, for k = 1 to 12, must change r and t smoothly,
    with no jump.
+4. **A defective Δ inside the stack.** A layer exactly at its critical angle (q = 0) must give the
+   same result as angles 10⁻ᵏ rad either side.
+5. **Thick metal.** 0.5, 5 and 50 µm of aluminium: R must equal the bulk reflectance, and 50 µm must
+   be flagged opaque.
+6. **Frustrated total reflection**, the Otto geometry with isotropic media: closed form.
+7. **Exponential and step bound.** Steps against the exact isotropic propagator at β = 1 and 2 with
+   m = 9, and β = 5.37 with m = 13, measuring error and time. The result fixes β and m.
+8. **Symmetries.** Reciprocity, and a sample rotated about z by 90° and 180°.
+
 **Tests 2–7 written: `tests/native/test_sweep.cpp`.** The reference multiplies the closed-form
 2×2 propagators of the p and s blocks (Berreman's Eq. 41, written without a branch so it is exact
 at q = 0). It applies to every stack whose Δ splits into those blocks. Results:
@@ -270,15 +279,6 @@ Six bugs were planted, one at a time, and every one failed the tests:
 - the four planted in Δ itself.
 
 Test 8 (symmetries) waits for anisotropic outer media.
-
-4. **A defective Δ inside the stack.** A layer exactly at its critical angle (q = 0) must give the
-   same result as angles 10⁻ᵏ rad either side.
-5. **Thick metal.** 0.5, 5 and 50 µm of aluminium: R must equal the bulk reflectance, and 50 µm must
-   be flagged opaque.
-6. **Frustrated total reflection**, the Otto geometry with isotropic media: closed form.
-7. **Exponential and step bound.** Steps against the exact isotropic propagator at β = 1 and 2 with
-   m = 9, and β = 5.37 with m = 13, measuring error and time. The result fixes β and m.
-8. **Symmetries.** Reciprocity, and a sample rotated about z by 90° and 180°.
 
 ## 7. The native rules
 
