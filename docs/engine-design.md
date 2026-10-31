@@ -90,6 +90,30 @@ outer medium with ε = 0, or a wave grazing at q = 0, fails with its own status.
    transmitted wave is then undefined, so the point fails with its own status rather than returning
    numbers.
 
+**As built** (`bc_schur.h`, `bc_outer.h`; tested in `tests/native/test_outer.cpp`):
+- The Schur form comes from a Householder reduction to Hessenberg form, then QR with Wilkinson
+  shifts and deflation, limited to 120 iterations.
+- The diagonal is reordered by unitary swaps of adjacent entries. Each pair is moved to the top in
+  turn, from the same Schur form.
+- The rounding bound used to decide that a root is real, or that two roots coincide, is
+  τ = 10³ u ‖Δ‖₁.
+- A coincident pair with an off-diagonal larger than τ has only one mode, and fails with
+  `OUTER_DEFECTIVE`.
+- Exactly isotropic outer media keep the closed form.
+
+What the tests showed:
+- **The Schur form:** over 500 random matrices, including repeated diagonals, A = QTQᴴ holds to
+  5 × 10⁻¹⁵.
+- **The general path on isotropic media:** it returns exactly the closed-form p and s waves, so
+  the projection basis for coincident roots is right.
+- **Uniaxial and biaxial outer media with aligned axes:** R and T agree with the block reference to
+  5 × 10⁻¹⁶.
+- **An incident optic axis along z at normal incidence:** equals an isotropic n_o medium. Tilts down
+  to 10⁻¹² rad change the result by O(θ), with the labels kept.
+- **300 stacks with randomly rotated biaxial outer media:** R + T = 1 to 5 × 10⁻¹⁵.
+- **Planted bugs:** three were planted (classification sign, swap rotation, coincidence test), and
+  every one failed the tests.
+
 ## 3. Through the stack
 
 The method is a backward sweep, from the exit medium to the incident medium. It carries a
@@ -202,6 +226,8 @@ records that it was opaque. Reflection is not affected, because it depends only 
 | `DELTA_SINGULAR` | d = M₃₃M₆₆ − M₃₆M₆₃ = 0 in some layer |
 | `OUTER_EIGEN_FAILED` | the QR iteration on an outer medium did not converge in its iteration limit |
 | `BOUNDARY_SINGULAR` | the 4×4 front system has a zero pivot |
+| `INCIDENT_EVANESCENT` | neither incident wave carries power |
+| `OUTER_DEFECTIVE` | an outer medium has a coincident pair of roots with only one mode |
 | `NOT_IMPLEMENTED` | for example an incoherent layer; outputs untouched |
 
 Each point also reports:

@@ -14,12 +14,14 @@
  *   4. Double precision throughout.
  *   5. An unimplemented path is LOUD: a distinct status, and output buffers left untouched.
  *
- * STATUS. bc_evaluate computes any stack of layers between ISOTROPIC outer media: Jones, R/T/A,
- * per-layer absorption and diagnostics. Still loud (rule 5):
- *   - a point whose incident or exit medium is anisotropic gets BC_NOT_IMPLEMENTED in its
- *     diagnostics, and its other outputs are untouched;
- *   - requesting fields against depth makes the whole call return BC_NOT_IMPLEMENTED, touching
- *     nothing.
+ * STATUS. bc_evaluate computes any stack of layers between any outer media (the incident one
+ * lossless, that is exactly Hermitian): Jones, R/T/A, per-layer absorption and diagnostics. Still
+ * loud (rule 5): requesting fields against depth makes the whole call return BC_NOT_IMPLEMENTED,
+ * touching nothing.
+ *
+ * An incident wave that carries no power has NaN for its R, T, A and layer absorption; its Jones
+ * column is still written. If neither incident wave carries power the point fails with
+ * BC_INCIDENT_EVANESCENT.
  * The ABI is not frozen: BC_ABI_VERSION 0 means it may still change without notice.
  *
  * RETURN VALUE OF bc_evaluate: BC_OK if every point succeeded, otherwise the status of the first
@@ -86,7 +88,9 @@ typedef enum bc_status
     BC_GRAZING_OUTER       = 5,  /* a root at q = 0 in an outer medium */
     BC_DELTA_SINGULAR      = 6,  /* M33 M66 - M36 M63 = 0 in some layer */
     BC_OUTER_EIGEN_FAILED  = 7,  /* the QR iteration on an outer medium did not converge */
-    BC_BOUNDARY_SINGULAR   = 8   /* the 4x4 system at the front has a zero pivot */
+    BC_BOUNDARY_SINGULAR   = 8,  /* the 4x4 system at the front has a zero pivot */
+    BC_INCIDENT_EVANESCENT = 9,  /* neither incident wave carries power: xi beyond the incident medium */
+    BC_OUTER_DEFECTIVE     = 10  /* an outer medium has a coincident pair of roots with one mode */
 } bc_status;
 
 /* ---------------------------------------------------------------------------------------------

@@ -86,6 +86,12 @@ with ε, μ, ρ, ρ' each 3×3 complex and dimensionless. This one form covers:
 | Optically active | ρ and ρ', as Berreman's Eq. 12 |
 | Magnetic | μ ≠ I, including the gyrotropic μ tensor of a magnetised ferrite (microwaves) |
 
+**A lossless material must reach the engine exactly Hermitian.** The engine tests losslessness
+exactly (derivation note, Section 7): an incident medium that is not exactly Hermitian is refused
+as absorbing. Rotating a symmetric tensor in floating point gives ε_ij and ε_ji that differ in the
+last bit. So C# computes each block's upper triangle and mirrors it (conjugated) into the lower one,
+rather than computing both.
+
 **The C++ engine sees only M.** Dispersion formulas, tables, Euler rotation and the material
 types above are all C#, so the engine has one code path for every material. Material data uses
 ThinFilmDesigner's material format where that format can express it.
@@ -106,6 +112,17 @@ incident medium | layer 1 | layer 2 | ... | layer N | exit medium
   The exit medium may absorb.
 - For an isotropic incident medium, the caller gives θ and C# computes ξ. For an anisotropic
   incident medium, the caller chooses the incident mode and its angle; C# solves for ξ.
+- **Evanescent incident waves.** An incident wave that carries no power (ξ beyond what the
+  incident medium supports for it) has no defined R, T or A.
+  - Its power and layer-absorption outputs are NaN.
+  - Its Jones column is still the amplitude response.
+  - If both incident waves are evanescent, the point fails with `BC_INCIDENT_EVANESCENT`.
+- **The modes of an anisotropic outer medium** are labelled by the engine:
+  - within each pair, the more p-like mode (larger share of |ψ₁|² + |ψ₂|²) comes first;
+  - each mode has unit 2-norm;
+  - the larger of E_x and E_y is real and positive.
+
+  The Jones coefficients connect these modes.
 
 ## 4. How a layer is propagated
 

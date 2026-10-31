@@ -15,7 +15,7 @@ One shared API drives three programs:
 - **an MCP server**, so an AI assistant can set up and evaluate stacks with the program.
 
 **Status: the engine evaluates, from C++ only.** The native engine computes any stack of layers,
-of any material, between **isotropic** outer media. It returns:
+of any material, between any outer media. The incident medium must be lossless. It returns:
 - the Jones coefficients;
 - reflectance, transmittance and absorptance;
 - the absorption in each layer;
@@ -23,9 +23,8 @@ of any material, between **isotropic** outer media. It returns:
 
 It is tested against closed forms (see the [engine design](docs/engine-design.md), Section 6).
 
-Not yet built, and refused with a distinct status rather than computed wrongly:
-- anisotropic outer media;
-- fields against depth.
+Fields against depth are not built yet. A request for them is refused with a distinct status
+rather than computed wrongly.
 
 The C# API does not yet build stacks from materials. The CLI, the MCP server and the GUI only
 report the engine's status.

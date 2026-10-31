@@ -21,6 +21,8 @@ public enum BcStatus : int
     DeltaSingular = 6,
     OuterEigenFailed = 7,
     BoundarySingular = 8,
+    IncidentEvanescent = 9,
+    OuterDefective = 10,
 }
 
 /// <summary>

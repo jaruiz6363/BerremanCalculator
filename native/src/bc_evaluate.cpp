@@ -1,10 +1,10 @@
 /* bc_evaluate.cpp — the evaluation of a range of points (engine design, Sections 2–5).
  *
- * WHAT IS BUILT. Isotropic outer media; any layers. The backward sweep, the front solve, the
- * forward recovery of transmission and per-layer absorption, and the diagnostics.
+ * WHAT IS BUILT. Any outer media (closed-form modes when isotropic, Schur otherwise) and any
+ * layers. The backward sweep, the front solve, the forward recovery of transmission and per-layer
+ * absorption, and the diagnostics.
  *
  * WHAT IS NOT, AND IS LOUD (rule 5):
- *   - an anisotropic outer medium: that point gets BC_NOT_IMPLEMENTED, its outputs untouched;
  *   - fields against depth: the whole call returns BC_NOT_IMPLEMENTED, touching nothing.
  *
  * THE TRANSMISSION FACTOR. Sweeping backward, each step gives P W_old = W_new R. The amplitudes
@@ -66,18 +66,15 @@ static bc_status bc_point(const bc_problem* p, int32_t pt, const bc_config* cfg,
     const bc_complex* Ms = p->M + (int64_t)s * (N + 2) * 36;
 
     /* ---- outer media (Section 2) ---------------------------------------------------------- */
-    bc_complex e_in, u_in, e_ex, u_ex;
-    if (!bc_is_isotropic(Ms, &e_in, &u_in)) return BC_NOT_IMPLEMENTED;
-    if (!bc_is_isotropic(Ms + (int64_t)(N + 1) * 36, &e_ex, &u_ex)) return BC_NOT_IMPLEMENTED;
-    if (e_in.im != 0.0 || u_in.im != 0.0) return BC_INCIDENT_ABSORBING;
+    if (!bc_is_hermitian(Ms)) return BC_INCIDENT_ABSORBING;
 
     // BC_FIXED_OK: 4×4 mode sets
     bc_complex m_in[16];
     // BC_FIXED_OK: 4×4
     bc_complex m_ex[16];
-    bc_status st = bc_isotropic_modes(e_in, u_in, xi, m_in, nullptr);
+    bc_status st = bc_outer_modes(Ms, xi, m_in);
     if (st != BC_OK) return st;
-    st = bc_isotropic_modes(e_ex, u_ex, xi, m_ex, nullptr);
+    st = bc_outer_modes(Ms + (int64_t)(N + 1) * 36, xi, m_ex);
     if (st != BC_OK) return st;
 
     diag->incident_condition = bc_cond1_4(m_in);
@@ -169,13 +166,20 @@ static bc_status bc_point(const bc_problem* p, int32_t pt, const bc_config* cfg,
     bc_complex psi[4];
     // BC_FIXED_OK: 2×2
     bc_complex cb[4];
+    /* The power each incident wave carries. An evanescent incident wave carries none, so its R, T,
+     * A and layer absorption are undefined and written as NaN; its Jones column is still the
+     * amplitude response. Both evanescent fails the point before anything is written. */
     // BC_FIXED_OK: one incident power per incident wave
     double s_inc[2];
     for (int j = 0; j < 2; ++j)
     {
         for (int i = 0; i < 4; ++i) psi[i] = inc[i * 2 + j];
         s_inc[j] = bc_poynting_z(psi);
+        double size = 0.0;
+        for (int i = 0; i < 4; ++i) size += psi[i].re * psi[i].re + psi[i].im * psi[i].im;
+        if (!(s_inc[j] > 1e3 * BC_UNIT_ROUNDOFF * size)) s_inc[j] = NAN;
     }
+    if (isnan(s_inc[0]) && isnan(s_inc[1])) return BC_INCIDENT_EVANESCENT;
 
     for (int32_t layer = 1; layer <= N; ++layer)
     {
