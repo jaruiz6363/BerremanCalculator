@@ -116,22 +116,39 @@ only.
    transmitted amplitudes by t = R_N⁻¹ ⋯ R₁⁻¹ c, applied in the forward direction as a sequence of 2×2
    triangular solves.
 
-**Why this is stable.** Re-orthonormalising after every bounded step is continuous orthonormalisation,
-the classical remedy for shooting through stiff linear differential equations (Godunov; Conte,
-*SIAM Rev.* 8, 309 (1966), citation to confirm). Within one step, the largest and smallest growth
-factors differ by at most about e^{2β}, so the QR step loses at most that factor times the unit
-roundoff. The step bound β therefore sets the accuracy directly.
+**Why this is stable.** Re-orthonormalising after every bounded step is Godunov's method for
+shooting through stiff linear differential equations (S. Godunov, *Uspehi Mat. Nauk* **16**, 171
+(1961)). Conte (S. D. Conte, "The numerical solution of linear boundary value problems," *SIAM
+Rev.* **8**, 309–321 (1966)) describes it, and proposes re-orthonormalising (Gram–Schmidt) only
+where a non-orthogonality test is exceeded: the smallest angle between the columns, or the largest
+column norm (his Eqs. 26–27). Our recovery of the transmitted amplitudes is the homogeneous case of
+his backward resolution (his Eq. 25), run in mirror image. Within one step, the largest and
+smallest growth factors differ by at most about e^{2β}, so the QR step loses at most that factor
+times the unit roundoff. The step bound β therefore sets the accuracy directly. Every step is kept
+because a two-column QR of a 4×2 matrix is cheap next to the exponential; Conte's selective
+version is an optimisation to measure later, not a correctness question.
 
 Consider a mode that grows e^{a} through a thick metal, sweeping backward. It dominates the subspace,
 which is physically right: the decaying partner is negligible at the front. Its size goes into R,
 not into W. Coincident roots, and a defective Δ at q = 0 inside a layer, need nothing special: the
 exponential of any matrix is defined, and the sweep never asks for an eigenvector.
 
-**The matrix exponential.** Each step uses a fixed-degree Padé approximant without scaling and
-squaring. Higham's analysis (*SIAM J. Matrix Anal. Appl.* 26, 1179 (2005)) shows that degree m is
-accurate to the unit roundoff when the norm is at most θ_m: about 0.95 for m = 7, 2.10 for m = 9 and
-5.37 for m = 13 (to confirm against the paper). The design starts with β = 1 and m = 9. Section 6
-measures accuracy and cost at β = 1, 2 and 5.37 before the final choice is written here.
+**The matrix exponential.** Each step uses a fixed-degree [m/m] Padé approximant r_m without scaling
+and squaring. Higham (N. J. Higham, "The scaling and squaring method for the matrix exponential
+revisited," *SIAM J. Matrix Anal. Appl.* **26**, 1179–1193 (2005), Tables 2.1–2.3) shows:
+
+- In exact arithmetic, r_m(A) = e^{A+E}, with E commuting with A and ‖E‖ ≤ u‖A‖ (u = 2⁻⁵³),
+  whenever ‖A‖ ≤ θ_m in any subordinate norm; his algorithm uses the 1-norm. This is a bound on
+  **backward** error. The forward error also depends on the conditioning of the exponential.
+- θ₇ = 0.950, θ₉ = 2.098, θ₁₃ = 5.372.
+- Rounding errors are bounded separately: for ‖A‖ ≤ θ_m, ‖q_m(A)⁻¹‖ ≤ 1.6, 3.0 and 17 for m = 7, 9
+  and 13, so the linear solve is well conditioned.
+- The costs are 4, 5 and 6 matrix products plus one solve.
+
+Evaluating r_m unscaled whenever ‖A‖₁ ≤ θ_m is exactly what his Algorithm 2.3 does, so the design
+is covered by the paper. It starts with m = 9 and β = 1. Section 6 measures accuracy and cost at
+β = 1 and 2 with m = 9, and at β = 5.37 with m = 13, before the final choice is written here. Degree
+9 is not covered above β = 2.098.
 
 **Opaque stacks.** If the running R factors exceed about 10²⁵⁰, the transmitted amplitude is below
 10⁻²⁵⁰ of the field at the front. t, T and the fields beyond are set to exactly zero, and the point
@@ -192,8 +209,8 @@ where the legacy code failed.
 5. **Thick metal.** 0.5, 5 and 50 µm of aluminium: R must equal the bulk reflectance, and 50 µm must
    be flagged opaque.
 6. **Frustrated total reflection**, the Otto geometry with isotropic media: closed form.
-7. **Exponential and step bound.** Steps against the exact isotropic propagator at β = 1, 2 and 5.37,
-   measuring error and time. The result fixes β and m.
+7. **Exponential and step bound.** Steps against the exact isotropic propagator at β = 1 and 2 with
+   m = 9, and β = 5.37 with m = 13, measuring error and time. The result fixes β and m.
 8. **Symmetries.** Reciprocity, and a sample rotated about z by 90° and 180°.
 
 ## 7. The native rules

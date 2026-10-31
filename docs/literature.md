@@ -153,6 +153,55 @@ Conventions: exp(−iωt) implied by ζ = ζ' + iζ'' with ζ'' > 0 dissipative.
 | Reflection by a half space (Section 3) | Closed form, through the auxiliary fields of its Eq. 3 |
 | Reflection and transmission by a slab (Section 4) | Closed form or numbers, to be read |
 
+### Passler and Paarmann, erratum (2019)
+
+N. C. Passler and A. Paarmann, "…: erratum," *J. Opt. Soc. Am. B* **36**, 3246–3248 (2019).
+
+It corrects three things:
+- The eigenvector components γ₁₃ and γ₃₃ (Eq. 20\*). It also normalises the eigenvectors (new
+  Eq. E1), which is needed for the cross-polarised r and t of birefringent media.
+- The signs of t_ss, t_ps and t_sp, to follow Yeh (Eqs. 34\*–36\*).
+- The field calculation in birefringent media (Section 2.C, replaced by Eqs. 37\*, 38 and E2).
+
+It changes no material parameters and does not mention the figures. Its reference list prints
+Yeh's paper as "J. Opt. Soc. Am. B 69"; that should read *J. Opt. Soc. Am.* 69. For us, it is a
+list of the places where a 4×4 program is easy to get wrong: each one becomes a test.
+
+### Yeh (1979) and Yeh (1980)
+
+P. Yeh, "Electromagnetic propagation in birefringent layered media," *J. Opt. Soc. Am.* **69**,
+742–756 (1979); P. Yeh, "Optics of anisotropic layered media: a new 4×4 matrix algebra," *Surf.
+Sci.* **96**, 41–53 (1980).
+
+Conventions: exp(−iωt), as ours. The continuity vector is (E_x, H_y, E_y, H_x), with H_x not negated.
+In 1979, reflection is written in a fixed Cartesian basis (r_xx, r_xy, …), so neither paper fixes the
+sign of p.
+
+- **The Euler angles (1979, Eq. 2) are the contract's.** The contract now adopts this matrix.
+- **No numerical example has complete inputs.** The Šolc filter figures (1979, Figs. 4–8) omit the
+  indices, the angle and the number of plates.
+- **Closed forms:**
+  - the Šolc unit-cell matrix (1979, Eqs. 32–37);
+  - r and t from the 4×4 matrix (1979, Eqs. 87–94; 1980, Eqs. 22–30);
+  - the uniaxial ordinary and extraordinary modes (1979, Eqs. A10–A13).
+
+### Schubert (1996)
+
+M. Schubert, "Polarization-dependent optical parameters of arbitrarily anisotropic homogeneous
+layered systems," *Phys. Rev. B* **53**, 4265–4274 (1996).
+
+Conventions: exp(−iωt) and n + ik, as ours. The field vector is ordered (E_x, E_y, H_x, H_y). It defines
+Ψ, Δ and the normalised Jones elements of generalised ellipsometry (Eqs. 4–9), and its p vectors
+give r_pp = −r_ss at normal incidence. **The contract adopts its definitions.** It has no numerical
+examples. Its closed forms:
+
+| Example | Equations | Check |
+|---|---|---|
+| Biaxial medium with axes along x, y and z: Δ, eigenvalues, exit matrix | B1–B4 | Closed form |
+| Aligned biaxial film on a biaxial substrate: ρ in Airy form | C1–C6 | Closed form; the best exact ellipsometry test in hand |
+| Eigenvalues of an arbitrary biaxial medium | 21–22 | Closed form |
+| A continuously twisted biaxial slab at normal incidence | 28–35 | Closed form, stated to be exact |
+
 ### Not usable as solver tests
 
 - R.-C. Ma, L.-L. Gao, T. Zhang and Y. Jin, Proc. SPIE 10452, 104525A (2017). It uses a
@@ -175,28 +224,77 @@ constants given as ε′ and tan δ. Tests that need no particular paper:
 - **Absorbers with magnetic loss** (a Dallenbach layer on metal): an isotropic stack with ε and μ
   both complex. The 2×2 result is exact, so this tests μ ≠ 1 against an independent formula.
 
-Published microwave examples with complete inputs are still to be found. Ferrite and magnetised
-plasma slabs, anisotropic radome walls and chiral slabs are the likely subjects.
+Microwave papers mostly use exp(+jωt) and ε = ε′ − jε″, and are converted by conjugation (contract
+§1). Ferrite papers also differ in the sign of the off-diagonal term of the Polder tensor, depending
+on the sign of γ in the equation of motion. That sign is fixed against a physical statement (the
+sense of Faraday rotation relative to the bias), never copied from one paper.
+
+### Examples with complete inputs
+
+| Paper | Example | Inputs | Check |
+|---|---|---|---|
+| Anshin et al., "Syntactic foams with low dielectric permittivity," 2024 IEEE 9th All-Russian Microwave Conf. (RMC), pp. 256–260 | A-sandwich radome wall in free space: skins ε = 3.1 − j0.05, about 1.8 mm; core ε = 1.37 − j0.01, about 6.9 mm | Complete. Thicknesses are printed as approximate, and the polarisation labels are unclear (Fig. 4 appears to be TM, Fig. 5 TE). | Curves: \|T\| in dB, 2–24 GHz, at 0°, 20°, 40° and 60° (Figs. 4–5), measured and calculated, agreeing within 0.2 dB |
+| Peshlov, Dankov and Hadjistamov, "Models of multilayer antenna radomes with anisotropic materials," Proc. EuCAP 2006 (ESA SP-626) | **Uniaxial** walls, axis along z. Table I: TWINTEX, 1.90 mm, ε′∥ 3.25, ε′⊥ 2.85, tan δ∥ 0.0062, tan δ⊥ 0.0045. Table II: a honeycomb wall as 1, 3 or 6 layers, every ε′ and tan δ given | Complete | Curves: insertion and return loss against frequency and angle (Figs. 5, 6, 10, 11), with **measured** points in Fig. 11. Their own model approximates the uniaxial physics, so we compare with the measurements, not their curves. |
+| Costa, Monorchio and Manara, *IEEE EMC Magazine* **5**(2), 67–74 (2016) | Salisbury screen, 5 mm air spacer on metal (Fig. 5a); Jaumann absorber, three 4 mm layers (ε 1, 2, 2) with sheets of 150 and 500 Ω/sq (Fig. 5b) | Salisbury: sheet resistance assumed 377 Ω/sq. Jaumann: the sheets' positions are assumed. | Numbers: the −15 dB bandwidths 45.4 % and 111.9 % (Table 1); curves |
+
+**Resistive sheets** (Salisbury and Jaumann) are a layer of zero thickness with a sheet
+conductance. C# can represent one as a thin layer with ε″ = 1/(ωε₀R_s d), in the limit d → 0. Whether
+to add a true sheet boundary condition instead is **Open**.
+
+### Closed forms for microwave materials
+
+| Source | Result | Equations |
+|---|---|---|
+| Thompson, "Ferrites in waveguides," *J. Brit. IRE*, June 1956, pp. 311–328 | Faraday rotation per unit length, longitudinal bias, lossless, exact; the high- and low-field limits | 4, 7, 8, 9. The printed κ (Eq. 6) lacks a factor ω. |
+| Thompson (1956) | Transverse bias: μ_eff = (μ² − κ²)/μ, negative (total reflection) above a field | 13 |
+| Adam, Linkhart and Geiler, Ch. 7 of *Modern Ferrites*, Vol. 2, ed. V. G. Harris (IEEE/Wiley, 2023) | Polder tensor with loss (ω₀ → ω₀ + jαω); propagation constants at any angle to the bias; worked curves at 1 GHz, 4πM = 1000 G, α = 0.01 | 7.15–7.16, 7.32–7.33, 7.46–7.50; Figs. 7.2–7.6. Its text gives χ″ the wrong sign for its own convention. |
+| Kodera and Caloz, *IEEE AWPL* **17** (2018) | Faraday rotation with Gilbert loss, in Pozar's form | 3b, 6 |
+| Mei et al., *Opt. Express* **20**, 16955 (2012) | Two slabs with **tilted optic axes**, ε_u ε_v = 1: zero reflection at every angle, TM, any thickness, and the transmitted phase equal to that of vacuum | 8, 11, 13–14. Scale-free, so it serves at any wavelength. The printed slab 2 (Eq. 18b) contradicts the paper's own conditions; the consistent values are ε_zz = 1, ε_xx = 5.0055, ε_xz = ∓2.0014 for the two slabs. That is our derivation, checked when the test is written. |
+| Ra'di, Simovski and Tretyakov, *Phys. Rev. Applied* **3**, 037001 (2015) | A slab with ε_r = μ_r reflects nothing at normal incidence, at any thickness; a sheet of admittance 1/η₀ + j/(η₀ tan k₀d) at any spacing on metal absorbs perfectly | §V A 1; 8–9 |
+| Costa et al. (2016); Ra'di et al. (2015) | Rozanov's thickness–bandwidth limit, with numbers for the Salisbury and Jaumann examples | 5; 89 |
+
+The tilted-axis bilayer of Mei et al. is the most valuable of these. It is an exact,
+angle-independent result for an off-diagonal ε, which is the part of the engine a 2×2 program cannot
+check.
+
+### Read and not usable
+
+- Reid, "Microwave ferrites," *Trans. SAIEE* **65** (1964).
+- Sahasrabudhe et al., PIERS 2017.
+- Harris, Ch. 14 of *Microwave Materials and Applications* (Wiley, 2017).
+- Iqbal, PhD thesis, UMIST (1996).
+- Vinoy and Jha, *Sādhanā* **20**, 815 (1995).
+- Abu Sanad et al., *Phys. Status Solidi A* **221**, 2300828 (2024).
+- Nair and Jha, *IEEE APM* **56**(4), 276 (2014).
+
+They are devices or waveguides, not layered stacks, or they give formulas without complete examples.
+Some of their oblique-incidence formulas use the angle of incidence where the angle of refraction
+belongs, so they are not used as references.
+
+Poddar, MS thesis, University of Wisconsin–Milwaukee (2020), has an appendix figure "Biased ferrite
+material in normal incidence" (Fig. A-1). The copy in hand is a preview that stops before it.
 
 ## To obtain
 
 | Paper | Why | Availability |
 |---|---|---|
-| The erratum to Passler and Paarmann, *JOSA B* **36**, 3246 (2019) | Corrects their transfer matrix and fields for birefringent films | Journal |
-| P. Yeh, "Electromagnetic propagation in birefringent layered media," *J. Opt. Soc. Am.* **69**, 742 (1979) | Passler's Euler-angle convention is defined in its Eq. 2 | Journal; citation as Passler gives it |
-| P. Yeh, "Optics of anisotropic layered media: a new 4×4 matrix algebra," *Surf. Sci.* **96**, 41 (1980). | The other classic 4×4 formulation. | Citation not yet confirmed |
-| M. Schubert, "Polarization-dependent optical parameters of arbitrarily anisotropic homogeneous layered systems," *Phys. Rev. B* **53**, 4265 (1996). | Generalised ellipsometry: Ψ, Δ and the normalised Jones elements for anisotropic samples. | Citation not yet confirmed |
+| S. Poddar, MS thesis, University of Wisconsin–Milwaukee (2020), ProQuest 28090735, full text | Appendix Fig. A-1, a biased ferrite at normal incidence: possibly a complete microwave ferrite example | The copy in hand is a 24-page preview |
+| A published ferrite slab example with every input printed (4πM_s, bias, linewidth, ε, thickness, frequency) and stated results | None of the eight ferrite sources read has one | Still to find |
 
 Each is read in full before it is used. Programs published with a paper may be run as independent
 checks, but no code is taken from them.
 
 ## Order
 
-1. The closed forms: Berreman's five, Park's Eqs. 5, 12 and 13, Catarina's polar Kerr film,
-   Lakhtakia's half space, and the two microwave tests. These test the engine exactly and come
-   first.
-2. Mansuripur's quadrilayer, whose inputs are complete, then Passler and Paarmann, whose inputs are
-   complete with the authors' code.
-3. The cholesteric curves of Ting (Fig. 2 first) and Park (Fig. 1), which test sublayer
+1. The closed forms, which test the engine exactly and come first:
+   - Berreman's five; Park's Eqs. 5, 12 and 13; Catarina's polar Kerr film; Lakhtakia's half space;
+   - Mei's tilted-axis bilayer;
+   - Thompson's and Adam's ferrite propagation constants;
+   - Ra'di's ε_r = μ_r slab.
+2. Mansuripur's quadrilayer, whose inputs are complete. Then Passler and Paarmann, whose inputs are
+   complete with the authors' code, checking each point of the erratum.
+3. The microwave stacks with complete inputs: Anshin's sandwich, Peshlov's uniaxial walls against
+   their measurements, and Costa's absorbers.
+4. The cholesteric curves of Ting (Fig. 2 first) and Park (Fig. 1), which test sublayer
    discretisation, with the missing inputs stated.
-4. Schubert's generalised ellipsometry, which tests the derived outputs.
+5. Schubert's generalised ellipsometry (his Eq. C6 first), which tests the derived outputs.

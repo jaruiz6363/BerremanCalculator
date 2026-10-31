@@ -22,15 +22,28 @@ These are stated with every result the program writes.
 
 **s and p.** For each plane wave in an isotropic medium, ŝ = ŷ and p̂ is chosen so that (p̂, ŝ, k̂) is
 right-handed. This one rule applies to incident, reflected and transmitted waves alike. A
-consequence: at normal incidence on any isotropic interface, r_pp = −r_ss. **Open:** whether that
-is the convention used by the ellipsometry examples we reproduce. If it is not, Ψ and Δ are
-converted on output; the internal definition does not change.
+consequence: at normal incidence on any isotropic interface, r_pp = −r_ss. This is also the
+convention of Schubert (*Phys. Rev. B* **53**, 4265 (1996)): his incident and reflected field
+vectors (Eqs. 37–39) and his Eq. (C5) give r_pp = −r_ss at normal incidence. Ψ and Δ are therefore
+defined as his: ρ = tan Ψ e^{iΔ} = r_pp/r_ss for isotropic samples (his Eq. 4). For anisotropic
+samples, they are given by his normalised elements R_pp = r_pp/r_ss, R_ps = r_ps/r_pp and
+R_sp = r_sp/r_ss (his Eq. 8). The subscripts are (incident, outgoing), so r_sp = B_p/A_s.
 
 **Euler angles.** A material's principal frame is rotated into the laboratory frame by z–x–z Euler
 angles (φ, θ, ψ): ε_lab = R ε_principal Rᵀ with R = R_z(φ) R_x(θ) R_z(ψ), and the same for μ and the
 optical-activity tensors. An azimuth of the plane of incidence is a rotation of the whole sample
-about z, applied the same way. **Open:** the sense of each rotation is fixed when the first
-uniaxial example is reproduced, and is then written here with a figure.
+about z, applied the same way. Each rotation is active and right-handed:
+
+```
+R_z(a) = [[cos a, −sin a, 0], [sin a, cos a, 0], [0, 0, 1]]
+R_x(a) = [[1, 0, 0], [0, cos a, −sin a], [0, sin a, cos a]]
+```
+
+This is the matrix A of Yeh (*J. Opt. Soc. Am.* **69**, 742 (1979), Eq. 2), which Passler and
+Paarmann also use. Multiplied out, its first row is (cos ψ cos φ − cos θ sin φ sin ψ,
+−sin ψ cos φ − cos θ sin φ cos ψ, sin θ sin φ). For θ = ψ = 0, the principal x axis lies along
+(cos φ, sin φ, 0). Schubert (1996) describes the same rotation through Goldstein, but does not print
+the matrix, so his examples are checked against this one when used.
 
 ## 1a. Units shown and typed
 
