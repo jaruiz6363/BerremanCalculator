@@ -28,6 +28,7 @@ The engine is written next, after the tests in the [engine design](docs/engine-d
 | [The contract](docs/contract.md) | Conventions, the material model, the outputs, and how C# and C++ divide the work and the memory. |
 | [Examples from the literature](docs/literature.md) | The papers to reproduce, what each gives, and the order. |
 | [Engine design](docs/engine-design.md) | How one point is computed, why it is stable, and the tests written before the code. |
+| [Derivation of Δ](docs/derivation-delta.md) | Berreman's 4×4 matrix from Maxwell's equations, in the program's conventions, with the checks. |
 
 ## Shape
 

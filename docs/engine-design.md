@@ -38,7 +38,7 @@ four gives dψ/dz = i k₀ Δ ψ, with ψ = (E_x, H̃_y, E_y, −H̃_x). This is
 Eqs. 19–24). It needs the 2×2 determinant d = M₃₃M₆₆ − M₃₆M₆₃ to be non-zero, and the point fails
 with its own status code if it is zero.
 
-Δ is derived from scratch in the derivation notes and coded once. It is tested against the Δ
+Δ is derived from scratch in [the derivation notes](derivation-delta.md) and coded once. It is tested against the Δ
 matrices Berreman writes out (his Eqs. 37, 47, 56 and 62) and Passler's Eq. 8. Then, for random
 general M, every eigenpair of Δ is turned back into the full six-component field and substituted
 into Maxwell's equations with k = k₀(ξ, 0, q). This last test does not depend on any formula for Δ.
