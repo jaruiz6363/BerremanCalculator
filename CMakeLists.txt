@@ -43,6 +43,14 @@ add_executable(test_skeleton tests/native/test_skeleton.cpp)
 target_link_libraries(test_skeleton PRIVATE berreman)
 add_test(NAME skeleton COMMAND test_skeleton)
 
+# Engine design, Section 6: the tests written before the engine. Header-only engine parts are
+# tested directly; test_support.h holds the tests' own, independent numerics.
+foreach(t delta isotropic)
+  add_executable(test_${t} tests/native/test_${t}.cpp)
+  target_link_libraries(test_${t} PRIVATE berreman)
+  add_test(NAME ${t} COMMAND test_${t})
+endforeach()
+
 # The README's rules, checked by the build rather than remembered.
 add_test(NAME constraints COMMAND "${CMAKE_COMMAND}"
          "-DBC_ROOT=${CMAKE_CURRENT_SOURCE_DIR}"

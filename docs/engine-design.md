@@ -197,6 +197,22 @@ where the legacy code failed.
 
 1. **Δ.** Berreman's Eqs. 37, 47, 56 and 62 and Passler's Eq. 8. Then the Maxwell residual of every
    eigenpair, for random M.
+   **Written: `tests/native/test_delta.cpp`.** It checks:
+   - Berreman's general formula (Eqs. 21 and 24), entry by entry for 200 random general M, which
+     covers Eq. 37 and Passler's Eq. 8 as special cases;
+   - his Eqs. 47 and 56;
+   - the closed forms of the derivation note;
+   - the Maxwell residual of 1200 eigenpairs.
+
+   The worst residual found was 5 × 10⁻¹⁶. Each of four sign errors planted in the elimination made
+   these tests fail. Eq. 62, the cholesteric, comes with the sublayer tests.
+   **Also written: `tests/native/test_isotropic.cpp`**, for the isotropic modes of Section 2 and the
+   front system of Section 3. It checks:
+   - Fresnel's equations with μ ≠ 1;
+   - r_pp = −r_ss at normal incidence;
+   - R + T = 1 for a lossless interface;
+   - total reflection;
+   - the forward branch, including a signed-zero case.
 2. **Isotropic stacks against the 2×2 Abelès result**, closed form:
    - thicknesses from 0 to 1000 waves;
    - angles below, at ±10⁻ᵏ rad from, and beyond the critical angle;

@@ -25,7 +25,7 @@ file(GLOB_RECURSE NATIVE_SOURCES
      "${BC_ROOT}/native/src/*.cpp")
 
 foreach(f ${NATIVE_SOURCES})
-  file(STRINGS "${f}" lines)
+  file(STRINGS "${f}" lines ENCODING UTF-8)
   set(prev "")
   foreach(line ${lines})
     # Comment lines are prose, and prose may name what it forbids.
@@ -68,7 +68,7 @@ endforeach()
 # Rule 3: every inline function in a header carries BC_HD, or device code could not call it.
 file(GLOB NATIVE_HEADERS "${BC_ROOT}/native/src/*.h")
 foreach(h ${NATIVE_HEADERS})
-  file(STRINGS "${h}" lines)
+  file(STRINGS "${h}" lines ENCODING UTF-8)
   foreach(line ${lines})
     if(line MATCHES "^(static )?inline ")
       fail("3" "${h}: an inline without BC_HD: ${line}")
