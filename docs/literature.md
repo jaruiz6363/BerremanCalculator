@@ -249,6 +249,7 @@ to add a true sheet boundary condition instead is **Open**.
 | Thompson (1956) | Transverse bias: μ_eff = (μ² − κ²)/μ, negative (total reflection) above a field | 13 |
 | Adam, Linkhart and Geiler, Ch. 7 of *Modern Ferrites*, Vol. 2, ed. V. G. Harris (IEEE/Wiley, 2023) | Polder tensor with loss (ω₀ → ω₀ + jαω); propagation constants at any angle to the bias; worked curves at 1 GHz, 4πM = 1000 G, α = 0.01 | 7.15–7.16, 7.32–7.33, 7.46–7.50; Figs. 7.2–7.6. Its text gives χ″ the wrong sign for its own convention. |
 | Kodera and Caloz, *IEEE AWPL* **17** (2018) | Faraday rotation with Gilbert loss, in Pozar's form | 3b, 6 |
+| Poddar, MS thesis (2020), Appendix A; arXiv 2205.03560 | Slab with gyrotropic ε **and** μ at normal incidence, bias along z: r, t, Faraday and Kerr rotation | A.1–A.151 |
 | Mei et al., *Opt. Express* **20**, 16955 (2012) | Two slabs with **tilted optic axes**, ε_u ε_v = 1: zero reflection at every angle, TM, any thickness, and the transmitted phase equal to that of vacuum | 8, 11, 13–14. Scale-free, so it serves at any wavelength. The printed slab 2 (Eq. 18b) contradicts the paper's own conditions; the consistent values are ε_zz = 1, ε_xx = 5.0055, ε_xz = ∓2.0014 for the two slabs. That is our derivation, checked when the test is written. |
 | Ra'di, Simovski and Tretyakov, *Phys. Rev. Applied* **3**, 037001 (2015) | A slab with ε_r = μ_r reflects nothing at normal incidence, at any thickness; a sheet of admittance 1/η₀ + j/(η₀ tan k₀d) at any spacing on metal absorbs perfectly | §V A 1; 8–9 |
 | Costa et al. (2016); Ra'di et al. (2015) | Rozanov's thickness–bandwidth limit, with numbers for the Salisbury and Jaumann examples | 5; 89 |
@@ -275,14 +276,27 @@ They are devices or waveguides, not layered stacks, or they give formulas withou
 Some of their oblique-incidence formulas use the angle of incidence where the angle of refraction
 belongs, so they are not used as references.
 
-Poddar, MS thesis, University of Wisconsin–Milwaukee (2020), has an appendix figure "Biased ferrite
-material in normal incidence" (Fig. A-1). The copy in hand is a preview that stops before it.
+Poddar's work on a gyrotropic slab at normal incidence:
+- S. Poddar, *Design and Analysis of Fully-Electronic Magnet-Free Non-Reciprocal Metamaterial*, MS
+  thesis, University of Wisconsin–Milwaukee (2020). Open access: dc.uwm.edu/etd/2578.
+- S. Poddar, R. S. Rafi and M. T. Hasan, arXiv 2205.03560 (2022).
+- S. Poddar, A. M. Holmes and G. W. Hanson, *IEEE Trans. Instrum. Meas.* **71**, 8006207 (2022).
+
+The thesis's Appendix A (Eqs. A.1–A.151, the same derivation as the arXiv paper's Section III) is
+**a closed form, not a numerical example**. It covers a slab between isotropic media, at normal
+incidence with the bias along z, with both ε and μ gyrotropic at once. It gives:
+- r and t in Cartesian and circular bases;
+- Faraday and Kerr rotation for any incident polarisation;
+- the thin-slab limit.
+
+Its time convention is exp(+jωt) (thesis Fig. 2-14). Berreman's Faraday example has gyrotropy in ε
+only, so this is the test for both blocks together. The 2022 article measures a transistor-loaded
+metasurface, with no material inputs.
 
 ## To obtain
 
 | Paper | Why | Availability |
 |---|---|---|
-| S. Poddar, MS thesis, University of Wisconsin–Milwaukee (2020), ProQuest 28090735, full text | Appendix Fig. A-1, a biased ferrite at normal incidence: possibly a complete microwave ferrite example | The copy in hand is a 24-page preview |
 | A published ferrite slab example with every input printed (4πM_s, bias, linewidth, ε, thickness, frequency) and stated results | None of the eight ferrite sources read has one | Still to find |
 
 Each is read in full before it is used. Programs published with a paper may be run as independent
