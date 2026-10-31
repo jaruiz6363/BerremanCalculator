@@ -5,9 +5,9 @@
 //      every M is diagonal and the p wave stays in its own 2×2 block, whose propagator has a closed
 //      form (Berreman's Eq. 41). This settles that the engine computes these stacks correctly.
 //   2. The paper's stated mode frequencies, and Fig. 2(a) read off the figure. The figure's dips
-//      are at the same frequencies, but its depths imply slightly weaker prism coupling than the
-//      authors' published code and data give (see samples/README.md); the depths are printed,
-//      not asserted.
+//      are at the same frequencies, but not the same depths. The authors' own code, run with the
+//      same prism data, agrees with this program to 5e-11 and gives these depths, not the
+//      figure's (samples/README.md). So the depths are printed, not asserted.
 
 using System.Numerics;
 using Berreman.Api;

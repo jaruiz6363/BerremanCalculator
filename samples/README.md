@@ -50,8 +50,23 @@ every dip position in Fig. 2(a). The critical gap is 5.5 µm, as stated.
   angle of 30.5°.
 - The authors' published code computes ξ = √ε_KRS5(ω) sin θ, as this program does, from the same
   KRS5 data. It should therefore give the Sellmeier column.
-- So the figure appears to have been computed with slightly different prism data or angle than the
-  code that was published. Running the authors' code would settle it.
+**Settled by running the authors' code** (2026-10-31, GNU Octave 11.3; a local script calling
+their functions, outside the repository). Both the 2017 version (Zenodo 400486) and the 2019
+version, from after the erratum, were run. They covered all three stacks at all four gaps, from 350
+to 1400 cm⁻¹:
+
+| Comparison | Largest \|ΔR_p\| over 12 spectra × 1051 frequencies |
+|---|---|
+| Their code (either version) against this program | 9 × 10⁻⁵, on the steepest resonance slopes |
+| Their 2019 code with this program's Sellmeier prism, against this program | 5 × 10⁻¹¹, the precision the results were printed to |
+
+- The two versions give identical p reflectances, so the erratum does not touch these figures.
+- The only difference between their code and this program is the prism index: their KRS5 table,
+  interpolated, against Rodney and Malitson's formula. With the same prism the two programs agree
+  to the printed digits.
+- Their code gives this program's depths (0.834, 0.549, 0.050, 0.243 at the four gaps), not the
+  figure's. So the published Fig. 2(a) was made with inputs other than the published code and
+  data. A prism index near 2.4, the "≈ 2.4" of the text, reproduces it.
 
 The tests assert the frequencies and the critical gap. The depths are printed, not asserted. Mei's Eq. 18b is printed with the wrong sign for the second slab, and the sample uses the
 sign the paper's own equations require.

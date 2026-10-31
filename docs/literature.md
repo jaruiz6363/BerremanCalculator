@@ -140,8 +140,10 @@ copied. The KRS5 and quartz tables are not copied into the repository either.
 code's table to its printed digits (2.37069 at 1000 cm⁻¹).
 
 **Done:** Figs. 2–4 as samples ([samples](../samples/README.md)). The engine matches a closed-form
-p-block calculation for these inputs, and every stated mode frequency is reproduced. The depths in
-Fig. 2(a) imply weaker prism coupling than the published code and data give; see the samples page.
+p-block calculation for these inputs, and every stated mode frequency is reproduced. **Run against
+the authors' own code** (both versions, under GNU Octave): with the same prism data the two
+programs agree to 5 × 10⁻¹¹ over all three stacks and four gaps. The depths in the published
+Fig. 2(a) differ from what the published code gives; see the samples page.
 Fig. 5 (quartz) still needs its data from a source the repository can carry.
 
 The code may be run as an independent check, and the
