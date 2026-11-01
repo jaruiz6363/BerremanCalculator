@@ -70,6 +70,20 @@ Equal(unknown?["result"]?["isError"]?.GetValue<bool>(), true, "an unknown tool i
 var badMethod = server.Handle(Request(5, "no/such/method"));
 Equal(badMethod?["error"]?["code"]?.GetValue<int>(), -32601, "an unknown method is a protocol error");
 
+var listed = server.Handle(Request(6, "tools/call", new JsonObject { ["name"] = "list_quantities" }));
+Check(listed?["result"]?["content"]?[0]?["text"]?.GetValue<string>().Contains("Mr34") == true, "list_quantities names the Mueller elements");
+var withMueller = server.Handle(Request(7, "tools/call", new JsonObject
+{
+    ["name"] = "evaluate_stack",
+    ["arguments"] = new JsonObject
+    {
+        ["stack"] = """{ "format": "berreman-stack", "version": 1, "materials": { "air": { "n": 1 }, "glass": { "n": 1.5 } }, "incident": { "material": "air" }, "layers": [], "exit": { "material": "glass" }, "sweep": { "spectral": 633, "angle_deg": 45 } }""",
+        ["quantities"] = new JsonArray("Mr34", "Psi_ps"),
+    },
+}));
+var csvText = withMueller?["result"]?["content"]?[0]?["text"]?.GetValue<string>() ?? "";
+Check(csvText.Contains("Mr34") && csvText.Contains("Psi_ps"), "evaluate_stack adds quantities by name");
+
 var output = new StringWriter();
 server.Serve(new StringReader("not json\n"), output);
 Check(output.ToString().Contains("-32700"), "unparseable input is a parse error");
@@ -89,6 +103,7 @@ Berreman.Native.Tests.MaterialEditingTests.Run();
 Berreman.Native.Tests.MaterialLibraryTests.Run();
 Berreman.Native.Tests.LatticeTests.Run();
 Berreman.Native.Tests.TaucLorentzTests.Run();
+Berreman.Native.Tests.QuantitiesTests.Run();
 checks += Berreman.Native.Tests.ApiTests.Checks;
 failures += Berreman.Native.Tests.ApiTests.Failures;
 checks += Berreman.Native.Tests.ClosedFormTests.Checks;
@@ -115,6 +130,8 @@ checks += Berreman.Native.Tests.LatticeTests.Checks;
 failures += Berreman.Native.Tests.LatticeTests.Failures;
 checks += Berreman.Native.Tests.TaucLorentzTests.Checks;
 failures += Berreman.Native.Tests.TaucLorentzTests.Failures;
+checks += Berreman.Native.Tests.QuantitiesTests.Checks;
+failures += Berreman.Native.Tests.QuantitiesTests.Failures;
 
 Console.WriteLine($"{checks} checks, {failures} failures");
 return failures == 0 ? 0 : 1;

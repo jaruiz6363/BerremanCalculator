@@ -12,7 +12,9 @@ public sealed class ResultTable
     public List<string> Columns { get; } = [];
     public List<string[]> Rows { get; } = [];
 
-    public static ResultTable Build(EvaluationResult result, bool jones = false, bool ellipsometry = false, bool absorption = false)
+    /// <param name="quantities">More columns, by name (Api/Quantities.cs: "Mr34", "Psi_ps", "|r_pp|", ...); an unknown name is refused, with the names listed.</param>
+    public static ResultTable Build(EvaluationResult result, bool jones = false, bool ellipsometry = false, bool absorption = false,
+                                    IEnumerable<string>? quantities = null)
     {
         var doc = result.Document;
         var t = new ResultTable();
@@ -21,6 +23,8 @@ public sealed class ResultTable
         bool isoOuter = doc.Materials[doc.Incident.Material].At(lambda0, 0).IsIsotropic(out _, out _)
                      && doc.Materials[doc.Exit.Material].At(lambda0, 0).IsIsotropic(out _, out _);
         string a = isoOuter ? "p" : "0", b = isoOuter ? "s" : "1";
+        var extra = (quantities ?? []).Select(n => Quantities.Find(n.Trim(), a, b)
+            ?? throw new StackFormatException($"'{n.Trim()}' is not a quantity; the quantities are: {string.Join(", ", Quantities.All(a, b).Select(q => q.Name))}")).ToList();
 
         t.Columns.Add(SpectralName(doc.SpectralUnit));
         if (anyAzimuth) t.Columns.Add("azimuth_deg");
@@ -34,6 +38,7 @@ public sealed class ResultTable
             for (int j = 0; j < 2; ++j)
                 for (int k = 0; k < doc.Layers.Count; ++k)
                     t.Columns.Add($"A_{(j == 0 ? a : b)}_layer{k + 1}");
+        foreach (var q in extra) t.Columns.Add(q.Name);
         t.Columns.Add("status");
 
         foreach (var p in result.Points)
@@ -45,6 +50,7 @@ public sealed class ResultTable
             if (jones) foreach (var z in p.Jones) row.AddRange([F(z.Real), F(z.Imaginary)]);
             if (ellipsometry) { var (psi, delta) = p.Ellipsometry(); row.AddRange([F(psi), F(delta)]); }
             if (absorption) row.AddRange(p.LayerAbsorption.Select(F));
+            foreach (var q in extra) row.Add(F(q.Value(p)));
             row.Add(p.Status == BcStatus.Ok ? (p.Diagnostics.Opaque != 0 ? "ok (opaque)" : "ok") : p.Status.ToString());
             t.Rows.Add([.. row]);
         }

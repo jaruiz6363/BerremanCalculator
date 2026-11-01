@@ -138,6 +138,16 @@ version does not know are.
   sweep values is its own curve, labelled by its values.
 - **Show** chooses the curves: R, T and A; the p and s waves (modes 0 and 1 with anisotropic outer
   media) and their mean, which is the unpolarised value; Ψ and Δ, on their own axis in degrees.
+- **More…** adds any other quantity, each unit on its own y axis. The quantities are:
+  - generalised ellipsometry (Ψ_ps, Δ_ps, Ψ_sp, Δ_sp);
+  - the conversion reflectances R_ps and R_sp;
+  - |r|, |t| and their phases;
+  - any single Mueller element.
+- **x** chooses the variable on the x axis, among those the sweep varies.
+- **view** shows the curves, or the Mueller matrix in reflection or in transmission. The Mueller
+  matrix is shown as 16 panels, the way ellipsometry papers draw it. Each element is divided by
+  M11, M11 itself is the unpolarised reflectance (or transmittance), and there is a curve for each
+  value of the other swept variables.
 - **File > Export results as CSV…** writes every point, with the Jones coefficients, Ψ and Δ, and
   the absorption in each layer.
 
@@ -148,6 +158,9 @@ berreman evaluate stack.json                      print R, T and A for every poi
 berreman evaluate stack.json --jones              add the Jones coefficients
 berreman evaluate stack.json --ellipsometry       add Ψ and Δ
 berreman evaluate stack.json --absorption         add the absorption in each layer
+berreman evaluate stack.json --mueller            add the Mueller matrix in reflection (each / M11)
+berreman evaluate stack.json --quantities Mr34,Psi_ps   add quantities by name
+berreman quantities                               list every quantity, with what it is
 berreman evaluate stack.json --csv out.csv        write the table to a file
 berreman status                                   whether the engine loads
 ```
@@ -159,8 +172,9 @@ a file that cannot be read or used, with a message that says where in the file t
 
 `berreman-mcp` speaks the Model Context Protocol over stdio. Its tool `evaluate_stack` takes a
 `path` to a stack file, or the file's JSON as `stack`. It returns the same table as the CLI, as
-CSV, with optional Jones coefficients, Ψ/Δ and per-layer absorption. `engine_status` reports whether
-the engine loads.
+CSV, with optional Jones coefficients, Ψ/Δ and per-layer absorption. It also takes `mueller`, and
+`quantities` (a list of names). `list_quantities` names them all, and `engine_status` reports
+whether the engine loads.
 
 ## Conventions
 

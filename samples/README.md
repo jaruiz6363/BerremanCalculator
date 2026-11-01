@@ -63,8 +63,11 @@ from Schubert et al., *Phys. Rev. B* **93**, 125209 (2016).
   the switch ([literature.md](../docs/literature.md), "Schubert et al. (2016)").
 - **What is not reproduced.** The B_u LPP frequencies of Table III, which are printed for
   comparison.
-- **What is not compared yet.** The Mueller-matrix figures, because the program does not output
-  Mueller matrices yet.
+- **Fig. 5, the Mueller matrix.** 17 features of M41, M42 and M43 at the three azimuths agree in
+  sign and, within reading accuracy, in size, in the reststrahlen band. They fixed the sign
+  convention of S3, and M42 is the independent check.
+- **What is not reproduced.** Above about 900 cm⁻¹ the figure shows almost no conversion of p
+  into s, and the computation shows up to 0.5. The cause is not known.
 
 ## Radome walls
 

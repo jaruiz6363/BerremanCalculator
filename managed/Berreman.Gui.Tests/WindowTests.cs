@@ -373,6 +373,38 @@ public static class WindowTests
         });
     }
 
+    public static void ResultsShowAnyQuantityAndTheMuellerMatrix(Harness h, HeadlessUnitTestSession session)
+    {
+        h.Section("the results pane plots chosen quantities against a chosen variable, and the Mueller matrix");
+        WithWindow(session, w =>
+        {
+            w.LoadSample(Sample("schubert-2016 / ga2o3-010"), "ga");
+            /* F5, rather than the automatic evaluation: the headless platform stops delivering a
+               DispatcherTimer's ticks to windows opened after the first one is closed. */
+            Click(w, Find<Button>(w, "EvaluateButton"));
+            h.Expect(PumpUntil(w, () => Find<SpectrumPlot>(w, "Plot").Series is { Count: > 0 }), $"the sample evaluates ({Find<SelectableTextBlock>(w, "StatusText").Text}; evaluating {w.IsEvaluating}; empty text {Find<SpectrumPlot>(w, "Plot").EmptyText}; visible {Find<SpectrumPlot>(w, "Plot").IsVisible}; eval {Find<TextBlock>(w, "EvaluationText").Text})");
+            var axes = Find<ComboBox>(w, "XAxisBox");
+            h.Expect(axes.ItemCount == 2, $"wavenumber and angle are offered as x ({axes.ItemCount})");
+            axes.SelectedIndex = 1;
+            Pump(w);
+            h.Expect(Find<SpectrumPlot>(w, "Plot").XTitle.StartsWith("angle"), "x can be the angle instead");
+            axes.SelectedIndex = 0;
+            w.MoreQuantities = ["Psi_ps", "Mr13"];
+            Pump(w);
+            var names = Find<SpectrumPlot>(w, "Plot").Series!.Select(x => x.Name).ToList();
+            h.Expect(names.Any(n => n.StartsWith("Psi_01")) && names.Any(n => n.StartsWith("Mr13")),
+                     $"quantities chosen with More… are plotted, Psi_ps as Psi_01 since the exit medium is anisotropic ({string.Join(", ", names.Take(20))})");
+            w.MoreQuantities = [];
+            Find<ComboBox>(w, "ViewBox").SelectedIndex = 1;
+            Pump(w, 200);
+            var m13 = w.GetVisualDescendants().OfType<SpectrumPlot>().First(p => p.Name == "Mueller13");
+            h.Expect(m13.IsEffectivelyVisible && m13.Series is { Count: 3 }, "the Mueller view has a panel per element, a curve per angle");
+            Shot(w, "mueller-reflection");
+            Find<ComboBox>(w, "ViewBox").SelectedIndex = 0;
+            Pump(w);
+        });
+    }
+
     public static void MaterialsComeFromLibraries(Harness h, HeadlessUnitTestSession session)
     {
         h.Section("From library… adds database materials and catalogue glasses; Save keeps one in my materials");

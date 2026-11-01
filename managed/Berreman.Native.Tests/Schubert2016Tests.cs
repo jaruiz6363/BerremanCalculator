@@ -48,6 +48,57 @@ internal static class Schubert2016Tests
         CoupledModes();
         PrincipalAxesTurn();
         ChecksReportWhatTheyShould();
+        Figure5();
+    }
+
+    // ---- Fig. 5: the (010) surface's Mueller matrix at azimuths P1, P2, P3 ------------------------
+
+    /// <summary>
+    /// Values read off Fig. 5 by eye (to about ±0.05), at features in the reststrahlen band away
+    /// from the sharpest resonances, as (azimuth φ, element row, column, wavenumber, value). Each
+    /// must lie within the range of the sample's three angles of incidence (50°, 60°, 70°), widened by
+    /// 0.12 for the reading. M42 is the independent check: M41 and M43 were used to fix the sign of
+    /// S3 (Api/Quantities.cs), M42 was not.
+    /// </summary>
+    private static readonly (double Phi, int I, int J, double W, double Read)[] Fig5 =
+    [
+        (62.5, 4, 1, 660, 0.20), (62.5, 4, 1, 730, -0.37), (107.5, 4, 1, 530, 0.25), (107.5, 4, 1, 660, -0.30),
+        (152.5, 4, 1, 730, 0.30), (152.5, 4, 1, 660, -0.20),
+        (62.5, 4, 3, 400, -0.90), (62.5, 4, 3, 750, -0.90), (107.5, 4, 3, 690, -0.80), (152.5, 4, 3, 520, -0.80),
+        (62.5, 4, 2, 570, 0.33), (62.5, 4, 2, 690, -0.35), (107.5, 4, 2, 400, 0.55), (107.5, 4, 2, 570, -0.65),
+        (107.5, 4, 2, 690, 0.45), (152.5, 4, 2, 690, 0.50), (152.5, 4, 2, 570, -0.20),
+    ];
+
+    private static void Figure5()
+    {
+        var root = JsonNode.Parse(SampleText())!.AsObject();
+        foreach (var phi in Fig5.Select(f => f.Phi).Distinct())
+        {
+            var r = root.DeepClone().AsObject();
+            r["exit"]!["euler_deg"] = new JsonArray(phi, 0.4, 0);
+            r["sweep"] = new JsonObject
+            {
+                ["spectral"] = new JsonArray(Fig5.Where(f => f.Phi == phi).Select(f => (JsonNode)f.W).Distinct().Append(1000).ToArray()),
+                ["angle_deg"] = new JsonArray(50, 60, 70),
+            };
+            var result = Evaluator.Evaluate(StackDocument.Parse(r.ToJsonString()));
+            foreach (var f in Fig5.Where(f => f.Phi == phi))
+            {
+                var v = result.Points.Where(p => p.Spectral == f.W).Select(p => Quantities.Mueller(p)[f.I - 1, f.J - 1]).ToList();
+                Check(f.Read >= v.Min() - 0.12 && f.Read <= v.Max() + 0.12,
+                      $"Fig. 5, φ = {f.Phi}°, M{f.I}{f.J} at {f.W} cm⁻¹: read {f.Read:+0.00;-0.00}, computed {string.Join(" / ", v.Select(x => x.ToString("+0.00;-0.00")))} at 50/60/70°");
+            }
+            var hi = result.Points.Where(p => p.Spectral == 1000).Select(p => Quantities.Mueller(p)[3, 1]).ToList();
+            Console.WriteLine($"  Schubert 2016 Fig. 5, φ = {phi}°: M42 at 1000 cm⁻¹ is {string.Join(" / ", hi.Select(x => x.ToString("+0.00;-0.00")))}; the figure shows about 0 (not reproduced above ~900 cm⁻¹)");
+        }
+    }
+
+    private static string SampleText()
+    {
+        var asm = Assembly.GetExecutingAssembly();
+        var name = asm.GetManifestResourceNames().First(n => n.Replace('\\', '/').EndsWith("samples/schubert-2016/ga2o3-010.json"));
+        using var st = asm.GetManifestResourceStream(name)!;
+        return new StreamReader(st).ReadToEnd();
     }
 
     // ---- the material, as the sample writes it, and variants of it -------------------------------

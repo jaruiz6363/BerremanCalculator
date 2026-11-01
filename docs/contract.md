@@ -172,9 +172,23 @@ From the native engine, per evaluation point:
 
 Derived in C# from the above:
 
-5. **Mueller matrices** in reflection and transmission.
-6. **Ellipsometric quantities**: Ψ and Δ, and the normalised Jones or Mueller elements of
-   generalised ellipsometry for anisotropic samples.
+5. **Mueller matrices** in reflection and transmission, each element divided by M11. With J the
+   Jones matrix (E_out = J E_in in the (p, s) basis), M = A (J ⊗ J*) A⁻¹ for the Stokes vector
+   S0 = |Ep|² + |Es|², S1 = |Ep|² − |Es|², S2 = 2 Re(Ep Es*), S3 = 2 Im(Ep Es*). An isotropic
+   sample then gives [[1, −N, 0, 0], [−N, 1, 0, 0], [0, 0, C, −S], [0, 0, S, C]] with N = cos 2Ψ,
+   C = sin 2Ψ cos Δ and S = sin 2Ψ sin Δ.
+   - **The sign of S3** (the handedness of circular light) varies between books. It is fixed by
+     Schubert et al. (2016), Fig. 5. With the β-Ga₂O₃ sample, M41 and M43 take that paper's signs
+     at all three azimuths with this choice, and the opposite signs with the other. M42, which was
+     not used to choose, then agrees too (docs/literature.md).
+   - **What the comparison also confirms.** The paper's Ψ, Δ, p, s and Euler angles are this
+     program's, so its off-diagonal elements, which the p sign and the Euler handedness would flip,
+     confirm both.
+6. **Ellipsometric quantities**: Ψ and Δ, and the normalised Jones elements of generalised
+   ellipsometry, r_ps/r_pp and r_sp/r_ss as Ψ_ps, Δ_ps, Ψ_sp, Δ_sp (Schubert 1996, Eq. 8).
+
+Every derived quantity has one name, in Api/Quantities.cs. The GUI, the CLI (`--quantities`) and
+the MCP server (`quantities`) all use it.
 
 **Incoherent (thick) layers** are combined in intensity, through Mueller matrices, between coherent
 groups of layers. They come after the coherent engine is verified, and until then a stack with an

@@ -475,9 +475,26 @@
           <CheckBox x:Name="ShowP" Content="p (mode 0)" IsChecked="True" Margin="0,0,8,0"/>
           <CheckBox x:Name="ShowS" Content="s (mode 1)" IsChecked="True" Margin="0,0,8,0"/>
           <CheckBox x:Name="ShowMean" Content="mean" Margin="0,0,20,0"/>
-          <CheckBox x:Name="ShowEllipsometry" Content="Ψ, Δ"/>
+          <CheckBox x:Name="ShowEllipsometry" Content="Ψ, Δ" Margin="0,0,12,0"/>
+          <Button x:Name="MoreQuantitiesButton" Content="More…" Margin="0,0,12,0"/>
+          <TextBlock Text="x:" VerticalAlignment="Center" Margin="0,0,4,0"/>
+          <ComboBox x:Name="XAxisBox" Width="140" Margin="0,0,12,0"/>
+          <TextBlock Text="view:" VerticalAlignment="Center" Margin="0,0,4,0"/>
+          <ComboBox x:Name="ViewBox" Width="190" SelectedIndex="0">
+            <ComboBoxItem Content="curves"/>
+            <ComboBoxItem Content="Mueller matrix, reflection"/>
+            <ComboBoxItem Content="Mueller matrix, transmission"/>
+          </ComboBox>
         </WrapPanel>
-        <local:SpectrumPlot x:Name="Plot"/>
+        <TextBlock DockPanel.Dock="Top" x:Name="MoreQuantitiesText" Classes="hint" TextWrapping="Wrap" Margin="0,0,0,4"/>
+        <Grid>
+          <local:SpectrumPlot x:Name="Plot"/>
+          <DockPanel x:Name="MuellerPanel" IsVisible="False">
+            <TextBlock DockPanel.Dock="Bottom" x:Name="MuellerTitle" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+            <TextBlock DockPanel.Dock="Top" x:Name="MuellerLegend" TextWrapping="Wrap" Classes="hint" Margin="0,0,0,4"/>
+            <UniformGrid x:Name="MuellerGrid" Rows="4" Columns="4"/>
+          </DockPanel>
+        </Grid>
       </DockPanel>
     </Grid>
   </DockPanel>

@@ -206,6 +206,9 @@ Points run over the spectral values, then azimuths, then angles.
   r_ps is p in, s out;
 - optionally Ψ and Δ (`--ellipsometry`), from r_pp/r_ss = tan Ψ e^{iΔ};
 - optionally the absorption in each layer (`--absorption`);
+- optionally the Mueller matrix in reflection, Mr12 … Mr44, each divided by M11 (`--mueller`);
+- optionally any quantity by name (`--quantities Mr34,Psi_ps,R_ps`): `berreman quantities` lists
+  them, with what each is ([the contract](contract.md), Section 5);
 - a status.
 
 With isotropic outer media the waves are p and s. With anisotropic ones they are the media's own

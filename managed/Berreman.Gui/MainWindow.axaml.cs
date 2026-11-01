@@ -194,6 +194,7 @@ public partial class MainWindow : Window
         };
         RevertMaterialButton.Click += (_, _) => ShowMaterial();
         InitMaterialEditor();
+        InitResults();
 
         // ---- the file tab ----------------------------------------------------------------------
         ApplyTextButton.Click += (_, _) => Try(() => _ws.EditText(Editor.Text ?? ""), "The file text is applied.");
@@ -520,19 +521,6 @@ public partial class MainWindow : Window
         if (_again) { _again = false; await Evaluate(auto: true); }
     }
 
-    private void Redraw()
-    {
-        if (_result is null) { Plot.Series = null; return; }
-        var choice = new PlotChoice(
-            R: ShowR.IsChecked == true, T: ShowT.IsChecked == true, A: ShowA.IsChecked == true,
-            P: ShowP.IsChecked == true, S: ShowS.IsChecked == true, Mean: ShowMean.IsChecked == true,
-            Ellipsometry: ShowEllipsometry.IsChecked == true);
-        var curves = ResultPlot.Build(_result, choice);
-        Plot.XTitle = curves.XTitle;
-        Plot.YTitle = curves.YTitle;
-        Plot.EmptyText = curves.Message ?? "Nothing to plot.";
-        Plot.Series = curves.Series;
-    }
 
     private async Task Export()
     {

@@ -53,7 +53,17 @@ public sealed class SpectrumPlot : Control
 
     // A wider left margin than PlotModel's default, to make room for the y-axis title beside the
     // tick labels.
-    private readonly PlotModel _model = new() { Left = 72.0 };
+    private PlotModel? _plotModel;
+    private PlotModel _model => _plotModel ??= Compact ? new PlotModel { Left = 44.0, Top = 18.0, Bottom = 20.0, Right = 6.0 } : new PlotModel { Left = 72.0 };
+
+    /// <summary>
+    /// A small panel of a grid (the Mueller matrix): narrow margins, the panel's Title at the top,
+    /// and no legend or axis titles, which the grid gives once for all its panels.
+    /// </summary>
+    public bool Compact { get; init; }
+
+    /// <summary>The panel's name in compact mode, "M12".</summary>
+    public string Title { get; set; } = "";
 
     static SpectrumPlot()
     {
@@ -133,6 +143,12 @@ public sealed class SpectrumPlot : Control
                     g.EndFigure(false);
                 }
             context.DrawGeometry(null, pen, geometry);
+        }
+
+        if (Compact)
+        {
+            Text(context, Title, new Point(left + 4, 2), 0xFF202020);
+            return;
         }
 
         // The legend, placed inside the plot so it cannot be cut off by a narrow window.

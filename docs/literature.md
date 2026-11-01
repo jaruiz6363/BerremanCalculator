@@ -244,8 +244,21 @@ Two things the paper does not say:
 The sample [schubert-2016/ga2o3-010.json](../samples/literature/schubert-2016/ga2o3-010.json)
 follows both readings above. The B_u LPP frequencies of Table III are not reproduced: the model
 gives 924.6 cm⁻¹ for the highest, as the paper's Fig. 12 shows, where the table has 967.1. The
-tests print these and do not assert them. The paper's figures are Mueller-matrix elements, which
-the program does not output yet.
+tests print these and do not assert them.
+
+**Fig. 5 (Mueller matrix, (010) surface, P1–P3).** The test compares 17 features of M41, M42 and
+M43, read off the figure by eye, in the reststrahlen band.
+- **Agreement.** All 17 agree in sign. In size, each read value lies within 0.12 of the range
+  computed over the three angles of incidence.
+- **The S3 convention.** M41 and M43 decided the sign of S3, which books choose differently
+  (contract, Section 5). With the other choice both are reversed everywhere. M42 was not used to
+  choose, and it agrees too.
+- **What this confirms.** The off-diagonal elements depend on the p sign and on the Euler
+  handedness, so their agreement confirms that the paper's are the program's.
+- **Not reproduced.** Above about 900 cm⁻¹ the computed off-diagonal elements reach 0.5 at
+  1000 cm⁻¹, where the computed reflectance falls to 0.05. The figure shows nearly 0 there. Neither
+  a/c* reading of Table IV, nor exchanging the free-carrier broadenings, removes it. The cause is
+  not known, and the test prints the values without asserting them.
 
 ### Not usable as solver tests
 

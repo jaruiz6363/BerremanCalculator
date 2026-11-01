@@ -122,6 +122,12 @@ public sealed class McpServer
     private static JsonArray DescribeTools() => new(
         new JsonObject
         {
+            ["name"] = "list_quantities",
+            ["description"] = "Every quantity evaluate_stack can add by name in 'quantities', with its unit group and what it is.",
+            ["inputSchema"] = new JsonObject { ["type"] = "object", ["properties"] = new JsonObject() },
+        },
+        new JsonObject
+        {
             ["name"] = "engine_status",
             ["description"] = "Whether the native engine loads, its ABI version, and what it can do.",
             ["inputSchema"] = new JsonObject { ["type"] = "object", ["properties"] = new JsonObject() },
@@ -132,8 +138,10 @@ public sealed class McpServer
             ["description"] =
                 "Evaluate a stack file (docs/stack-format.md) and return a CSV table: R, T, A for each "
                 + "incident wave at every point of the file's sweep, with optional Jones coefficients, "
-                + "Psi/Delta and per-layer absorption. Give either 'path' to a file or 'stack' as the "
-                + "file's JSON text.",
+                + "Psi/Delta and per-layer absorption, and any derived quantity by name in 'quantities' "
+                + "(Mueller elements Mr12..Mr44 and Mt12..Mt44 divided by M11, Psi_ps/Delta_ps generalised "
+                + "ellipsometry, R_ps conversion, |r_pp|, arg r_pp, ...; the tool 'list_quantities' names them all). "
+                + "Give either 'path' to a file or 'stack' as the file's JSON text.",
             ["inputSchema"] = new JsonObject
             {
                 ["type"] = "object",
@@ -144,6 +152,8 @@ public sealed class McpServer
                     ["jones"] = new JsonObject { ["type"] = "boolean" },
                     ["ellipsometry"] = new JsonObject { ["type"] = "boolean" },
                     ["absorption"] = new JsonObject { ["type"] = "boolean" },
+                    ["mueller"] = new JsonObject { ["type"] = "boolean", ["description"] = "Add the reflection Mueller matrix, Mr12..Mr44." },
+                    ["quantities"] = new JsonObject { ["type"] = "array", ["items"] = new JsonObject { ["type"] = "string" }, ["description"] = "More columns, by quantity name." },
                 },
             },
         });
@@ -161,10 +171,12 @@ public sealed class McpServer
                     if ((path is null) == (json is null)) return ("give exactly one of 'path' and 'stack'", true);
                     var doc = path is not null ? StackDocument.Load(path) : StackDocument.Parse(json!);
                     var result = Evaluator.Evaluate(doc);
+                    var names = (arguments["quantities"] as JsonArray)?.Select(n => n!.GetValue<string>()).ToList() ?? [];
+                    if (arguments["mueller"]?.GetValue<bool>() == true) names.AddRange(Quantities.All().Where(q => q.Name.StartsWith("Mr")).Select(q => q.Name));
                     var table = ResultTable.Build(result,
                         arguments["jones"]?.GetValue<bool>() ?? false,
                         arguments["ellipsometry"]?.GetValue<bool>() ?? false,
-                        arguments["absorption"]?.GetValue<bool>() ?? false);
+                        arguments["absorption"]?.GetValue<bool>() ?? false, names);
                     int failed = result.Points.Count(p => p.Status != Berreman.Native.BcStatus.Ok);
                     var head = (doc.Title != "" ? doc.Title + "\n" : "") + (doc.Source != "" ? "Source: " + doc.Source + "\n" : "")
                              + (failed > 0 ? $"{failed} of {result.Points.Count} points failed; see the status column.\n" : "")
@@ -173,6 +185,9 @@ public sealed class McpServer
                 }
                 catch (StackFormatException e) { return (e.Message, true); }
             }
+            case "list_quantities":
+                return (string.Join("\n", Quantities.All().Select(q => $"{q.Name}\t{q.Group}\t{q.Description}"))
+                        + "\nWith anisotropic outer media the waves are modes 0 and 1 (R_01 for R_ps); either name is accepted.", false);
             case "engine_status":
             {
                 var r = EngineStatus.Probe();
