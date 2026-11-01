@@ -34,7 +34,7 @@ internal static class McpToolTests
         var s = new McpServer();
         var tools = s.Handle(new JsonObject { ["jsonrpc"] = "2.0", ["id"] = 99, ["method"] = "tools/list" })?["result"]?["tools"]?.AsArray()
                     .Select(t => t!["name"]!.GetValue<string>()).ToList() ?? [];
-        foreach (var t in new[] { "list_samples", "read_sample", "describe_stack", "search_materials", "build_layers", "import_tfd", "export_tfd", "field_profile", "conoscope_map", "material_response" })
+        foreach (var t in new[] { "list_samples", "read_sample", "describe_stack", "search_materials", "build_layers", "import_tfd", "export_tfd", "list_coatings", "import_coating", "field_profile", "conoscope_map", "material_response" })
             Check(tools.Contains(t), $"{t} is listed");
 
         var (list, e1) = Call(s, "list_samples", new JsonObject { ["filter"] = "cholesteric" });
@@ -89,5 +89,21 @@ internal static class McpToolTests
             Check(!e10 && !e11 && StackDocument.Parse(back).Layers.Count == 9, "export_tfd and import_tfd round-trip the mirror");
         }
         finally { File.Delete(tfd); }
+
+        /* Coatings from an OpticStudio coating file: listed, then imported in waves at a given wavelength. */
+        var dat = Path.Combine(Path.GetTempPath(), $"berreman-mcp-{Guid.NewGuid():N}.dat");
+        try
+        {
+            File.WriteAllText(dat, "MATE MGF2\r\n0.4 1.38 0\r\n0.9 1.38 0\r\n\r\nCOAT AR\r\nMGF2 .25\r\n\r\nCOAT LOOPED\r\nMGF2 .25 0 2\r\n");
+            var (listed, e12) = Call(s, "list_coatings", new JsonObject { ["file"] = dat });
+            Check(!e12 && listed.Contains("\"AR\"") && listed.Contains("loop index"), $"list_coatings names them, and says why one cannot be imported ({listed})");
+            var (_, e13) = Call(s, "import_coating", new JsonObject { ["file"] = dat, ["coating"] = "AR" });
+            Check(e13, "a coating in waves with no wavelength is refused");
+            var (imported, e14) = Call(s, "import_coating", new JsonObject { ["file"] = dat, ["coating"] = "1", ["wavelength_nm"] = 552, ["stack"] = start });
+            var coated = StackDocument.Parse(imported[imported.IndexOf('{')..]);
+            Check(!e14 && coated.Layers.Count == 1 && Math.Abs(coated.Layers[0].ThicknessNm - 552 / 4.0 / 1.38) < 1e-6,
+                  $"import_coating by number replaces the given stack's layers with the quarter wave");
+        }
+        finally { File.Delete(dat); }
     }
 }

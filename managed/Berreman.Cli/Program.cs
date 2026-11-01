@@ -17,6 +17,8 @@ try
         ["status"] => Status(),
         ["quantities"] => ListQuantities(),
         ["convert", var from, var to] => Convert(from, to),
+        ["coatings", var file] => ListCoatings(file),
+        ["import-coating", var file, var coating, var output, .. var rest] => ImportCoating(file, coating, output, rest),
         ["report", var path, .. var rest] => Report(path, rest),
         ["evaluate", var path, .. var rest] => Evaluate(path, rest),
         [var command, ..] => NotYet(command),
@@ -46,6 +48,15 @@ static int Help()
                                             the layers and every material as tables (docs/user-guide.md)
           convert <in> <out>                a ThinFilmDesigner design (.tfd) to a stack file (.berr),
                                             or an isotropic stack to a .tfd (docs/user-guide.md)
+          coatings <file>                   the coatings in an OpticStudio coating file (COATING.DAT)
+                                            or an Optiland coating or lens file (.json)
+          import-coating <file> <coating> <out.berr> [options]
+                                            a coating from such a file as a stack file; <coating> is
+                                            its name or its number in the list
+              --into <stack.berr>  replace this stack's layers (default: a new stack, air / glass)
+              --wavelength <nm>    count OpticStudio thicknesses in waves at this wavelength,
+                                   when the file does not say
+              --keep-media         keep the stack's media rather than take an Optiland coating's
           status                            whether the native engine loads, and its ABI version
           help                              this text
 
@@ -160,6 +171,50 @@ static int Evaluate(string path, string[] options)
         Console.Error.WriteLine($"berreman: {failed} of {result.Points.Count} points failed; see the status column");
         return 1;
     }
+    return 0;
+}
+
+static int ListCoatings(string file)
+{
+    var bytes = File.ReadAllBytes(file);
+    var list = CoatingImport.List(bytes, (0.4, 0.8));
+    Console.WriteLine($"{Path.GetFileName(file)}: an {(CoatingImport.IsOptiland(bytes) ? "Optiland" : "OpticStudio coating")} file, {list.Count} coating{(list.Count == 1 ? "" : "s")} made of layers");
+    for (int i = 0; i < list.Count; ++i)
+        Console.WriteLine($"{i + 1,4}  {list[i].Name,-28} {list[i].Layers,4} layer{(list[i].Layers == 1 ? " " : "s")}{(list[i].Problem is { } why ? $"  cannot be imported: it {why}" : "")}");
+    return 0;
+}
+
+static int ImportCoating(string file, string coating, string output, string[] options)
+{
+    string? into = null;
+    double? wavelength = null;
+    bool keepMedia = false;
+    for (int i = 0; i < options.Length; ++i)
+    {
+        switch (options[i])
+        {
+            case "--into" when i + 1 < options.Length: into = options[++i]; break;
+            case "--wavelength" when i + 1 < options.Length:
+                wavelength = double.TryParse(options[++i], NumberStyles.Float, CultureInfo.InvariantCulture, out var w) && w > 0
+                    ? w : throw new StackFormatException($"--wavelength needs a positive number of nm, not '{options[i]}'");
+                break;
+            case "--keep-media": keepMedia = true; break;
+            default:
+                Console.Error.WriteLine($"berreman: unknown option '{options[i]}'. Run 'berreman help'.");
+                return 2;
+        }
+    }
+    var model = into is null ? StackModel.NewDefault() : StackModel.FromJson(File.ReadAllText(into));
+    ImportedCoating read;
+    try { read = CoatingImport.Read(File.ReadAllBytes(file), coating, wavelength, CoatingImport.WavelengthRangeUm(model)); }
+    catch (StackFormatException e) when (e.Message.Contains("does not say at which wavelength"))
+    {
+        throw new StackFormatException($"{e.Message} with --wavelength <nm>");
+    }
+    var notes = CoatingImport.Apply(model, read, takeMedia: !keepMedia);
+    File.WriteAllText(output, model.ToJson(), new UTF8Encoding(false));
+    Console.WriteLine($"{read.Name}: {read.Layers.Count} layers written to {output}");
+    foreach (var n in notes) Console.WriteLine($"  {n}");
     return 0;
 }
 

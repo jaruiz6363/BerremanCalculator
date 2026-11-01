@@ -13,7 +13,7 @@ three programs read the same file:
 | Program | For |
 |---|---|
 | `berreman-gui` | Editing a stack, evaluating it, and plotting the results |
-| `berreman` | Scripts: evaluate a file, print or write a table, convert, report |
+| `berreman` | Scripts: evaluate a file, print or write a table, convert, import a coating, report |
 | `berreman-mcp` | An AI assistant: evaluation, samples, materials, analyses and conversion as tools |
 
 The samples from the literature are installed beside the programs, under `samples/`. Each one
@@ -292,6 +292,10 @@ berreman quantities                               list every quantity, with what
 berreman report stack.berr --step 10 --out r.txt  the layers and every material as tables
 berreman convert design.tfd stack.berr            read a ThinFilmDesigner design as a stack file
 berreman convert stack.berr design.tfd            write an isotropic stack as a ThinFilmDesigner design
+berreman coatings COATING.DAT                     list the coatings in an OpticStudio or Optiland file
+berreman import-coating COATING.DAT HEAR1 ar.berr --wavelength 550
+                                                  a coating as a stack file (--into stack.berr to
+                                                  replace that stack's layers; --keep-media)
 berreman evaluate stack.berr --csv out.csv        write the table to a file
 berreman status                                   whether the engine loads
 ```
@@ -324,7 +328,8 @@ JSON, and a tool that changes a stack returns the new JSON.
 | `describe_stack` | A stack in words: units, media, layers with orientation and twist, and each material with its passivity and reciprocity over the sweep. |
 | `search_materials` | Library materials in their stack-file form: ThinFilmDesigner's databases, the glass catalogues and your own. |
 | `build_layers` | Layers from a design string such as `(HL)8 H`, each letter a material and a physical thickness. |
-| `import_tfd`, `export_tfd` | ThinFilmDesigner designs in and out, as File > Import and Export do. |
+| `import_tfd`, `export_tfd` | ThinFilmDesigner designs in and out. |
+| `list_coatings`, `import_coating` | Coatings from OpticStudio coating files and Optiland files, as File > Import a coating does: listed, then imported into a stack (or a new one). |
 | `field_profile` | The fields against depth at one point, as CSV, with the interfaces. |
 | `conoscope_map` | One quantity over every direction of incidence, or the transmission between crossed or parallel polarisers. |
 | `material_response` | One material across a range: n and k along its principal axes, passivity and reciprocity. |

@@ -60,6 +60,18 @@ public sealed partial class McpServer
              }), "design", "letters"),
         Tool("import_tfd", "A ThinFilmDesigner design (.tfd) read as a stack: its layers, materials (constant, Sellmeier, Cauchy, tables, catalogue glasses) and its wavelengths and angles as the sweep. The merit function is not carried over. Returns the stack JSON.",
              new JsonObject { ["path"] = S("The .tfd file.") }, "path"),
+        Tool("list_coatings", "The coatings made of layers in an OpticStudio coating file (COATING.DAT and the like) or an Optiland file (a ThinFilmCoating alone, or a lens file with coated surfaces): each one's number, name, layer count, and why it cannot be imported if it cannot (a loop index, a material with no MATE, a database material not on this computer). IDEAL, TABLE and ENCRYPTED coatings are not made of layers and are not listed.",
+             new JsonObject { ["file"] = S("The coating file.") }, "file"),
+        Tool("import_coating", "A coating from an OpticStudio coating file or an Optiland file, as the layers of a stack: its materials are added under their names in the file (a different one of the same name becomes NAME_2), and an Optiland coating's media are taken unless keep_media. Into the stack given by 'path' or 'stack', or a new one (air / glass) when neither is given; that stack's sweep and angles are kept. OpticStudio thicknesses in waves need wavelength_nm unless the file states it. Returns notes (including any material whose data do not cover the sweep) and the stack JSON.",
+             new JsonObject
+             {
+                 ["file"] = S("The coating file."),
+                 ["coating"] = S("The coating's name from list_coatings, or its number there (from 1)."),
+                 ["wavelength_nm"] = N("The wavelength OpticStudio thicknesses in waves are counted at (the lens's primary wavelength), when the file does not say."),
+                 ["keep_media"] = B("Keep the stack's media rather than take an Optiland coating's."),
+                 ["path"] = S("A stack file (.berr) whose layers the coating replaces. Optional."),
+                 ["stack"] = S("Or the stack JSON itself. Optional."),
+             }, "file", "coating"),
         Tool("export_tfd", "Writes the stack as a ThinFilmDesigner design (.tfd), for optimisation there. Every material must be isotropic and in a form ThinFilmDesigner holds; anything else is refused by name.",
              StackArgs(new JsonObject { ["out"] = S("Where to write the .tfd.") }), "out"),
         Tool("field_profile", "The fields against depth at one point: one spectral value, one angle of incidence (or xi, as the stack's sweep gives them) and one azimuth. Depth is from the first interface, in the stack's length unit, negative in the incident medium. Returns CSV of depth and |E|^2, |Ex|^2, |Ey|^2, |Ez|^2 for incident p (or mode 0) and s (mode 1), per unit incident amplitude, after a line giving the interfaces.",
@@ -167,6 +179,29 @@ public sealed partial class McpServer
                     if (a["append"]?.GetValue<bool>() != true) model.Layers.Clear();
                     model.Layers.AddRange(layers);
                     return (model.ToJson(), false);
+                }
+                case "list_coatings":
+                {
+                    var bytes = File.ReadAllBytes(a["file"]?.GetValue<string>() ?? throw new StackFormatException("give 'file'"));
+                    var list = CoatingImport.List(bytes, (0.4, 0.8));
+                    var arr = new JsonArray(list.Select((c, i) =>
+                    {
+                        var o = new JsonObject { ["number"] = i + 1, ["name"] = c.Name, ["layers"] = c.Layers };
+                        if (c.Problem is not null) o["cannot_import"] = c.Problem;
+                        return (JsonNode)o;
+                    }).ToArray());
+                    return ($"An {(CoatingImport.IsOptiland(bytes) ? "Optiland" : "OpticStudio coating")} file:\n" + arr.ToJsonString(Wire), false);
+                }
+                case "import_coating":
+                {
+                    var model = a["path"] is null && a["stack"] is null ? StackModel.NewDefault() : StackModel.FromJson(StackText(a));
+                    var bytes = File.ReadAllBytes(a["file"]?.GetValue<string>() ?? throw new StackFormatException("give 'file'"));
+                    double? wavelength = a["wavelength_nm"] is JsonValue wv && wv.GetValueKind() == System.Text.Json.JsonValueKind.Number ? double.Parse(wv.ToJsonString(), Inv) : null;
+                    var read = CoatingImport.Read(bytes, a["coating"]?.GetValue<string>() ?? throw new StackFormatException("give 'coating'"),
+                                                  wavelength, CoatingImport.WavelengthRangeUm(model));
+                    var notes = CoatingImport.Apply(model, read, takeMedia: a["keep_media"]?.GetValue<bool>() != true);
+                    string said = notes.Count == 0 ? "" : "Notes:\n" + string.Join("\n", notes.Select(n => "- " + n)) + "\n\n";
+                    return ($"{read.Name}: {read.Layers.Count} layers.\n{said}{model.ToJson()}", false);
                 }
                 case "import_tfd":
                     return (TfdFile.Read(File.ReadAllText(a["path"]?.GetValue<string>() ?? throw new StackFormatException("give 'path'"))).ToJson(), false);

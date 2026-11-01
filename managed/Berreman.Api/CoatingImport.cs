@@ -45,6 +45,132 @@ public sealed record ImportedCoating(
     (string Name, JsonObject Spec)? Exit,
     IReadOnlyList<string> Notes);
 
+/// <summary>
+/// A coating file of either kind, and a coating merged into a stack: what the GUI, the CLI
+/// (berreman coatings, berreman import-coating) and the MCP tools share.
+/// </summary>
+public static class CoatingImport
+{
+    private static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
+
+    /// <summary>An Optiland file is JSON; an OpticStudio coating file is keyword text.</summary>
+    public static bool IsOptiland(byte[] bytes) =>
+        Encoding.UTF8.GetString(bytes).TrimStart('﻿', ' ', '\t', '\r', '\n').StartsWith('{');
+
+    /// <summary>The coatings in a file of either kind.</summary>
+    public static IReadOnlyList<CoatingInFile> List(byte[] bytes, (double Lo, double Hi) gridUm) =>
+        IsOptiland(bytes) ? OptilandCoatingReader.List(Encoding.UTF8.GetString(bytes).TrimStart('﻿'), gridUm) : ZemaxCoatingReader.List(bytes);
+
+    /// <summary>
+    /// A coating from a file of either kind, by its name as the list gives it (in any case) or by
+    /// its number in the list, from 1. <paramref name="referenceNm"/> counts an OpticStudio
+    /// coating's thicknesses in waves when the file does not say at which wavelength.
+    /// </summary>
+    public static ImportedCoating Read(byte[] bytes, string coating, double? referenceNm, (double Lo, double Hi) gridUm)
+    {
+        var list = List(bytes, gridUm);
+        int index = list.ToList().FindIndex(c => c.Name.Equals(coating.Trim(), StringComparison.OrdinalIgnoreCase));
+        if (index < 0 && int.TryParse(coating, NumberStyles.Integer, Inv, out int n) && n >= 1 && n <= list.Count) index = n - 1;
+        if (index < 0)
+            throw new StackFormatException($"the file has no coating '{coating}'; it has {(list.Count == 0 ? "none made of layers" : string.Join(", ", list.Select(c => c.Name)))}");
+        if (list[index].Problem is { } why) throw new StackFormatException($"{list[index].Name} cannot be imported: it {why}");
+        return IsOptiland(bytes)
+            ? OptilandCoatingReader.Read(Encoding.UTF8.GetString(bytes).TrimStart('﻿'), index, gridUm)
+            : ZemaxCoatingReader.Read(bytes, list[index].Name, referenceNm);
+    }
+
+    /// <summary>
+    /// Replaces the stack's layers by an imported coating. Its materials are added under their
+    /// names in the file; a material the stack already has under that name is used when it is the
+    /// same, and otherwise the file's becomes NAME_2. With <paramref name="takeMedia"/>, the media
+    /// the file gives (Optiland gives them; OpticStudio does not) become the stack's. The spectral
+    /// sweep and the angles are kept. Returns notes: the coating's own, a renamed material, and any
+    /// imported material whose data do not cover the sweep (a table is not extended past its data,
+    /// and the engine refuses, so this is said at once rather than when an evaluation fails).
+    /// </summary>
+    public static IReadOnlyList<string> Apply(StackModel m, ImportedCoating coating, bool takeMedia)
+    {
+        var notes = new List<string>(coating.Notes);
+        var named = new Dictionary<string, string>();
+        string Merge(string name, JsonObject spec)
+        {
+            if (named.TryGetValue(name, out var known)) return known;
+            string chosen = name;
+            for (int k = 2; ; ++k)
+            {
+                var existing = m.Material(chosen);
+                if (existing is null)
+                {
+                    m.Materials.Add(new NamedMaterial(chosen, (JsonObject)spec.DeepClone()));
+                    break;
+                }
+                if (JsonNode.DeepEquals(existing.Spec, spec)) break;
+                chosen = $"{name}_{k}";
+            }
+            if (chosen != name) notes.Add($"the stack already has a different {name}; the file's is {chosen}");
+            return named[name] = chosen;
+        }
+        foreach (var (name, spec) in coating.Materials) Merge(name, spec);
+        double nmPer = Units.NmPerLength(m.LengthUnit);
+        m.Layers = coating.Layers.Select(l => new LayerModel
+        {
+            Material = named[l.Material], Thickness = double.Parse((l.ThicknessNm / nmPer).ToString("G12", Inv), Inv),
+        }).ToList();
+        if (takeMedia && coating.Incident is { } inc) { m.Incident.Material = Merge(inc.Name, inc.Spec); m.Incident.EulerDeg = [0, 0, 0]; }
+        if (takeMedia && coating.Exit is { } exit) { m.Exit.Material = Merge(exit.Name, exit.Spec); m.Exit.EulerDeg = [0, 0, 0]; }
+
+        var (lo, hi) = WavelengthRangeUm(m);
+        foreach (var name in named.Values.Distinct())
+            if (m.Material(name) is { } mat && DataRangeUm(mat.Spec) is { } r && (lo < r.Lo - 1e-9 || hi > r.Hi + 1e-9))
+                notes.Add($"{name} has data from {r.Lo.ToString("0.###", Inv)} to {r.Hi.ToString("0.###", Inv)} µm only; the sweep goes from {lo.ToString("0.###", Inv)} to {hi.ToString("0.###", Inv)} µm");
+        return notes;
+    }
+
+    /// <summary>The wavelengths (µm) a table or a ranged Sellmeier or Cauchy covers; null for anything unbounded.</summary>
+    private static (double Lo, double Hi)? DataRangeUm(JsonObject spec)
+    {
+        try
+        {
+            double Um(double v, string unit) => Units.ToWavelengthNm(v, unit) / 1000;
+            if (spec["table"] is JsonObject t && t["data"] is JsonArray rows && rows.Count > 1)
+            {
+                string unit = t["unit"]?.GetValue<string>() ?? "nm";
+                double a = Um(rows[0]![0]!.GetValue<double>(), unit), b = Um(rows[^1]![0]!.GetValue<double>(), unit);
+                return (Math.Min(a, b), Math.Max(a, b));
+            }
+            foreach (var law in new[] { "sellmeier", "cauchy" })
+                if (spec[law] is JsonObject f && f["range"] is JsonArray r)
+                {
+                    string unit = f["unit"]?.GetValue<string>() ?? "nm";
+                    double a = Um(r[0]!.GetValue<double>(), unit), b = Um(r[1]!.GetValue<double>(), unit);
+                    return (Math.Min(a, b), Math.Max(a, b));
+                }
+        }
+        catch (Exception e) when (e is StackFormatException or InvalidOperationException or FormatException) { }
+        return null;
+    }
+
+    /// <summary>The first wavelength of the sweep in nm, or null when the spectral axis does not convert.</summary>
+    public static double? FirstWavelengthNm(StackModel m)
+    {
+        try { return Units.ToWavelengthNm(StackDocument.Values(SweepText.Parse(m.Spectral, "spectral"), "spectral")[0], m.SpectralUnit); }
+        catch (StackFormatException) { return null; }
+    }
+
+    /// <summary>The sweep's wavelength range in µm, where an Optiland formula with no range of its
+    /// own is tabulated; 0.4 to 0.8 µm when the sweep does not convert.</summary>
+    public static (double Lo, double Hi) WavelengthRangeUm(StackModel m)
+    {
+        try
+        {
+            var nm = StackDocument.Values(SweepText.Parse(m.Spectral, "spectral"), "spectral").Select(v => Units.ToWavelengthNm(v, m.SpectralUnit)).ToArray();
+            double lo = nm.Min() / 1000, hi = nm.Max() / 1000;
+            return hi > lo ? (lo, hi) : (lo * 0.9, hi * 1.1);
+        }
+        catch (StackFormatException) { return (0.4, 0.8); }
+    }
+}
+
 // ================================================================================================
 // OpticStudio
 // ================================================================================================
