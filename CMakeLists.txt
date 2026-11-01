@@ -37,6 +37,16 @@ foreach(t berreman berreman_shared)
     ${CMAKE_CURRENT_SOURCE_DIR}/native/src)
 endforeach()
 
+# The OpticStudio user-defined surface example (examples/zemax-uds): the engine compiled into the
+# surface DLL itself, so OpticStudio finds one self-contained file. Built on every platform so its
+# arithmetic is tested everywhere; only the Windows build is loaded by OpticStudio.
+add_library(us_berreman SHARED examples/zemax-uds/us_berreman.cpp ${BC_SOURCES})
+target_include_directories(us_berreman PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/native/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/native/src
+  ${CMAKE_CURRENT_SOURCE_DIR}/examples/zemax-uds)
+set_target_properties(us_berreman PROPERTIES OUTPUT_NAME US_BERREMAN PREFIX "")
+
 enable_testing()
 
 add_executable(test_skeleton tests/native/test_skeleton.cpp)

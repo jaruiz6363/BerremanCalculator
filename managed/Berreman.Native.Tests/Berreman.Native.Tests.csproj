@@ -27,6 +27,15 @@
     <EmbeddedResource Include="..\..\tests\fixtures\**\*.tfd;..\..\tests\fixtures\**\*.json" LogicalName="fixtures/%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 
+  <!-- The OpticStudio user-defined surface example (examples/zemax-uds), built by CMake, which the
+       suite calls as OpticStudio does. -->
+  <ItemGroup>
+    <None Include="..\..\build\**\US_BERREMAN.dll;..\..\build\**\US_BERREMAN.so;..\..\build\**\US_BERREMAN.dylib">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>%(Filename)%(Extension)</Link>
+    </None>
+  </ItemGroup>
+
   <Import Project="..\NativeLibrary.targets" />
 
 </Project>

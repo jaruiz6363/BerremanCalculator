@@ -101,6 +101,7 @@ tests/      the engine's tests, and fixtures both sides read
 tools/      build checks, including the rules above
 samples/    the examples from the literature
 materials/  material databases and glass catalogues
+examples/   an OpticStudio user-defined surface with a Berreman film (examples/zemax-uds)
 ```
 
 | Project | Builds |
