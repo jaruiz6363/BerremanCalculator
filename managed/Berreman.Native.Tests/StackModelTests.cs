@@ -27,6 +27,7 @@ internal static class StackModelTests
         DesignStringBuildsTheStack();
         WorkspaceEditsAreAtomicAndUndoable();
         MaterialsRenameAndRemove();
+        MaterialsAreClassified();
         UnitChangesKeepTheStack();
         AxisDirectionIsTheRotatedZ();
         UnknownKeysSurvive();
@@ -207,7 +208,75 @@ internal static class StackModelTests
         Check(refused, "a rename onto an existing name is refused");
         Check(m.UniqueName("glass") == "glass (2)", "a unique name is made from a taken one");
         var ws = new StackWorkspace();
-        Check(ws.Summary("low") == "n = 1.38" && ws.Summary("nothing") == "missing", "a material is summarised for lists");
+        Check(ws.Summary("low") == "isotropic, n = 1.38" && ws.Summary("nothing") == "missing", "a material is summarised for lists");
+    }
+
+    /// <summary>
+    /// The layer table's Type column: read from the material matrix, so the type does not depend on
+    /// how the material was written. Hand-made materials of each type, then every sample material
+    /// against itself rewritten as terms.
+    /// </summary>
+    private static void MaterialsAreClassified()
+    {
+        var ws = new StackWorkspace();
+        ws.Load("""
+            { "format": "berreman-stack", "version": 1, "units": { "length": "nm", "spectral": "nm" },
+              "materials": {
+                "iso": { "n": 1.5 },
+                "uni": { "no": 1.54, "ne": 1.55 },
+                "bi": { "nx": 1.5, "ny": 1.6, "nz": 1.7 },
+                "tilted": { "terms": [ { "eps": 2.25 }, { "lorentz": { "unit": "eV", "center": 10, "strength": 30 }, "axis_deg": [30, 20] } ] },
+                "mo": { "eps": [[2.25, [0, 0.01], 0], [[0, -0.01], 2.25, 0], [0, 0, 2.25]] },
+                "chiral": { "terms": [ { "eps": 2.25 }, { "rho": [[[0, 0.001], 0, 0], [0, [0, 0.001], 0], [0, 0, [0, 0.001]]],
+                                                         "rho_prime": [[[0, -0.001], 0, 0], [0, [0, -0.001], 0], [0, 0, [0, -0.001]]] } ] },
+                "mono": { "lattice": { "a": 12.2, "b": 3.0, "c": 5.8, "beta": 103.7 },
+                          "terms": [ { "eps": [[3.21, -0.08, 0], [-0.08, 3.75, 0], [0, 0, 3.71]] } ] },
+                "bk7": { "glass": { "catalog": "SCHOTT", "name": "N-BK7" } },
+                "sio2": { "sellmeier": { "unit": "um", "terms": [ { "b": 0.6961663, "c": 0.0684043 }, { "b": 0.4079426, "c": 0.1162414 }, { "b": 0.8974794, "c": 9.896161 } ] } }
+              },
+              "incident": { "material": "iso" }, "layers": [], "exit": { "material": "iso" },
+              "sweep": { "spectral": 633, "angle_deg": 0 } }
+            """, null);
+        string Kind(string m) => ws.Kind(m);
+        Check(Kind("iso") == "isotropic · constant" && Kind("uni") == "uniaxial · constant" && Kind("bi") == "biaxial · constant",
+              $"constant isotropic, uniaxial and biaxial ({Kind("iso")}; {Kind("uni")}; {Kind("bi")})");
+        Check(ws.Summary("uni") == "uniaxial, nₒ = 1.54, nₑ = 1.55", $"a uniaxial's summary gives nₒ and nₑ ({ws.Summary("uni")})");
+        Check(Kind("tilted") == "uniaxial · 2 terms" && ws.Summary("tilted").Contains("nₒ = 1.5, nₑ = "),
+              $"a uniaxial written as terms with a tilted axis is uniaxial, with its indices ({ws.Summary("tilted")})");
+        Check(Kind("mo") == "magneto-optic · constant", $"an antisymmetric ε is magneto-optic ({Kind("mo")})");
+        Check(Kind("chiral") == "bianisotropic · 2 terms", $"magnetoelectric blocks make it bianisotropic ({Kind("chiral")})");
+        Check(Kind("mono") == "monoclinic · 1 term" && ws.Summary("mono").Contains("principal n = "),
+              $"a lattice with one oblique angle is monoclinic, with its principal indices ({ws.Summary("mono")})");
+        Check(Kind("bk7") == "isotropic · SCHOTT glass" && ws.Summary("bk7").EndsWith("; SCHOTT N-BK7"), $"a glass names its catalogue ({ws.Summary("bk7")})");
+        Check(Kind("sio2") == "isotropic · Sellmeier" && ws.Summary("sio2").Contains(" at 633 nm; Sellmeier"), $"a dispersive material gives the wavelength and law ({ws.Summary("sio2")})");
+
+        int compared = 0, mismatched = 0;
+        foreach (var s in SampleCatalog.List(SampleCatalog.DefaultRoot))
+        {
+            var text = File.ReadAllText(s.Path);
+            var sample = new StackWorkspace();
+            sample.Load(text, s.Path);
+            var root = System.Text.Json.Nodes.JsonNode.Parse(text, documentOptions: new() { CommentHandling = System.Text.Json.JsonCommentHandling.Skip })!;
+            foreach (var (name, node) in root["materials"]!.AsObject().ToList())
+            {
+                string kind = sample.Kind(name);
+                Check(kind != "invalid" && kind != "missing", $"{s.Name}/{name}: has a type ({kind})");
+                if (MaterialTerms.ToTerms(node!.AsObject()) is not { } terms) continue;
+                var copy = System.Text.Json.Nodes.JsonNode.Parse(text, documentOptions: new() { CommentHandling = System.Text.Json.JsonCommentHandling.Skip })!;
+                copy["materials"]![name] = System.Text.Json.Nodes.JsonNode.Parse(terms.ToJsonString());
+                var asTerms = new StackWorkspace();
+                asTerms.Load(copy.ToJsonString(), null);
+                string a = kind.Split(" · ")[0], b = asTerms.Kind(name).Split(" · ")[0];
+                if (a != b) { ++mismatched; Console.WriteLine($"  {s.Name}/{name}: {a} as written, {b} as terms"); }
+                ++compared;
+            }
+        }
+        Check(compared >= 30 && mismatched == 0, $"every sample material has the same type written as terms ({compared} compared, {mismatched} differ)");
+
+        /* Ga2O3 gives no lattice; it is monoclinic because its index and absorption axes differ. */
+        var ga = new StackWorkspace();
+        ga.Load(File.ReadAllText(SampleCatalog.List(SampleCatalog.DefaultRoot).First(s => s.Name == "schubert-2016 / ga2o3-010").Path), null);
+        Check(ga.Kind("Ga2O3") == "monoclinic · 16 terms", $"β-Ga2O3 is monoclinic without a lattice ({ga.Summary("Ga2O3")})");
     }
 
     private static void UnitChangesKeepTheStack()

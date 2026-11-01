@@ -281,7 +281,7 @@ public partial class MainWindow : Window
             ExitInfo.Text = _ws.Summary(m.Exit.Material);
 
             var selected = LayerGrid.SelectedIndex;
-            LayerGrid.Columns[2].Header = $"Thickness ({(m.LengthUnit == "um" ? "µm" : m.LengthUnit)})";
+            LayerGrid.Columns[3].Header = $"Thickness ({(m.LengthUnit == "um" ? "µm" : m.LengthUnit)})";
             LayerGrid.ItemsSource = _ws.Rows();
             if (selected >= 0 && selected < m.Layers.Count) LayerGrid.SelectedIndex = selected;
 

@@ -212,35 +212,175 @@ public sealed class StackWorkspace
 
     public List<LayerRow> Rows() => Enumerable.Range(0, Model.Layers.Count).Select(i => new LayerRow(this, i)).ToList();
 
-    /// <summary>A material in a few words, for lists: "n = 1.52", "uniaxial, nₒ = 1.54, nₑ = 1.55", "model: ferrite".</summary>
+    /// <summary>
+    /// A material in a sentence, for lists and tooltips: its type, its principal indices at the
+    /// first wavelength of the sweep, and the law it disperses by. "uniaxial, nₒ = 1.54, nₑ = 1.55
+    /// at 633 nm; Sellmeier".
+    /// </summary>
     public string Summary(string material)
     {
         if (Model.Material(material) is not { } m) return "missing";
-        if (m.Spec["model"] is { } model) return $"model: {model}";
-        string terms = m.Spec["terms"] is System.Text.Json.Nodes.JsonArray list ? $"{list.Count} terms; " : "";
-        return terms + Describe(m);
+        var c = Classify(m);
+        if (c.Invalid is { } why) return $"invalid: {why}";
+        if (c.Detail == "" || c.Law == "constant") c = c with { At = "" };
+        return c.Kind + (c.Detail == "" ? "" : $", {c.Detail}") + c.At + (c.Law == "constant" ? "" : $"; {c.Law}");
     }
 
-    private string Describe(NamedMaterial m)
+    /// <summary>A material's type in a few words, for the layer table: "uniaxial · Sellmeier".</summary>
+    public string Kind(string material)
     {
+        if (Model.Material(material) is not { } m) return "missing";
+        var c = Classify(m);
+        return c.Invalid is not null ? "invalid" : $"{c.Kind} · {c.ShortLaw}";
+    }
+
+    private sealed record MaterialClass(string Kind, string Detail, string At, string Law, string ShortLaw, string? Invalid = null);
+
+    /// <summary>
+    /// THE TYPE IS READ FROM THE MATERIAL MATRIX, whatever form the material was written in (a
+    /// rotated uniaxial written as terms is still uniaxial), at the first wavelength of the sweep, in
+    /// the material's own axes. In order: magnetoelectric blocks (bianisotropic); an antisymmetric
+    /// part of μ (gyromagnetic) or of ε (magneto-optic); then the symmetric ε by how many of its
+    /// eigenvalues coincide: isotropic, uniaxial, biaxial. A material that gives a crystal lattice
+    /// with oblique angles is monoclinic (one) or triclinic (more) instead of biaxial.
+    /// </summary>
+    private MaterialClass Classify(NamedMaterial m)
+    {
+        var (law, shortLaw) = LawOf(m.Spec);
+        if (m.Spec["model"]?.ToString() == "resistive_sheet")   /* its ε depends on the layer holding it */
+            return new MaterialClass("isotropic", "", "", law, shortLaw);
         try
         {
             var mat = MaterialParser.Parse(m.Spec, $"materials.{m.Name}");
             double lambda = FirstWavelength();
             var M = mat.At(lambda, 0);
             string at = mat.IsConstant ? "" : $" at {Units.FromWavelengthNm(lambda, Model.SpectralUnit):G5} {Model.SpectralUnit}";
-            if (M.IsIsotropic(out var eps, out var mu))
-                return mu == Complex.One ? $"n = {Index(Complex.Sqrt(eps))}{at}" : $"ε = {C(eps)}, μ = {C(mu)}{at}";
-            bool diagonal = Enumerable.Range(0, 6).All(i => Enumerable.Range(0, 6).All(j => i == j || M[i, j] == Complex.Zero));
-            if (diagonal && M[3, 3] == Complex.One && M[4, 4] == Complex.One && M[5, 5] == Complex.One)
-            {
-                Complex nx = Complex.Sqrt(M[0, 0]), ny = Complex.Sqrt(M[1, 1]), nz = Complex.Sqrt(M[2, 2]);
-                if (nx == ny) return $"uniaxial, nₒ = {Index(nx)}, nₑ = {Index(nz)}{at}";
-                return $"biaxial, n = {Index(nx)}, {Index(ny)}, {Index(nz)}{at}";
-            }
-            return $"anisotropic (6×6){at}";
+            var (kind, detail) = Classify(M, m.Spec["lattice"]);
+            return new MaterialClass(kind, detail, at, law, shortLaw);
         }
-        catch (StackFormatException e) { return $"invalid: {e.Message}"; }
+        catch (StackFormatException e) { return new MaterialClass("", "", "", law, shortLaw, e.Message); }
+    }
+
+    private static (string Kind, string Detail) Classify(MaterialMatrix M, System.Text.Json.Nodes.JsonNode? lattice)
+    {
+        Complex E(int i, int j) => M[i, j];
+        Complex Mu(int i, int j) => M[3 + i, 3 + j];
+        double scale = 0;
+        for (int i = 0; i < 3; ++i) scale = Math.Max(scale, Math.Max(E(i, i).Magnitude, Mu(i, i).Magnitude));
+        double tol = 1e-12 * Math.Max(scale, 1e-300);
+        bool Zero(Complex z) => z.Magnitude <= tol;
+
+        bool rho = false, muAntisym = false, epsAntisym = false, muScalar = true;
+        for (int i = 0; i < 3; ++i)
+            for (int j = 0; j < 3; ++j)
+            {
+                rho |= !Zero(M[i, 3 + j]) || !Zero(M[3 + i, j]);
+                muAntisym |= !Zero(Mu(i, j) - Mu(j, i));
+                epsAntisym |= !Zero(E(i, j) - E(j, i));
+                muScalar &= i == j ? Zero(Mu(i, i) - Mu(0, 0)) : Zero(Mu(i, j));
+            }
+        if (rho) return ("bianisotropic", "");
+        if (muAntisym) return ("gyromagnetic", "");
+        if (epsAntisym)
+        {
+            /* The diagonal indices, and the off-diagonal elements that carry the gyration. */
+            var off = new[] { (0, 1, "ε_xy"), (0, 2, "ε_xz"), (1, 2, "ε_yz") }.Where(t => !Zero(E(t.Item1, t.Item2)))
+                                                                         .Select(t => $"{t.Item3} = {C(E(t.Item1, t.Item2))}");
+            return ("magneto-optic", $"n = {Index(Complex.Sqrt(E(0, 0)))}, {Index(Complex.Sqrt(E(1, 1)))}, {Index(Complex.Sqrt(E(2, 2)))}; {string.Join(", ", off)}");
+        }
+        string mu = !muScalar ? ", μ anisotropic" : Zero(Mu(0, 0) - 1) ? "" : $", μ = {C(Mu(0, 0))}";
+
+        /* ε symmetric. Its eigenvalues are p + x, with x the roots of x³ − 3qx − 2r = 0 for
+           B = ε − pI, p = tr ε / 3, q = tr B² / 6, r = det B / 2. Two coincide when r² = q³: then
+           the double root is −r/q (ordinary) and the single one 2r/q (extraordinary). */
+        Complex p = (E(0, 0) + E(1, 1) + E(2, 2)) / 3;
+        var B = new Complex[3, 3];
+        for (int i = 0; i < 3; ++i) for (int j = 0; j < 3; ++j) B[i, j] = E(i, j) - (i == j ? p : 0);
+        bool bZero = true;
+        foreach (var b in B) bZero &= Zero(b);
+        if (bZero) return ("isotropic", muScalar && Zero(Mu(0, 0) - 1) ? $"n = {Index(Complex.Sqrt(p))}" : $"ε = {C(p)}{mu}");
+        Complex q = 0;
+        for (int i = 0; i < 3; ++i) for (int j = 0; j < 3; ++j) q += B[i, j] * B[j, i];
+        q /= 6;
+        Complex r = (B[0, 0] * (B[1, 1] * B[2, 2] - B[1, 2] * B[2, 1]) - B[0, 1] * (B[1, 0] * B[2, 2] - B[1, 2] * B[2, 0])
+                   + B[0, 2] * (B[1, 0] * B[2, 1] - B[1, 1] * B[2, 0])) / 2;
+        Complex q3 = q * q * q;
+        int oblique = 0;
+        if (lattice is System.Text.Json.Nodes.JsonObject lat)
+            foreach (var a in new[] { "alpha", "beta", "gamma" })
+                if (lat[a] is { } v && Math.Abs(v.GetValue<double>() - 90) > 1e-9) ++oblique;
+        if (oblique == 0 && q.Magnitude > 0 && (r * r - q3).Magnitude <= 1e-9 * q3.Magnitude)
+        {
+            Complex eo = p - r / q, ee = p + 2 * r / q;
+            return ("uniaxial", $"nₒ = {Index(Complex.Sqrt(eo))}, nₑ = {Index(Complex.Sqrt(ee))}{mu}");
+        }
+        string kind = oblique == 0 ? "biaxial" : oblique == 1 ? "monoclinic" : "triclinic";
+        /* Without a lattice: when the real and imaginary parts of ε do not share principal axes,
+           the index and absorption axes differ, which only a monoclinic or triclinic crystal
+           allows. Monoclinic when one coordinate axis is still a principal axis of both. */
+        if (oblique == 0)
+        {
+            double comm = 0, re = 0, im = 0;
+            for (int i = 0; i < 3; ++i)
+                for (int j = 0; j < 3; ++j)
+                {
+                    double c = 0;
+                    for (int k = 0; k < 3; ++k) c += E(i, k).Real * E(k, j).Imaginary - E(i, k).Imaginary * E(k, j).Real;
+                    comm = Math.Max(comm, Math.Abs(c));
+                    re = Math.Max(re, Math.Abs(E(i, j).Real)); im = Math.Max(im, Math.Abs(E(i, j).Imaginary));
+                }
+            if (comm > 1e-9 * re * im)
+            {
+                bool axisKept = Enumerable.Range(0, 3).Any(k => Enumerable.Range(0, 3).All(j => j == k || Zero(E(k, j))));
+                kind = axisKept ? "monoclinic" : "monoclinic or triclinic";
+            }
+        }
+        bool diagonal = Zero(E(0, 1)) && Zero(E(0, 2)) && Zero(E(1, 2));
+        if (diagonal) return (kind, $"n = {Index(Complex.Sqrt(E(0, 0)))}, {Index(Complex.Sqrt(E(1, 1)))}, {Index(Complex.Sqrt(E(2, 2)))}{mu}");
+        /* The three roots by Cardano: x = u + q/u for each cube root u of r + √(r² − q³). */
+        Complex d = Complex.Sqrt(r * r - q3), s = r + d;
+        if (s.Magnitude < (r - d).Magnitude) s = r - d;
+        Complex u = Complex.Pow(s, 1.0 / 3), w = new Complex(-0.5, Math.Sqrt(3) / 2);
+        var n = new[] { u, u * w, u * w * w }.Select(x => Complex.Sqrt(p + x + (x.Magnitude == 0 ? 0 : q / x)))
+                                             .OrderBy(z => z.Real).Select(Index);
+        return (kind, $"principal n = {string.Join(", ", n)}{mu}");
+    }
+
+    private static readonly Dictionary<string, string> LawNames = new()
+    {
+        ["sellmeier"] = "Sellmeier", ["cauchy"] = "Cauchy", ["lorentz"] = "Lorentz", ["drude"] = "Drude",
+        ["tauc_lorentz"] = "Tauc–Lorentz", ["phonon"] = "phonon (TO–LO)", ["phonon_additive"] = "phonon (additive)",
+        ["table"] = "table", ["conductivity"] = "conductivity", ["polder"] = "Polder",
+    };
+
+    /// <summary>How the material disperses, in full for the summary and short for the table.</summary>
+    private static (string Law, string Short) LawOf(System.Text.Json.Nodes.JsonObject spec)
+    {
+        /* A glass is named in full in the summary ("SCHOTT N-BK7") and by its catalogue in the table. */
+        static IEnumerable<(string Long, string Short)> Laws(System.Text.Json.Nodes.JsonNode? node)
+        {
+            if (node is not System.Text.Json.Nodes.JsonObject o) yield break;
+            foreach (var (key, value) in o)
+            {
+                if (key == "glass" && value is System.Text.Json.Nodes.JsonObject g) yield return ($"{g["catalog"]} {g["name"]}".Trim(), $"{g["catalog"]} glass".Trim());
+                else if (LawNames.TryGetValue(key, out var name)) yield return (name, name);
+            }
+        }
+        if (spec["model"] is { } model)
+        {
+            var name = model.ToString() switch { "ferrite" => "ferrite model", "conductor" => "conductor model", "resistive_sheet" => "resistive sheet", var x => $"model {x}" };
+            return (name, name);
+        }
+        if (spec["terms"] is System.Text.Json.Nodes.JsonArray terms)
+        {
+            var laws = terms.SelectMany(Laws).Select(l => l.Long).Distinct().ToList();
+            string count = $"{terms.Count} term{(terms.Count == 1 ? "" : "s")}";
+            return (laws.Count == 0 ? $"{count}, constant" : $"{count}: {string.Join(", ", laws)}", count);
+        }
+        var all = Laws(spec).Concat(Laws(spec["uniaxial"]?["ordinary"])).Concat(Laws(spec["uniaxial"]?["extraordinary"]))
+                            .Concat(new[] { "x", "y", "z" }.SelectMany(a => Laws(spec["biaxial"]?[a]))).Distinct().ToList();
+        if (all.Count == 0) return ("constant", "constant");
+        return (string.Join(", ", all.Select(l => l.Long)), string.Join(", ", all.Select(l => l.Short).Distinct()));
     }
 
     private double FirstWavelength()
@@ -249,8 +389,15 @@ public sealed class StackWorkspace
         catch (StackFormatException) { return 550; }
     }
 
-    private static string Index(Complex n) => n.Imaginary == 0 ? n.Real.ToString("G6", Inv) : $"{n.Real.ToString("G5", Inv)} + {n.Imaginary.ToString("G4", Inv)}i";
-    private static string C(Complex z) => z.Imaginary == 0 ? z.Real.ToString("G6", Inv) : $"{z.Real.ToString("G5", Inv)} + {z.Imaginary.ToString("G4", Inv)}i";
+    /* An imaginary part below 10⁻¹² of the whole is round-off (from the eigenvalues) and dropped. */
+    private static string Index(Complex n) => C(n);
+    private static string C(Complex z)
+    {
+        double re = Math.Abs(z.Real) <= 1e-12 * z.Magnitude ? 0 : z.Real, im = Math.Abs(z.Imaginary) <= 1e-12 * z.Magnitude ? 0 : z.Imaginary;
+        if (im == 0) return re.ToString("G6", Inv);
+        string i = $"{Math.Abs(im).ToString("G4", Inv)}i";
+        return re == 0 ? (im < 0 ? $"−{i}" : i) : $"{re.ToString("G5", Inv)} {(im < 0 ? "−" : "+")} {i}";
+    }
 
     /// <summary>The total physical thickness, in the length unit.</summary>
     public double TotalThickness => Model.Layers.Sum(l => l.Thickness);
@@ -284,6 +431,10 @@ public sealed class LayerRow(StackWorkspace ws, int index)
         get => L.Material;
         set { if (value is not null && value != L.Material) Try(m => m.Layers[index].Material = value); }
     }
+
+    /// <summary>The material's type and dispersion, "uniaxial · Sellmeier"; the full summary is the tooltip.</summary>
+    public string TypeText => ws.Kind(L.Material);
+    public string MaterialSummary => ws.Summary(L.Material);
 
     /// <summary>The physical thickness, in the stack's length unit.</summary>
     public string ThicknessText

@@ -204,6 +204,14 @@
                     </DataTemplate>
                   </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
+                <!-- What the material is: its type, read from its matrix, and how it disperses. -->
+                <DataGridTemplateColumn Header="Type" Width="170" IsReadOnly="True">
+                  <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate x:DataType="core:LayerRow">
+                      <TextBlock Text="{Binding TypeText}" ToolTip.Tip="{Binding MaterialSummary}" VerticalAlignment="Center" Margin="4,0" TextTrimming="CharacterEllipsis"/>
+                    </DataTemplate>
+                  </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
                 <DataGridTemplateColumn Header="Thickness" Width="120" IsReadOnly="True">
                   <DataGridTemplateColumn.CellTemplate>
                     <DataTemplate x:DataType="core:LayerRow">

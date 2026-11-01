@@ -73,6 +73,7 @@ evaluates on demand. Every edit can be undone (**Ctrl+Z**) and redone (**Ctrl+Y*
   | Column | |
   |---|---|
   | Material | chosen from the stack's materials |
+  | Type | what the material is, and how it disperses: "uniaxial · Sellmeier", "monoclinic · 16 terms". Hover for its principal indices at the sweep's first wavelength. See below |
   | Thickness | physical, in the length unit |
   | φ, θ, ψ | the layer's orientation: R = Rz(φ) Rx(θ) Rz(ψ) turns the material from its own axes into the stack's (contract, Section 1) |
   | Optic axis | where the material's own z axis ends up: its tilt from the normal and its azimuth from x. For a uniaxial material this is the optic axis |
@@ -81,6 +82,27 @@ evaluates on demand. Every edit can be undone (**Ctrl+Z**) and redone (**Ctrl+Y*
 
   A typed value is taken when the cell is left or Enter is pressed. A value that cannot be used
   (a negative thickness, a word) is refused and the status line says why.
+
+  **How the type is decided.** The type is read from the material's 6×6 matrix at the sweep's first
+  wavelength, in the material's own axes. It does not depend on how the material was written: a
+  uniaxial written as terms with a tilted axis is still uniaxial. The rules are applied in order:
+
+  1. **Bianisotropic**: any magnetoelectric block (ρ, ρ′) is present.
+  2. **Gyromagnetic**: μ has an antisymmetric part, as a ferrite does.
+  3. **Magneto-optic**: ε has an antisymmetric part.
+  4. Otherwise ε is symmetric, and the type depends on how many of its eigenvalues coincide:
+     - all three: **isotropic**;
+     - two: **uniaxial**;
+     - none: **biaxial**.
+
+  A material that gives a crystal `lattice` with oblique angles is **monoclinic** (one oblique
+  angle) or **triclinic** (more). So is a material whose index and absorption axes differ: only a
+  monoclinic or triclinic crystal allows that. Such a material is called **monoclinic** when one
+  coordinate axis is still a principal axis of both, and **monoclinic or triclinic** otherwise.
+  β-Ga₂O₃ is an example.
+
+  A lossless monoclinic material looks biaxial at a single wavelength. Give its `lattice` to have
+  it called monoclinic.
 - **Insert** copies the selected layer after it; **Delete** removes the selected layers; **Up** and
   **Down** move one. **Stack > Reverse layers** reverses their order; **Reverse layers and media**
   also swaps the outer media, so the light arrives from the other side.
