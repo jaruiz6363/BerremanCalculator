@@ -2,7 +2,10 @@
 
 BerremanCalculator evaluates a stack of layers: plane waves through homogeneous planar layers of
 any material, between any two outer media. It computes reflection, transmission and absorption,
-the Jones coefficients, Ψ and Δ, and the absorption in each layer. It never changes the stack.
+the Jones coefficients, Ψ and Δ, the Mueller matrices, the absorption in each layer and the
+fields against depth. From those it draws spectra, Mueller-matrix panels, conoscopic maps and
+field profiles. It never changes the stack: it evaluates, and ThinFilmDesigner, which shares its
+design files, optimises.
 
 A stack is described by a **stack file**, a JSON document ([the format](stack-format.md)). All
 three programs read the same file:
@@ -10,8 +13,8 @@ three programs read the same file:
 | Program | For |
 |---|---|
 | `berreman-gui` | Editing a stack, evaluating it, and plotting the results |
-| `berreman` | Scripts: evaluate a file, print or write a table |
-| `berreman-mcp` | An AI assistant: the same evaluation as a tool |
+| `berreman` | Scripts: evaluate a file, print or write a table, convert, report |
+| `berreman-mcp` | An AI assistant: evaluation, samples, materials, analyses and conversion as tools |
 
 The samples from the literature are installed beside the programs, under `samples/`. Each one
 names the paper it reproduces. [samples/README.md](../samples/README.md) says how closely each is
@@ -155,12 +158,12 @@ version does not know are.
 
 ### Results
 
-- The status line reports the number of points and the time taken. Points that failed show as
-  gaps in the plot, and the status line names the first failure. For a stack with twisted layers,
-  it shows how much doubling the sublayers changes the result.
-- **The plot** puts on its x axis whatever the sweep varies: the spectral variable if there is more
-  than one value; otherwise the angle (or ξ); otherwise the azimuth. Every other combination of
-  sweep values is its own curve, labelled by its values.
+- **Beside the layer count** the window shows the number of points and the time taken. For a stack
+  with twisted layers it also shows how much doubling the sublayers changes the result.
+- **Failed points** show as gaps in the plot, and the status line names the first failure.
+- **The plot** puts on its x axis, unless **x** says otherwise, whatever the sweep varies: the
+  spectral variable if it has more than one value, otherwise the angle (or ξ), otherwise the
+  azimuth. Every other combination of sweep values is its own curve, labelled by its values.
 - **Show** chooses the curves: R, T and A; the p and s waves (modes 0 and 1 with anisotropic outer
   media) and their mean, which is the unpolarised value; Ψ and Δ, on their own axis in degrees.
 - **More…** adds any other quantity, each unit on its own y axis. The quantities are:
@@ -269,3 +272,7 @@ These are fixed, and stated in full in [the contract](contract.md):
 - **Ellipsometry:** Ψ and Δ are defined as Schubert (1996) defines them, ρ = r_pp/r_ss =
   tan Ψ e^{iΔ}.
 - **Jones coefficients** carry the incident wave as their first subscript: r_ps is p in, s out.
+- **Mueller matrices** are divided by M11. An isotropic sample gives [[1, −N, 0, 0], [−N, 1, 0, 0],
+  [0, 0, C, −S], [0, 0, S, C]], with N = cos 2Ψ, C = sin 2Ψ cos Δ and S = sin 2Ψ sin Δ. The sign of
+  the fourth row and column is Schubert et al. (2016)'s, checked against their Fig. 5 (contract,
+  Section 5).

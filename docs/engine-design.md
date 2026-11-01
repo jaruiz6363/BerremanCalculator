@@ -1,8 +1,8 @@
 # Engine design
 
 How the native engine computes one evaluation point: a wavelength, a tangential wavevector ξ and a
-stack. This note decides what [the contract](contract.md) left open in its Section 4. Nothing here is
-implemented yet.
+stack. This note decides what [the contract](contract.md) left open in its Section 4. It was written
+before the engine, which now implements it; the tests it names run with every build.
 
 ## The problem it avoids
 

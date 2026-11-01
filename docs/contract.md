@@ -4,7 +4,9 @@ This document fixes what the engine computes, in what conventions, and how C# an
 work and the memory. It is agreed before any engine code exists, because it is the most expensive
 thing to change later.
 
-Nothing here is implemented yet. Decisions still open are marked **Open**.
+It was written first, and the engine, the API and the programs now implement it. Where a decision is
+still open it is marked **Open**. Where the code and this document disagree, the ABI header
+`native/include/berreman.h` is what ships, and this document is wrong.
 
 ## 1. Conventions
 

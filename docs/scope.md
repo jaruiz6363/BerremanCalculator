@@ -1,7 +1,6 @@
 # Scope
 
-What BerremanCalculator computes, what it leaves out, and the order the work is done in. Where a
-decision is still open it says so.
+What BerremanCalculator computes and what it leaves out. Where a decision is still open it says so.
 
 ## What it is
 
@@ -14,29 +13,35 @@ design belong to other programs (ThinFilmDesigner designs isotropic coatings).
 - Plane waves, linear optics, one wavelength at a time.
 - A stack of homogeneous layers with parallel planar interfaces, between an incident medium and an
   exit medium.
-- Each layer is described by its thickness and its 3×3 relative permittivity tensor at the
-  wavelength. Isotropic, uniaxial and biaxial materials, rotated by Euler angles, are special cases
-  of the tensor.
-- **Anisotropic incident and exit media are part of the model from the start**, not added later.
-- Layers may be coherent or incoherent (thick). How incoherence is treated is an open decision.
+- Each medium is described at each wavelength by Berreman's 6×6 matrix: permittivity, permeability
+  and the magnetoelectric blocks. Any element may disperse ([material-model.md](material-model.md)),
+  so isotropic, uniaxial, biaxial, monoclinic and triclinic crystals, magneto-optic and chiral media,
+  and ferrites are all cases of it, rotated by Euler angles.
+- **Anisotropic incident and exit media are part of the model from the start.** The incident one
+  must be lossless.
+- Layers are coherent. A twisted (cholesteric) layer is evaluated as uniform sublayers, and the
+  result is checked by doubling them. **Open:** incoherent (thick) layers, combined in intensity;
+  a stack that asks for one is refused.
 
 ## Conventions
 
-To be fixed in the contract before any code: the time dependence, the sign of the extinction
-coefficient, the axes and the Euler-angle convention, the definition of p and s and of their
-directions in each medium, and the sign conventions of the reflection coefficients. Every result
-the program reports states them.
+Fixed in [the contract](contract.md), Section 1: the time dependence, the sign of the extinction
+coefficient, the axes and the Euler-angle convention, the definition of p and s in each medium, and
+the signs of the reflection coefficients. Every result the program reports states them.
 
-## Outputs (to be agreed)
+## Outputs
 
-Candidates, roughly in the order the literature uses them:
+All are built:
 
 1. Jones reflection and transmission coefficients: r_pp, r_ps, r_sp, r_ss and the t's.
-2. Reflectance, transmittance and absorptance for any incident polarisation.
+2. Reflectance, transmittance and absorptance for each incident wave.
 3. Mueller matrices in reflection and transmission.
 4. Ellipsometric quantities: Ψ and Δ, and the generalised ones for anisotropic samples.
 5. Absorption in each layer.
-6. Fields and absorption against depth.
+6. Fields against depth, in the stack and in the outer media.
+
+From them the GUI draws spectra against any swept variable, the Mueller matrix as sixteen panels,
+conoscopic maps and field and index profiles. The CLI and the MCP server give the same numbers.
 
 ## Interfaces
 
@@ -50,17 +55,27 @@ around them. Each example is a sample file and a test, with the paper's numbers 
 they are matched. A second, independent calculation is used where one exists. For isotropic stacks,
 the 4×4 result must agree with the 2×2 (Abelès) result.
 
-## Order of work
+## Exchange with other programs
 
-1. **The contract**: conventions, the stack description, the outputs, the native calls and who
-   allocates what. Agreed before any engine code exists.
-2. **The literature list**: the examples to reproduce, starting with Berreman (1972), with the
-   figures and the numbers each one gives.
-3. The native engine, tested against the 2×2 limit and the first examples.
-4. The C# API and the command line.
-5. The MCP server.
-6. The GUI.
-7. Installers.
+- **ThinFilmDesigner** designs (.tfd) are read and written. ThinFilmDesigner optimises isotropic
+  coatings, and this program evaluates anything, so a coating can move between them. The tests
+  agree with ThinFilmDesigner's engine to 10⁻¹² on its own samples.
+- **ZEMAX and Optiland coatings** go through ThinFilmDesigner, which reads and writes both.
+- **A design report** lists the layers and every material as plain tables, for a program without
+  dispersion formulas.
+
+## Left out
+
+- Optimisation and fitting, by design.
+- Incoherent layers (above).
+- Rough or graded interfaces, except as thin layers; non-planar geometry; nonlinear optics.
+
+## Order of the work, as it was done
+
+The contract came first, then the list of literature examples, the native engine (tested against
+the 2×2 limit and the first examples), the C# API and the command line, the MCP server, the GUI
+and the installers. The GUI was then rebuilt as a stack editor, the general material model was
+added, and the analyses followed.
 
 ## The earlier implementation
 
