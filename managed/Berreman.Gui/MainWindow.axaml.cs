@@ -53,6 +53,7 @@ public partial class MainWindow : Window
         ExportItem.Click += async (_, _) => await Export();
         ExportPlotItem.Click += async (_, _) => await ExportPlot();
         ImportTfdItem.Click += async (_, _) => await ImportTfd();
+        ExportReportItem.Click += async (_, _) => await ExportReport();
         ExportTfdItem.Click += async (_, _) => await ExportTfd();
         ExitItem.Click += (_, _) => Close();
         UndoItem.Click += (_, _) => _ws.Undo();
@@ -450,6 +451,22 @@ public partial class MainWindow : Window
         var model = TfdFile.Read(text);
         _ws.Load(model.ToJson(), null, name + ".json");
         Status($"'{name}' read from ThinFilmDesigner: {model.Layers.Count} layers. The merit function is not carried over; Save as… keeps the stack.");
+    }
+
+    private async Task ExportReport()
+    {
+        string text;
+        try { var (f, t, s) = DesignReport.DefaultRange(_ws.Model); text = DesignReport.Build(_ws.Model, f, t, s); }
+        catch (StackFormatException e) { Status($"No report: {e.Message}", error: true); return; }
+        var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Export a design report", DefaultExtension = "txt",
+            FileTypeChoices = [new FilePickerFileType("Text") { Patterns = ["*.txt"] }],
+            SuggestedFileName = Path.GetFileNameWithoutExtension(_ws.Name) + "-report.txt",
+        });
+        if (file?.TryGetLocalPath() is not { } path) return;
+        await File.WriteAllTextAsync(path, text);
+        Status($"The report is written to {path}: the layers, and every material over the sweep's range.");
     }
 
     private async Task ExportTfd()

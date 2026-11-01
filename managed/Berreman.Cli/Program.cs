@@ -17,6 +17,7 @@ try
         ["status"] => Status(),
         ["quantities"] => ListQuantities(),
         ["convert", var from, var to] => Convert(from, to),
+        ["report", var path, .. var rest] => Report(path, rest),
         ["evaluate", var path, .. var rest] => Evaluate(path, rest),
         [var command, ..] => NotYet(command),
     };
@@ -41,6 +42,8 @@ static int Help()
               --quantities <a,b,...>  add these quantities by name (berreman quantities lists them)
               --csv <file>     write the table to a CSV file instead of the console
           quantities                        every quantity --quantities can name, with what it is
+          report <stack.json> [--from a --to b --step s] [--out file]
+                                            the layers and every material as tables (docs/user-guide.md)
           convert <in> <out>                a ThinFilmDesigner design (.tfd) to a stack file (.json),
                                             or an isotropic stack to a .tfd (docs/user-guide.md)
           status                            whether the native engine loads, and its ABI version
@@ -48,6 +51,32 @@ static int Help()
 
         Stack files are described in docs/stack-format.md.
         """);
+    return 0;
+}
+
+static int Report(string path, string[] options)
+{
+    var model = StackModel.FromJson(File.ReadAllText(path));
+    var (from, to, step) = DesignReport.DefaultRange(model);
+    string? output = null;
+    for (int i = 0; i < options.Length; ++i)
+    {
+        double Next() => i + 1 < options.Length && double.TryParse(options[++i], NumberStyles.Float, CultureInfo.InvariantCulture, out var v)
+            ? v : throw new StackFormatException($"{options[i]} needs a number");
+        switch (options[i])
+        {
+            case "--from": from = Next(); break;
+            case "--to": to = Next(); break;
+            case "--step": step = Next(); break;
+            case "--out" when i + 1 < options.Length: output = options[++i]; break;
+            default:
+                Console.Error.WriteLine($"berreman: unknown option '{options[i]}'. Run 'berreman help'.");
+                return 2;
+        }
+    }
+    var text = DesignReport.Build(model, from, to, step);
+    if (output is null) Console.Write(text);
+    else { File.WriteAllText(output, text, new UTF8Encoding(false)); Console.WriteLine($"report written to {output}"); }
     return 0;
 }
 

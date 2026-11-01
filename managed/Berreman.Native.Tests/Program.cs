@@ -108,6 +108,7 @@ Berreman.Native.Tests.ConoscopeTests.Run();
 Berreman.Native.Tests.FieldProfileTests.Run();
 Berreman.Native.Tests.TfdTests.Run();
 Berreman.Native.Tests.McpToolTests.Run();
+Berreman.Native.Tests.DesignReportTests.Run();
 checks += Berreman.Native.Tests.ApiTests.Checks;
 failures += Berreman.Native.Tests.ApiTests.Failures;
 checks += Berreman.Native.Tests.ClosedFormTests.Checks;
@@ -144,6 +145,8 @@ checks += Berreman.Native.Tests.TfdTests.Checks;
 failures += Berreman.Native.Tests.TfdTests.Failures;
 checks += Berreman.Native.Tests.McpToolTests.Checks;
 failures += Berreman.Native.Tests.McpToolTests.Failures;
+checks += Berreman.Native.Tests.DesignReportTests.Checks;
+failures += Berreman.Native.Tests.DesignReportTests.Failures;
 
 Console.WriteLine($"{checks} checks, {failures} failures");
 return failures == 0 ? 0 : 1;

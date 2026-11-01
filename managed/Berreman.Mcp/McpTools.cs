@@ -82,6 +82,8 @@ public sealed partial class McpServer
                  ["azimuths"] = N("How many azimuths round the circle; default 24."),
                  ["polariser"] = N("Degrees from the sample's x; default 0."),
              }), "quantity"),
+        Tool("design_report", "The stack as numbers another program can take: the layers in physical units with their Euler angles, and every material as a table over a spectral range (n, k; or n, k along x, y, z; or every non-zero element of the 6x6 M), in the material's own axes. Tab-separated; other lines start with # or [.",
+             StackArgs(new JsonObject { ["from"] = N("Default: the sweep's first value."), ["to"] = N("Default: its last."), ["step"] = N("Default: about a hundredth of the range.") })),
         Tool("material_response", "One material of the stack across a spectral range: n and k along its principal axes, and whether it is passive and reciprocal there. Returns CSV and a line of checks.",
              StackArgs(new JsonObject
              {
@@ -214,6 +216,12 @@ public sealed partial class McpServer
                         for (int j = 0; j < map.AzimuthsDeg.Length; ++j)
                             sb.Append(FormattableString.Invariant($"{map.AnglesDeg[i]:G8},{map.AzimuthsDeg[j]:G8},{map.Values[i, j]:G8}\n"));
                     return (sb.ToString(), false);
+                }
+                case "design_report":
+                {
+                    var model = StackModel.FromJson(StackText(a));
+                    var (f, t, st) = DesignReport.DefaultRange(model);
+                    return (DesignReport.Build(model, Arg(a, "from", f), Arg(a, "to", t), Arg(a, "step", st)), false);
                 }
                 case "material_response":
                 {

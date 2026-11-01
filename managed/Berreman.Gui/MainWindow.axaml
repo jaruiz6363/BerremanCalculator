@@ -72,6 +72,7 @@
         <Separator/>
         <MenuItem x:Name="ExportItem" Header="_Export results as CSV…"/>
         <MenuItem x:Name="ExportPlotItem" Header="Export the _plot as PNG…"/>
+        <MenuItem x:Name="ExportReportItem" Header="Export a design _report…"/>
         <Separator/>
         <MenuItem x:Name="ExitItem" Header="E_xit"/>
       </MenuItem>

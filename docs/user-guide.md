@@ -46,6 +46,13 @@ evaluates on demand. Every edit can be undone (**Ctrl+Z**) and redone (**Ctrl+Y*
   - **ε tables.** A table given as ε′, ε″ is written as finely spaced n and k, because
     ThinFilmDesigner interpolates n and k.
   - **The result** has no merit function. Its wavelengths and angles are the stack's sweep.
+- **File > Export a design report…** writes the stack as numbers another program can take:
+  - the layers in physical units, with each one's Euler angles and the tilt and azimuth of its z axis;
+  - every material as a table over the sweep's range: n and k for an isotropic one, n and k along
+    x, y and z for an aligned crystal, and otherwise every non-zero element of its 6×6 matrix.
+
+  Values are in the material's own axes. The tables are tab-separated, and every other line starts
+  with `#` or `[`. `berreman report` writes the same, with `--from`, `--to` and `--step`.
 - Opening another stack, or closing the window, with unsaved changes asks whether to save them.
 - Opening a stack file from Explorer, Finder or a file manager (`berreman-gui file.json`)
   evaluates it at once.
@@ -214,6 +221,7 @@ berreman evaluate stack.json --absorption         add the absorption in each lay
 berreman evaluate stack.json --mueller            add the Mueller matrix in reflection (each / M11)
 berreman evaluate stack.json --quantities Mr34,Psi_ps   add quantities by name
 berreman quantities                               list every quantity, with what it is
+berreman report stack.json --step 10 --out r.txt  the layers and every material as tables
 berreman convert design.tfd stack.json            read a ThinFilmDesigner design as a stack file
 berreman convert stack.json design.tfd            write an isotropic stack as a ThinFilmDesigner design
 berreman evaluate stack.json --csv out.csv        write the table to a file
@@ -244,6 +252,7 @@ JSON, and a tool that changes a stack returns the new JSON.
 | `field_profile` | The fields against depth at one point, as CSV, with the interfaces. |
 | `conoscope_map` | One quantity over every direction of incidence, or the transmission between crossed or parallel polarisers. |
 | `material_response` | One material across a range: n and k along its principal axes, passivity and reciprocity. |
+| `design_report` | The stack as numbers, as File > Export a design report writes it. |
 
 **ZEMAX and Optiland coatings** come in and go out through ThinFilmDesigner, which reads and writes
 both: open the coating there, save it as a .tfd, and import that here; or the reverse for an
