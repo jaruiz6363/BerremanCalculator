@@ -20,8 +20,8 @@ design belong to other programs (ThinFilmDesigner designs isotropic coatings).
 - **Anisotropic incident and exit media are part of the model from the start.** The incident one
   must be lossless.
 - Layers are coherent. A twisted (cholesteric) layer is evaluated as uniform sublayers, and the
-  result is checked by doubling them. **Open:** incoherent (thick) layers, combined in intensity;
-  a stack that asks for one is refused.
+  result is checked by doubling them. Incoherent (thick) layers, such as a substrate's back
+  surface, are left out (decided 2026-11-01); a stack that asks for one is refused.
 
 ## Conventions
 
@@ -67,7 +67,7 @@ the 4×4 result must agree with the 2×2 (Abelès) result.
 ## Left out
 
 - Optimisation and fitting, by design.
-- Incoherent layers (above).
+- Incoherent layers and a substrate's back surface (decided 2026-11-01).
 - Rough or graded interfaces, except as thin layers; non-planar geometry; nonlinear optics.
 
 ## Order of the work, as it was done
