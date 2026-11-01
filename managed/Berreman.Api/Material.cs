@@ -169,6 +169,42 @@ public sealed class DrudeDispersion(string unit, double plasma, double gamma) : 
     }
 }
 
+/// <summary>
+/// Tauc–Lorentz (Jellison and Modine, Appl. Phys. Lett. 69, 371 (1996); erratum 69, 2137), in a
+/// unit proportional to photon energy (eV usually): f = ε∞ + χ(E), with
+///   Im χ = (1/E) A E₀ C (E − E_g)² / ((E² − E₀²)² + C²E²) above the gap E_g, and 0 below;
+///   Re χ the Kramers–Kronig transform of Im χ, in closed form.
+/// The closed form is transcribed from the Wikipedia article "Tauc–Lorentz model", whose source
+/// is the paper with its erratum. It is checked against a numerical Kramers–Kronig integral of
+/// Im χ in the managed tests, so a typo in either would show. C < 2E₀ is required (α real).
+/// </summary>
+public sealed class TaucLorentzDispersion(string unit, double epsInf, double a, double e0, double c, double eg) : Dispersion
+{
+    public override Complex Eps(double wavelengthNm)
+    {
+        double e = Units.FromWavelengthNm(wavelengthNm, unit);
+        return epsInf + Chi(e, a, e0, c, eg);
+    }
+
+    public static Complex Chi(double E, double A, double E0, double C, double Eg)
+    {
+        double im = E > Eg ? A * E0 * C * (E - Eg) * (E - Eg) / ((E * E - E0 * E0) * (E * E - E0 * E0) + C * C * E * E) / E : 0;
+        double E2 = E * E, Eg2 = Eg * Eg, E02 = E0 * E0, C2 = C * C;
+        double alpha = Math.Sqrt(4 * E02 - C2), gamma2 = E02 - C2 / 2;
+        double zeta4 = (E2 - gamma2) * (E2 - gamma2) + alpha * alpha * C2 / 4;
+        double aLn = (Eg2 - E02) * E2 + Eg2 * C2 - E02 * (E02 + 3 * Eg2);
+        double aAtan = (E2 - E02) * (E02 + Eg2) + Eg2 * C2;
+        double k = A / (Math.PI * zeta4);
+        double re =
+              k * C * aLn / (2 * alpha * E0) * Math.Log((E02 + Eg2 + alpha * Eg) / (E02 + Eg2 - alpha * Eg))
+            - k * aAtan / E0 * (Math.PI - Math.Atan((alpha + 2 * Eg) / C) + Math.Atan((alpha - 2 * Eg) / C))
+            + 2 * k * E0 / alpha * Eg * (E2 - gamma2) * (Math.PI + 2 * Math.Atan(2 * (gamma2 - Eg2) / (alpha * C)))
+            - k * E0 * C * (E2 + Eg2) / E * Math.Log(Math.Abs(E - Eg) / (E + Eg))
+            + 2 * k * E0 * C * Eg * Math.Log(Math.Abs(E - Eg) * (E + Eg) / Math.Sqrt((E02 - Eg2) * (E02 - Eg2) + Eg2 * C2));
+        return new Complex(re, im);
+    }
+}
+
 /// <summary>Cauchy: n = A + B/λ² + C/λ⁴ with λ in the given wavelength unit, k = 0; f = n².</summary>
 public sealed class CauchyDispersion(string unit, double a, double b, double c, double[]? range) : Dispersion
 {

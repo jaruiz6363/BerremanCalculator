@@ -34,7 +34,7 @@ public static class MaterialEditing
     private static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
 
     public static readonly string[] LawChoices =
-        ["none (constant)", "sellmeier", "cauchy", "lorentz", "drude", "phonon", "phonon_additive", "table", "glass", "conductivity", "polder"];
+        ["none (constant)", "sellmeier", "cauchy", "lorentz", "drude", "tauc_lorentz", "phonon", "phonon_additive", "table", "glass", "conductivity", "polder"];
 
     /// <summary>What a law means, for the line under its choice.</summary>
     public static string LawFormula(string? law) => law switch
@@ -44,6 +44,7 @@ public static class MaterialEditing
         "cauchy" => "n = a + b/λ² + c/λ⁴, k = 0; f = n². λ in the unit (a wavelength).",
         "lorentz" => "f = S/(ω₀² − ω² − iγω), S = amplitude²; centre, γ and amplitude in the unit (a frequency)",
         "drude" => "f = −ω_p²/(ω² + iγω); plasma and γ in the unit (a frequency)",
+        "tauc_lorentz" => "f = ε∞ + χ(E): Im χ = A E0 C (E − Eg)²/(E((E² − E0²)² + C²E²)) above Eg, 0 below; Re χ its Kramers–Kronig transform (Jellison and Modine 1996). E, A, E0, C, Eg in the unit (eV usually).",
         "phonon" => "f = ε∞ Π (ω_L² − ω² − iγ_L ω)/(ω_T² − ω² − iγ_T ω)",
         "phonon_additive" => "f = ε∞ [1 + Σ (ω_T² − ω_L²)/(ω² − ω_T² + iγω)]",
         "table" => "f = (n + ik)² or ε′ + iε″, interpolated linearly in x; refused outside the rows",
@@ -60,6 +61,7 @@ public static class MaterialEditing
         "cauchy" => """{ "unit": "um", "a": 1.5, "b": 0.004, "c": 0 }""",
         "lorentz" => """{ "unit": "cm-1", "amplitude": 500, "center": 500, "gamma": 5 }""",
         "drude" => """{ "unit": "eV", "plasma": 1, "gamma": 0.1 }""",
+        "tauc_lorentz" => """{ "unit": "eV", "eps_inf": 1, "a": 100, "e0": 4.5, "c": 1, "eg": 3.2 }""",
         "phonon" => """{ "unit": "cm-1", "eps_inf": 1, "modes": [ { "to": 500, "lo": 600, "gamma_to": 5, "gamma_lo": 5 } ] }""",
         "phonon_additive" => """{ "unit": "cm-1", "eps_inf": 1, "modes": [ { "to": 500, "lo": 600, "gamma": 5 } ] }""",
         "table" => """{ "unit": "um", "columns": ["x", "n", "k"], "data": [ [0.4, 1.5, 0], [0.8, 1.5, 0] ] }""",

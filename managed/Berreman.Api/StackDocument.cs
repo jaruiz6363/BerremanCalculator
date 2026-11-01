@@ -367,7 +367,7 @@ public static class MaterialParser
 
     /// <summary>The scalar laws, each a key whose value is the law's parameters.</summary>
     public static readonly string[] DispersionKeys =
-        ["sellmeier", "cauchy", "lorentz", "drude", "phonon", "phonon_additive", "table", "glass", "conductivity", "polder"];
+        ["sellmeier", "cauchy", "lorentz", "drude", "tauc_lorentz", "phonon", "phonon_additive", "table", "glass", "conductivity", "polder"];
 
     /// <summary>The keys that give a term's shape (docs/stack-format.md, "General materials").</summary>
     public static readonly string[] ShapeKeys = ["eps", "mu", "rho", "rho_prime", "matrix", "axis", "axis_deg", "axis_uvw"];
@@ -526,6 +526,15 @@ public static class MaterialParser
                     throw new StackFormatException($"{w}: give one of strength (S) or amplitude (√S)");
                 double strength = s.ContainsKey("strength") ? N(s["strength"], $"{w}.strength") : Math.Pow(N(s["amplitude"], $"{w}.amplitude"), 2);
                 return new LorentzDispersion(unit, strength, center, gamma);
+            }
+            case "tauc_lorentz":
+            {
+                if (!IsFrequencyUnit(unit))
+                    throw new StackFormatException($"{w}.unit: a Tauc–Lorentz law is written in energy or frequency (eV, cm-1, THz, GHz), not '{unit}'");
+                double eg = N(s["eg"], $"{w}.eg"), e0 = N(s["e0"], $"{w}.e0"), cc = N(s["c"], $"{w}.c"), aa = N(s["a"], $"{w}.a");
+                if (!(eg > 0) || !(e0 > 0) || !(cc > 0) || !(aa >= 0)) throw new StackFormatException($"{w}: eg, e0 and c must be positive, and a not negative");
+                if (!(cc < 2 * e0)) throw new StackFormatException($"{w}: the broadening c must be below 2 e0 (the closed form needs √(4e0² − c²) real)");
+                return new TaucLorentzDispersion(unit, N(s["eps_inf"], $"{w}.eps_inf"), aa, e0, cc, eg);
             }
             case "cauchy":
             {

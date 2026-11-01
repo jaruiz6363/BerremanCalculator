@@ -128,6 +128,7 @@ A material written as terms may give its crystal `lattice`, `{ "a", "b", "c", "a
 |---|---|---|
 | `lorentz` | `unit` (a frequency: cm-1, eV, THz, GHz); `center`; `gamma` (default 0); `strength` S or `amplitude` A | S/(ω₀² − ω² − iγω), S = A² |
 | `drude` | `unit` (a frequency); `plasma`; `gamma` (default 0) | −ω_p²/(ω² + iγω) |
+| `tauc_lorentz` | `unit` (an energy or frequency, eV usually); `eps_inf`; `a`; `e0`; `c` (below 2 e0); `eg` | ε∞ + χ, Jellison and Modine (1996): absorption only above the gap `eg` ([material-model.md](material-model.md)) |
 | `cauchy` | `unit` (a wavelength); `a`; `b`, `c` (default 0); optional `range` | n², n = a + b/λ² + c/λ⁴ |
 | `conductivity` | `sigma_s_per_m` | iσ/(ωε₀) |
 | `polder` | as the ferrite model, and `part`: `"mu"` or `"kappa"` | the Polder μ or κ |

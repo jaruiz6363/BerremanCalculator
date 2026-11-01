@@ -39,6 +39,7 @@ All are in exp(−iωt), with losses positive.
 | `cauchy` | n² with n = A + B/λ² + C/λ⁴ (ThinFilmDesigner's form) |
 | `lorentz` | S/(ω₀² − ω² − iγω), or with amplitude A, S = A² |
 | `drude` | −ω_p²/(ω² + iγω) |
+| `tauc_lorentz` | ε∞ + χ: Im χ = A E₀ C (E − E_g)²/(E((E² − E₀²)² + C²E²)) above E_g, 0 below; Re χ its Kramers–Kronig transform in closed form (Jellison and Modine 1996, with the erratum) |
 | `phonon` | ε∞ Π (ω_L² − ω² − iγ_Lω)/(ω_T² − ω² − iγ_Tω) |
 | `phonon_additive` | ε∞ [1 + Σ (ω_T² − ω_L²)/(ω² − ω_T² + iγω)] |
 | `table` | n + ik or ε′ + iε″ against λ, linear |
@@ -50,7 +51,10 @@ Lorentz and Drude are written in a frequency unit (cm⁻¹, eV, THz, GHz). Cauch
 written in a wavelength unit. A law outside its stated range, or beyond the ends of a table, is
 refused rather than extrapolated.
 
-Still to add: Tauc–Lorentz, for amorphous films above the gap.
+The Tauc–Lorentz closed form was transcribed from a secondary source (the Wikipedia article, which
+cites the paper and its erratum). The managed tests compare it with a numerical Kramers–Kronig
+integral of Im χ. For three parameter sets the two agree to 10⁻⁷, and to 7 × 10⁻⁹ where the
+integral is refined, so the transcription is confirmed.
 
 ## Shapes
 

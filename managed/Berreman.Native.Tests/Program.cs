@@ -88,6 +88,7 @@ Berreman.Native.Tests.Schubert2016Tests.Run();
 Berreman.Native.Tests.MaterialEditingTests.Run();
 Berreman.Native.Tests.MaterialLibraryTests.Run();
 Berreman.Native.Tests.LatticeTests.Run();
+Berreman.Native.Tests.TaucLorentzTests.Run();
 checks += Berreman.Native.Tests.ApiTests.Checks;
 failures += Berreman.Native.Tests.ApiTests.Failures;
 checks += Berreman.Native.Tests.ClosedFormTests.Checks;
@@ -112,6 +113,8 @@ checks += Berreman.Native.Tests.MaterialLibraryTests.Checks;
 failures += Berreman.Native.Tests.MaterialLibraryTests.Failures;
 checks += Berreman.Native.Tests.LatticeTests.Checks;
 failures += Berreman.Native.Tests.LatticeTests.Failures;
+checks += Berreman.Native.Tests.TaucLorentzTests.Checks;
+failures += Berreman.Native.Tests.TaucLorentzTests.Failures;
 
 Console.WriteLine($"{checks} checks, {failures} failures");
 return failures == 0 ? 0 : 1;
