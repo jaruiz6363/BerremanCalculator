@@ -45,6 +45,40 @@ evaluates on demand. Every edit can be undone (**Ctrl+Z**) and redone (**Ctrl+Y*
   - **The check.** The tests evaluate three of ThinFilmDesigner's samples, read this way, and
     agree with ThinFilmDesigner's own engine to 10⁻¹². One of them is a 52-layer bandpass with
     Cauchy, Sellmeier and catalogue-glass materials.
+- **File > Import a coating from OpticStudio or Optiland…** opens one of the following and lists
+  the coatings it holds:
+  - an OpticStudio coating file, such as COATING.DAT;
+  - an Optiland coating file;
+  - an Optiland lens file, which can have several coated surfaces.
+
+  The coating you choose replaces the stack's layers. The spectral sweep and the angles are kept,
+  and one Undo takes the import back.
+  - **Materials.** They are added under their names in the file. When the stack already has a
+    material of that name, it is used if it is the same; otherwise the file's becomes NAME_2.
+  - **OpticStudio.** Each MATE comes in as its n,k table, which is what OpticStudio itself uses.
+    OpticStudio's negative k for an absorber becomes a positive k here.
+    - A thickness in µm is taken as it is.
+    - A thickness in waves (optical thickness, n d = waves × λ) is counted at the wavelength the
+      file states, if it states one. Otherwise the dialog asks for it, and offers the sweep's
+      first wavelength. In OpticStudio it is the lens's primary wavelength.
+    - A coating that uses a loop index, or a material with no MATE, is listed with the reason it
+      cannot be imported.
+    - IDEAL, TABLE and ENCRYPTED coatings are defined by their effect rather than by layers, so
+      they are not listed.
+  - **Optiland.** Its materials come in as follows:
+    - formulas 1 and 2 as this program's Sellmeier;
+    - formula 5 as a Cauchy;
+    - a catalogue glass this program has as that glass;
+    - an n,k table as a table;
+    - anything else as a finely sampled table, which the notes mention.
+
+    A database material whose file is not on this computer, and an Abbe material, cannot be read,
+    and the reason is given. When the coating gives its media, the dialog offers to use them too.
+  - **Data range.** A table, or a formula with a range, is not extended past its data. If it does
+    not cover the sweep, the status line says so straight away.
+  - **The check.** The tests import OpticStudio's quarter-half-quarter AR (HEAR1) in waves. The
+    reflectance at the design wavelength matches the closed form to 10⁻¹². All 34 layer coatings
+    in OpticStudio 2022's COATING.DAT read.
 - **File > Export a design report…** writes the stack as numbers another program can take:
   - the layers in physical units, with each one's Euler angles and the tilt and azimuth of its z axis;
   - every material as a table over the sweep's range: n and k for an isotropic one, n and k along

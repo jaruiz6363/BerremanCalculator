@@ -239,6 +239,99 @@ public sealed class StackWorkspace
         }
     }
 
+    /// <summary>
+    /// Replaces the stack's layers by an imported coating (an OpticStudio or Optiland file;
+    /// Berreman.Api/CoatingImport.cs), as one undoable edit. Its materials are added under their
+    /// names in the file; a material the stack already has under that name is used when it is the
+    /// same, and otherwise the file's becomes NAME_2. With <paramref name="takeMedia"/>, the media
+    /// the file gives (Optiland gives them; OpticStudio does not) become the stack's. The
+    /// spectral sweep and the angles are kept. Returns notes for the status line.
+    /// </summary>
+    public IReadOnlyList<string> ImportCoating(ImportedCoating coating, bool takeMedia)
+    {
+        var notes = new List<string>(coating.Notes);
+        Edit(m =>
+        {
+            var named = new Dictionary<string, string>();
+            string Merge(string name, System.Text.Json.Nodes.JsonObject spec)
+            {
+                if (named.TryGetValue(name, out var known)) return known;
+                string chosen = name;
+                for (int k = 2; ; ++k)
+                {
+                    var existing = m.Material(chosen);
+                    if (existing is null)
+                    {
+                        m.Materials.Add(new NamedMaterial(chosen, (System.Text.Json.Nodes.JsonObject)spec.DeepClone()));
+                        break;
+                    }
+                    if (System.Text.Json.Nodes.JsonNode.DeepEquals(existing.Spec, spec)) break;
+                    chosen = $"{name}_{k}";
+                }
+                if (chosen != name) notes.Add($"the stack already has a different {name}; the file's is {chosen}");
+                return named[name] = chosen;
+            }
+            foreach (var (name, spec) in coating.Materials) Merge(name, spec);
+            double nmPer = Units.NmPerLength(m.LengthUnit);
+            m.Layers = coating.Layers.Select(l => new LayerModel { Material = named[l.Material], Thickness = Round(l.ThicknessNm / nmPer) }).ToList();
+            if (takeMedia && coating.Incident is { } inc) { m.Incident.Material = Merge(inc.Name, inc.Spec); m.Incident.EulerDeg = [0, 0, 0]; }
+            if (takeMedia && coating.Exit is { } exit) { m.Exit.Material = Merge(exit.Name, exit.Spec); m.Exit.EulerDeg = [0, 0, 0]; }
+        });
+
+        /* A table or a ranged formula is not extended past its data (the engine refuses), so say
+           which imported materials do not cover the sweep, rather than let the evaluation fail. */
+        var (lo, hi) = WavelengthRangeUm();
+        foreach (var name in coating.Materials.Select(x => x.Name).Distinct())
+            if (Model.Material(name) is { } mat && DataRangeUm(mat.Spec) is { } r && (lo < r.Lo - 1e-9 || hi > r.Hi + 1e-9))
+                notes.Add($"{name} has data from {r.Lo.ToString("0.###", Inv)} to {r.Hi.ToString("0.###", Inv)} µm only; the sweep goes from {lo.ToString("0.###", Inv)} to {hi.ToString("0.###", Inv)} µm");
+        return notes;
+    }
+
+    /// <summary>The wavelengths (µm) a table or a ranged Sellmeier or Cauchy covers; null for anything unbounded.</summary>
+    private static (double Lo, double Hi)? DataRangeUm(System.Text.Json.Nodes.JsonObject spec)
+    {
+        try
+        {
+            double Um(double v, string unit) => Units.ToWavelengthNm(v, unit) / 1000;
+            if (spec["table"] is System.Text.Json.Nodes.JsonObject t && t["data"] is System.Text.Json.Nodes.JsonArray rows && rows.Count > 1)
+            {
+                string unit = t["unit"]?.GetValue<string>() ?? "nm";
+                double a = Um(rows[0]![0]!.GetValue<double>(), unit), b = Um(rows[^1]![0]!.GetValue<double>(), unit);
+                return (Math.Min(a, b), Math.Max(a, b));
+            }
+            foreach (var law in new[] { "sellmeier", "cauchy" })
+                if (spec[law] is System.Text.Json.Nodes.JsonObject f && f["range"] is System.Text.Json.Nodes.JsonArray r)
+                {
+                    string unit = f["unit"]?.GetValue<string>() ?? "nm";
+                    double a = Um(r[0]!.GetValue<double>(), unit), b = Um(r[1]!.GetValue<double>(), unit);
+                    return (Math.Min(a, b), Math.Max(a, b));
+                }
+        }
+        catch (Exception e) when (e is StackFormatException or InvalidOperationException or FormatException) { }
+        return null;
+    }
+
+    /// <summary>The first wavelength of the sweep in nm, or null when the spectral axis does not
+    /// convert (an import in waves asks for one, and offers this).</summary>
+    public double? FirstWavelengthNm()
+    {
+        try { return Units.ToWavelengthNm(StackDocument.Values(SweepText.Parse(Model.Spectral, "spectral"), "spectral")[0], Model.SpectralUnit); }
+        catch (StackFormatException) { return null; }
+    }
+
+    /// <summary>The sweep's wavelength range in µm, where an Optiland formula with no range of its
+    /// own is tabulated; 0.4 to 0.8 µm when the sweep does not convert.</summary>
+    public (double Lo, double Hi) WavelengthRangeUm()
+    {
+        try
+        {
+            var nm = StackDocument.Values(SweepText.Parse(Model.Spectral, "spectral"), "spectral").Select(v => Units.ToWavelengthNm(v, Model.SpectralUnit)).ToArray();
+            double lo = nm.Min() / 1000, hi = nm.Max() / 1000;
+            return hi > lo ? (lo, hi) : (lo * 0.9, hi * 1.1);
+        }
+        catch (StackFormatException) { return (0.4, 0.8); }
+    }
+
     /// <summary>The smallest of 1, 2, 5 times a power of ten that is at least x.</summary>
     internal static double RoundStep(double x)
     {

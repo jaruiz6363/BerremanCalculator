@@ -55,6 +55,7 @@ public partial class MainWindow : Window
         ExportItem.Click += async (_, _) => await Export();
         ExportPlotItem.Click += async (_, _) => await ExportPlot();
         ImportTfdItem.Click += async (_, _) => await ImportTfd();
+        ImportCoatingItem.Click += async (_, _) => await ImportCoating();
         ExportReportItem.Click += async (_, _) => await ExportReport();
         ExitItem.Click += (_, _) => Close();
         UndoItem.Click += (_, _) => _ws.Undo();
@@ -451,6 +452,28 @@ public partial class MainWindow : Window
     }
 
     private static readonly FilePickerFileType TfdFiles = new("ThinFilmDesigner designs") { Patterns = ["*.tfd"] };
+
+    private static readonly FilePickerFileType CoatingFiles = new("OpticStudio coating files and Optiland files (.dat, .json)") { Patterns = ["*.dat", "*.DAT", "*.json"] };
+
+    private async Task ImportCoating()
+    {
+        var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Import a coating from OpticStudio or Optiland", FileTypeFilter = [CoatingFiles, FilePickerFileTypes.All],
+        });
+        if (files.Count == 0 || files[0].TryGetLocalPath() is not { } path) return;
+        var dialog = new CoatingImportDialog(await File.ReadAllBytesAsync(path), Path.GetFileName(path), _ws.FirstWavelengthNm(), _ws.WavelengthRangeUm());
+        if (await dialog.ShowDialog<CoatingChoice?>(this) is { } choice) ApplyCoating(choice);
+    }
+
+    /// <summary>A coating chosen in the import dialog, applied as one undoable edit; the tests call it directly.</summary>
+    public void ApplyCoating(CoatingChoice choice)
+    {
+        IReadOnlyList<string> notes = [];
+        Try(() => notes = _ws.ImportCoating(choice.Coating, choice.TakeMedia));
+        string said = notes.Count == 0 ? "Undo takes them back." : string.Join(". ", notes.Select(n => char.ToUpper(n[0]) + n[1..])) + ".";
+        Status($"{choice.Coating.Name}: {choice.Coating.Layers.Count} layers imported. {said}");
+    }
 
     private async Task ImportTfd()
     {

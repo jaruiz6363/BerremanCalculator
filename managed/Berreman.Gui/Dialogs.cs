@@ -439,3 +439,111 @@ public sealed class SampleBrowser : Window
         public override string ToString() => Info.Entry.Name;
     }
 }
+
+/// <summary>What the coating dialog decided: the coating read, and whether to take its media.</summary>
+public sealed record CoatingChoice(ImportedCoating Coating, bool TakeMedia);
+
+/// <summary>
+/// A coating from an OpticStudio coating file (COATING.DAT and the like) or an Optiland file (a
+/// coating alone, or a lens file with coated surfaces), chosen from the file's list. A ZEMAX
+/// coating in waves asks for the wavelength they are counted at, unless the file says; an Optiland
+/// coating that gives its media offers them. Returns the choice; the window applies it.
+/// </summary>
+public sealed class CoatingImportDialog : Window
+{
+    public CoatingImportDialog(byte[] bytes, string fileName, double? firstWavelengthNm, (double Lo, double Hi) gridUm)
+    {
+        Title = $"Import a coating from {fileName}";
+        Width = 620;
+        SizeToContent = SizeToContent.Height;
+        CanResize = false;
+        WindowStartupLocation = WindowStartupLocation.CenterOwner;
+
+        string text = System.Text.Encoding.UTF8.GetString(bytes).TrimStart('﻿', ' ', '\t', '\r', '\n');
+        bool optiland = text.StartsWith('{');
+        var list = new ListBox { Name = "CoatingList", Height = 200 };
+        var waves = new TextBox
+        {
+            Name = "WavelengthBox", Width = 90, TextAlignment = TextAlignment.Right,
+            Text = (firstWavelengthNm ?? 550).ToString("0.###", CultureInfo.InvariantCulture),
+        };
+        var wavesRow = Dialogs.Row(Dialogs.Label("Thicknesses are in waves, counted at"), waves, Dialogs.Label("nm"));
+        var media = new CheckBox { Name = "MediaBox", IsChecked = true };
+        var detail = Dialogs.Hint("");
+        var error = new TextBlock { Name = "ErrorText", Foreground = Brushes.Firebrick, TextWrapping = TextWrapping.Wrap };
+
+        IReadOnlyList<CoatingInFile> found = [];
+        try { found = optiland ? OptilandCoatingReader.List(text, gridUm) : ZemaxCoatingReader.List(bytes); }
+        catch (StackFormatException e) { error.Text = e.Message; }
+        list.ItemsSource = found.Select((c, i) => new Item(c, i)).ToList();
+        if (found.Count == 0 && string.IsNullOrEmpty(error.Text)) error.Text = "The file holds no coating made of layers.";
+
+        void Show()
+        {
+            error.Text = "";
+            wavesRow.IsVisible = media.IsVisible = false;
+            detail.Text = "";
+            if (list.SelectedItem is not Item it) return;
+            if (it.Coating.Problem is { } why) { error.Text = $"{it.Coating.Name} cannot be imported: it {why}."; return; }
+            try
+            {
+                if (optiland)
+                {
+                    var c = OptilandCoatingReader.Read(text, it.Index, gridUm);
+                    if (c.Incident is not null || c.Exit is not null)
+                    {
+                        media.Content = $"Also use the coating's media: {c.Incident?.Name ?? "(the stack's own)"} and {c.Exit?.Name ?? "(the stack's own)"}";
+                        media.IsVisible = true;
+                    }
+                    detail.Text = string.Join(". ", c.Notes.Select(n => char.ToUpper(n[0]) + n[1..]));
+                }
+                else
+                {
+                    var (inWaves, stated) = ZemaxCoatingReader.Waves(bytes, it.Coating.Name);
+                    wavesRow.IsVisible = inWaves && stated is null;
+                    if (inWaves && stated is { } s)
+                        detail.Text = $"Its thicknesses are in waves, counted at {s.ToString("0.###", CultureInfo.InvariantCulture)} nm, which the file says it was designed at.";
+                }
+            }
+            catch (StackFormatException e) { error.Text = e.Message; }
+        }
+        list.SelectionChanged += (_, _) => Show();
+        list.DoubleTapped += (_, _) => Ok();
+
+        var buttons = Dialogs.Buttons(this, Ok);
+        ((Button)buttons.Children[0]).Content = "Import";
+        Content = new StackPanel
+        {
+            Margin = new Thickness(16), Spacing = 8,
+            Children =
+            {
+                new TextBlock { Text = optiland ? "Coatings in this Optiland file" : "Coatings in this OpticStudio coating file", FontWeight = FontWeight.SemiBold },
+                list, wavesRow, media, detail,
+                Dialogs.Hint("The coating replaces the stack's layers. Its materials are added under their names in the file; the spectral sweep and the angles are kept. Undo takes the import back."),
+                error, buttons,
+            },
+        };
+        if (found.Count > 0) list.SelectedIndex = Math.Max(0, found.ToList().FindIndex(c => c.Problem is null));
+        else Show();
+
+        bool Ok()
+        {
+            if (list.SelectedItem is not Item it || it.Coating.Problem is not null) return false;
+            try
+            {
+                var c = optiland
+                    ? OptilandCoatingReader.Read(text, it.Index, gridUm)
+                    : ZemaxCoatingReader.Read(bytes, it.Coating.Name, wavesRow.IsVisible ? Dialogs.Read(waves, "the wavelength") : null);
+                Close(new CoatingChoice(c, media.IsVisible && media.IsChecked == true));
+                return true;
+            }
+            catch (StackFormatException e) { error.Text = e.Message; return false; }
+        }
+    }
+
+    private sealed record Item(CoatingInFile Coating, int Index)
+    {
+        public override string ToString() =>
+            $"{Coating.Name}   ({Coating.Layers} layer{(Coating.Layers == 1 ? "" : "s")}{(Coating.Problem is null ? "" : "; cannot be imported")})";
+    }
+}

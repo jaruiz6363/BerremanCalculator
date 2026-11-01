@@ -690,6 +690,64 @@ public static class WindowTests
         });
     }
 
+    public static void ACoatingIsImportedFromOpticStudioAndOptiland(Harness h, HeadlessUnitTestSession session)
+    {
+        h.Section("File > Import a coating: an OpticStudio coating file, then an Optiland coating with its media");
+        WithWindow(session, w =>
+        {
+            var e = new System.Text.UnicodeEncoding(false, true);
+            byte[] dat = [.. e.GetPreamble(), .. e.GetBytes(string.Join("\r\n",
+                "MATE MGF2", ".400 1.38 0", ".700 1.38 0", "", "COAT AR", "MGF2 .25", "", "COAT LOOPED", "MGF2 .25 0 3", "", "COAT AR_UM", "MGF2 .1 1", ""))];
+            var d = new CoatingImportDialog(dat, "coating.dat", 600, (0.4, 0.8));
+            var shown = d.ShowDialog<CoatingChoice?>(w);
+            Pump(d);
+            var list = Find<ListBox>(d, "CoatingList");
+            h.Expect(list.ItemCount == 3 && list.SelectedIndex == 0, $"the file's three coatings are listed, the first selected ({list.ItemCount})");
+            h.Expect(Find<TextBox>(d, "WavelengthBox").IsEffectivelyVisible && Find<TextBox>(d, "WavelengthBox").Text == "600",
+                     "AR is in waves: the wavelength is asked, offering the sweep's first");
+            list.SelectedIndex = 1;
+            Pump(d);
+            h.Expect(Find<TextBlock>(d, "ErrorText").Text!.Contains("loop"), $"LOOPED says why it cannot be imported ({Find<TextBlock>(d, "ErrorText").Text})");
+            list.SelectedIndex = 0;
+            Pump(d);
+            if (Environment.GetEnvironmentVariable("BC_SHOT_DIR") is { Length: > 0 } shots) d.CaptureRenderedFrame()?.Save(System.IO.Path.Combine(shots, "coating-import.png"));
+            Find<TextBox>(d, "WavelengthBox").Text = "552";
+            Click(d, Find<Button>(d, "OkButton"));
+            Pump(w);
+            h.Expect(shown.IsCompleted && shown.Result is { } c && Math.Abs(c.Coating.Layers[0].ThicknessNm - 0.25 * 552 / 1.38) < 1e-9,
+                     "Import reads it at the wavelength typed: a quarter wave of MgF2 at 552 nm");
+            if (shown.Result is not { } zemax) return;
+            w.ApplyCoating(zemax);
+            Pump(w);
+            h.Expect(Rows(w).Count == 1 && Rows(w)[0].Material == "MGF2" && Rows(w)[0].TypeText == "isotropic · table",
+                     $"the layer table holds the coating ({Rows(w).Count} rows, {Rows(w).FirstOrDefault()?.TypeText})");
+            h.Expect(Find<SelectableTextBlock>(w, "StatusText").Text!.Contains("1 layers imported"), $"and the status says so ({Find<SelectableTextBlock>(w, "StatusText").Text})");
+
+            var optiland = """
+                {"type": "ThinFilmCoating",
+                 "material_pre": {"type": "IdealMaterial", "index": 1.0, "absorp": 0.0},
+                 "material_post": {"type": "IdealMaterial", "index": 1.52, "absorp": 0.0},
+                 "layers": [{"material": {"type": "IdealMaterial", "index": 2.3, "absorp": 0.0}, "thickness_nm": 60.0},
+                            {"material": {"type": "IdealMaterial", "index": 1.46, "absorp": 0.0}, "thickness_nm": 95.0}]}
+                """;
+            var d2 = new CoatingImportDialog(System.Text.Encoding.UTF8.GetBytes(optiland), "ar.json", 600, (0.4, 0.8));
+            var shown2 = d2.ShowDialog<CoatingChoice?>(w);
+            Pump(d2);
+            var mediaBox = Find<CheckBox>(d2, "MediaBox");
+            h.Expect(mediaBox.IsEffectivelyVisible && mediaBox.IsChecked == true && (mediaBox.Content as string)!.Contains("n=1.52"),
+                     $"an Optiland coating offers its media ({mediaBox.Content})");
+            Click(d2, Find<Button>(d2, "OkButton"));
+            Pump(w);
+            if (shown2.Result is not { } opt) { h.Expect(false, "the Optiland dialog returned a coating"); return; }
+            w.ApplyCoating(opt);
+            Pump(w);
+            h.Expect(Rows(w).Count == 2 && w.Workspace.Model.Exit.Material == "n=1.52" && w.Workspace.Model.Incident.Material == "air",
+                     $"its layers and its media are the stack's ({w.Workspace.Model.Incident.Material} / {w.Workspace.Model.Exit.Material})");
+            Click(w, Find<Button>(w, "UndoButton"));
+            h.Expect(Rows(w).Count == 1 && Rows(w)[0].Material == "MGF2", "Undo takes the whole import back");
+        });
+    }
+
     public static void MediaShowOrientationOnlyWhenAnisotropic(Harness h, HeadlessUnitTestSession session)
     {
         h.Section("an isotropic incident or exit medium shows no φ, θ, ψ: turning it changes nothing");
