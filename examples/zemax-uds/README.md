@@ -81,6 +81,27 @@ in place of the bare interface, and the film would then be counted together with
 Not handled: a mirror surface (the ray is reflected, and its polarization left to OpticStudio), and
 absorbing media either side (OpticStudio passes real indices).
 
+## Example lens files
+
+Two lens files open in OpticStudio once the DLL is in its `Surfaces` folder. Each is a 2 mm N-BK7
+plate. The film is on its front surface, which is surface 1, of type User Defined. The beam is
+10 mm in diameter at fields of 0° and 20°. The input polarization is circular: Jx = Jy = 1, with
+a Y phase of 90°. To see the other hand, set the Y phase to −90° in System Explorer › Polarization.
+
+- **`us_berreman_cholesteric.zmx`**: a right-handed cholesteric. Its pitch is 0.38 µm, its
+  thickness 3.8 µm, nₒ = 1.5 and nₑ = 1.7. Its band is centred near 0.6 µm, so 0.6 µm is in the band
+  and 0.7 µm is outside it.
+- **`us_berreman_oplate.zmx`**: a 2.3 µm O-plate, nₒ = 1.52 and nₑ = 1.63, with its axis tilted
+  35° at azimuth 50°.
+
+Transmitted intensity through the cholesteric file, from OpticStudio's polarization ray trace
+(Y phase +90° / −90°). The figures include the plate's uncoated back surface:
+
+| λ | 0° field | 20° field |
+|---|---|---|
+| 0.6 µm (in band) | 0.906 / 0.048 | 0.893 / 0.061 |
+| 0.7 µm (outside) | 0.888 / 0.762 | 0.920 / 0.899 |
+
 ## Building
 
 The DLL is a target of the main CMake build:
