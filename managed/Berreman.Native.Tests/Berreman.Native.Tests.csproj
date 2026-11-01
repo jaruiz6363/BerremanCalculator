@@ -23,7 +23,7 @@
 
   <!-- The literature samples the suite checks, embedded so there is no path to get wrong. -->
   <ItemGroup>
-    <EmbeddedResource Include="..\..\samples\literature\**\*.json" LogicalName="samples/%(RecursiveDir)%(Filename)%(Extension)" />
+    <EmbeddedResource Include="..\..\samples\literature\**\*.berr" LogicalName="samples/%(RecursiveDir)%(Filename)%(Extension)" />
     <EmbeddedResource Include="..\..\tests\fixtures\**\*.tfd;..\..\tests\fixtures\**\*.json" LogicalName="fixtures/%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 

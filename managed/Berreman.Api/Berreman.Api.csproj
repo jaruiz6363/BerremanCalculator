@@ -21,7 +21,7 @@
   <!-- The literature samples, copied beside every program that uses the API, under samples/:
        the GUI lists them, and the CLI and the MCP server can be pointed at them. -->
   <ItemGroup>
-    <None Include="..\..\samples\**\*.json" Link="samples\%(RecursiveDir)%(Filename)%(Extension)">
+    <None Include="..\..\samples\**\*.berr" Link="samples\%(RecursiveDir)%(Filename)%(Extension)">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

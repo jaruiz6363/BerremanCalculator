@@ -96,7 +96,7 @@ internal static class Schubert2016Tests
     private static string SampleText()
     {
         var asm = Assembly.GetExecutingAssembly();
-        var name = asm.GetManifestResourceNames().First(n => n.Replace('\\', '/').EndsWith("samples/schubert-2016/ga2o3-010.json"));
+        var name = asm.GetManifestResourceNames().First(n => n.Replace('\\', '/').EndsWith("samples/schubert-2016/ga2o3-010.berr"));
         using var st = asm.GetManifestResourceStream(name)!;
         return new StreamReader(st).ReadToEnd();
     }
@@ -106,7 +106,7 @@ internal static class Schubert2016Tests
     private static JsonObject Spec()
     {
         var asm = Assembly.GetExecutingAssembly();
-        var name = asm.GetManifestResourceNames().First(n => n.Replace('\\', '/').EndsWith("samples/schubert-2016/ga2o3-010.json"));
+        var name = asm.GetManifestResourceNames().First(n => n.Replace('\\', '/').EndsWith("samples/schubert-2016/ga2o3-010.berr"));
         using var s = asm.GetManifestResourceStream(name)!;
         var root = JsonNode.Parse(new StreamReader(s).ReadToEnd(), documentOptions: new() { CommentHandling = System.Text.Json.JsonCommentHandling.Skip })!;
         return root["materials"]!["Ga2O3"]!.AsObject();

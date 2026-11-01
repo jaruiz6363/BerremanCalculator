@@ -9,18 +9,18 @@ public sealed record SampleEntry(string Path, string Name);
 
 public static class SampleCatalog
 {
-    /// <summary>The samples folder beside the program: samples/literature/&lt;paper&gt;/&lt;stack&gt;.json.</summary>
+    /// <summary>The samples folder beside the program: samples/literature/&lt;paper&gt;/&lt;stack&gt;.berr.</summary>
     public static string DefaultRoot => System.IO.Path.Combine(AppContext.BaseDirectory, "samples");
 
     public static IReadOnlyList<SampleEntry> List(string root)
     {
         if (!Directory.Exists(root)) return [];
-        return Directory.EnumerateFiles(root, "*.json", SearchOption.AllDirectories)
+        return Directory.EnumerateFiles(root, "*.berr", SearchOption.AllDirectories)
             .Select(p =>
             {
                 var rel = System.IO.Path.GetRelativePath(root, p).Replace('\\', '/');
                 if (rel.StartsWith("literature/", StringComparison.Ordinal)) rel = rel["literature/".Length..];
-                return new SampleEntry(p, rel[..^".json".Length].Replace("/", " / "));
+                return new SampleEntry(p, rel[..^".berr".Length].Replace("/", " / "));
             })
             .OrderBy(e => e.Name, StringComparer.Ordinal)
             .ToList();

@@ -180,7 +180,7 @@ public static class WindowTests
             Click(w, Find<Button>(w, "UndoButton"));
             Click(w, Find<Button>(w, "UndoButton"));
             h.Expect(w.Workspace.Text == StackModel.FromJson(Sample("mansuripur-1990 / quadrilayer")).ToJson(), "three Undos give back the sample exactly");
-            h.Expect(w.Title?.EndsWith("quadrilayer.json") == true, $"and the title no longer says it changed ({w.Title})");
+            h.Expect(w.Title?.EndsWith("quadrilayer.berr") == true, $"and the title no longer says it changed ({w.Title})");
         });
     }
 
@@ -542,7 +542,7 @@ public static class WindowTests
         {
             w.ImportTfd(text, "AR-visible");
             Pump(w);
-            h.Expect(w.Workspace.Model.Layers.Count == 4 && w.Workspace.Name == "AR-visible.json" && Rows(w).Count == 4, "its four layers are the table's");
+            h.Expect(w.Workspace.Model.Layers.Count == 4 && w.Workspace.Name == "AR-visible.berr" && Rows(w).Count == 4, "its four layers are the table's");
             h.Expect(w.Workspace.Model.Notes.Contains("merit function"), "and its notes say what was not carried over");
         });
     }

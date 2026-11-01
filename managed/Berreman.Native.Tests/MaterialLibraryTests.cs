@@ -122,8 +122,8 @@ internal static class MaterialLibraryTests
         var path = Path.Combine(Path.GetTempPath(), $"berreman-user-{Guid.NewGuid():N}.json");
         try
         {
-            var ga = ApiTests.Sample("schubert-2016/ga2o3-010.json");
-            var spec = JsonNode.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "samples", "literature", "schubert-2016", "ga2o3-010.json")))!["materials"]!["Ga2O3"]!.AsObject();
+            var ga = ApiTests.Sample("schubert-2016/ga2o3-010.berr");
+            var spec = JsonNode.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "samples", "literature", "schubert-2016", "ga2o3-010.berr")))!["materials"]!["Ga2O3"]!.AsObject();
             MaterialLibrary.SaveToUserFile("Ga2O3 (Schubert 2016)", spec, path);
             MaterialLibrary.SaveToUserFile("glass", JsonNode.Parse("""{ "n": 1.5 }""")!.AsObject(), path);
             MaterialLibrary.SaveToUserFile("glass", JsonNode.Parse("""{ "n": 1.52 }""")!.AsObject(), path);

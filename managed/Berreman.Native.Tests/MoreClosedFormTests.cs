@@ -48,7 +48,7 @@ internal static class MoreClosedFormTests
     /// </summary>
     private static void CatarinaPolarKerr()
     {
-        var doc = ApiTests.Sample("catarina-2020/polar-kerr-film.json");
+        var doc = ApiTests.Sample("catarina-2020/polar-kerr-film.berr");
         var res = Evaluator.Evaluate(doc);
         var film = doc.Materials["film"].At(500, 0);
         Complex exx = film[0, 0], exy = film[0, 1];
@@ -117,7 +117,7 @@ internal static class MoreClosedFormTests
         }
         Small(worstFresnel, 1e-14, "Lakhtakia Eqs. 22–29 as transcribed reduce to Fresnel at Γ = 0");
 
-        var doc = ApiTests.Sample("lakhtakia-2018/magnetoelectric-halfspace.json");
+        var doc = ApiTests.Sample("lakhtakia-2018/magnetoelectric-halfspace.berr");
         var res = Evaluator.Evaluate(doc);
         double worst = 0;
         foreach (var p in res.Points)
@@ -137,7 +137,7 @@ internal static class MoreClosedFormTests
     /// </summary>
     private static void SchubertBiaxialFilm()
     {
-        var doc = ApiTests.Sample("schubert-1996/biaxial-film.json");
+        var doc = ApiTests.Sample("schubert-1996/biaxial-film.berr");
         var res = Evaluator.Evaluate(doc);
         Complex nx = new(1.6, 0.01), ny = new(1.7, 0.02), nz = new(1.5, 0.005);
         Complex sx = new(2.0, 0.05), sy = new(2.1, 0.03), sz = new(1.9, 0.04);

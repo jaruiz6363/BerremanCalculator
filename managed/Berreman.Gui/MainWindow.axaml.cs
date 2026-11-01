@@ -26,7 +26,9 @@ namespace Berreman.Gui;
 public partial class MainWindow : Window
 {
     private static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
-    private static readonly FilePickerFileType StackFiles = new("Stack files") { Patterns = ["*.json"] };
+    /* Stack files are saved as .berr. Their content is JSON, so Open also takes a stack named .json. */
+    private static readonly FilePickerFileType StackFiles = new("BerremanCalculator stacks (.berr)") { Patterns = ["*.berr"] };
+    private static readonly FilePickerFileType OpenableStacks = new("BerremanCalculator stacks (.berr, .json)") { Patterns = ["*.berr", "*.json"] };
 
     private readonly StackWorkspace _ws = new();
     private EvaluationResult? _result;
@@ -450,7 +452,7 @@ public partial class MainWindow : Window
     public void ImportTfd(string text, string name)
     {
         var model = TfdFile.Read(text);
-        _ws.Load(model.ToJson(), null, name + ".json");
+        _ws.Load(model.ToJson(), null, name + ".berr");
         Status($"'{name}' read from ThinFilmDesigner: {model.Layers.Count} layers. The merit function is not carried over; Save as… keeps the stack.");
     }
 
@@ -473,7 +475,7 @@ public partial class MainWindow : Window
     /// <summary>A sample opened as a copy, with no file of its own: Save asks where.</summary>
     public void LoadSample(string json, string name)
     {
-        _ws.Load(json, null, name.Replace(" / ", "-") + ".json");
+        _ws.Load(json, null, name.Replace(" / ", "-") + ".berr");
         Status($"Sample {name}: a copy; Save as… keeps it.");
     }
 
@@ -481,7 +483,7 @@ public partial class MainWindow : Window
     {
         var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
-            Title = "Open a stack file", AllowMultiple = false, FileTypeFilter = [StackFiles],
+            Title = "Open a stack file", AllowMultiple = false, FileTypeFilter = [OpenableStacks],
         });
         if (files.Count == 1 && files[0].TryGetLocalPath() is { } path) await OpenPath(path);
     }
@@ -493,8 +495,8 @@ public partial class MainWindow : Window
         {
             var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
             {
-                Title = "Save the stack file", DefaultExtension = "json", FileTypeChoices = [StackFiles],
-                SuggestedFileName = _ws.Name.EndsWith(".json") ? _ws.Name : "stack.json",
+                Title = "Save the stack file", DefaultExtension = "berr", FileTypeChoices = [StackFiles],
+                SuggestedFileName = _ws.Name == "untitled" ? "stack.berr" : Path.ChangeExtension(_ws.Name, ".berr"),
             });
             if (file?.TryGetLocalPath() is not { } chosen) return false;
             path = chosen;

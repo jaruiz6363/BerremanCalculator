@@ -97,7 +97,7 @@ internal static class TfdTests
         Check(drift < 1e-6, $"a stack of Sellmeier, Cauchy, an ε table and a glass survives the round trip ({drift:G3})");
 
         bool refused = false;
-        try { TfdFile.Write(StackModel.FromJson(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "samples", "literature", "schubert-2016", "ga2o3-010.json")))); }
+        try { TfdFile.Write(StackModel.FromJson(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "samples", "literature", "schubert-2016", "ga2o3-010.berr")))); }
         catch (StackFormatException e) { refused = e.Message.Contains("Ga2O3"); }
         Check(refused, "an anisotropic stack is refused, the material named");
     }

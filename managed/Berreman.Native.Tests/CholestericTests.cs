@@ -208,7 +208,7 @@ internal static class CholestericTests
 
     private static StackDocument Ting(int perPitch, string hand = "right", double[]? spectral = null)
     {
-        var doc = ApiTests.Sample("ting-2006/cholesteric-fig2.json");
+        var doc = ApiTests.Sample("ting-2006/cholesteric-fig2.berr");
         var l = doc.Layers[0];
         var layers = new List<StackLayer>
         {
@@ -257,7 +257,7 @@ internal static class CholestericTests
     /// </summary>
     private static void TingFig2Band()
     {
-        var res = Evaluator.Evaluate(ApiTests.Sample("ting-2006/cholesteric-fig2.json"));
+        var res = Evaluator.Evaluate(ApiTests.Sample("ting-2006/cholesteric-fig2.berr"));
         var pts = res.Points.Select(p => (L: p.Spectral, R: (p.Power[0] + p.Power[3]) / 2)).ToList();
         var peak = pts.MaxBy(x => x.R);
         double RAt(double l) => pts.MinBy(x => Math.Abs(x.L - l)).R;

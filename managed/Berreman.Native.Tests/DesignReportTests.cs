@@ -27,7 +27,7 @@ internal static class DesignReportTests
 
     public static void Run()
     {
-        var ga = Sample("schubert-2016/ga2o3-010.json");
+        var ga = Sample("schubert-2016/ga2o3-010.berr");
         var text = DesignReport.Build(ga, 400, 800, 100);
         var rows = Table(text, "Ga2O3");
         var m = ga.ToDocument().Materials["Ga2O3"].At(1e7 / 500, 0);
@@ -38,10 +38,10 @@ internal static class DesignReportTests
         Check(Table(text, "air").All(r => r.Length == 3 && r[1] == 1 && r[2] == 0), "an isotropic material is n, k");
         Check(text.Contains("exit\tGa2O3\t\t62.5\t0.4\t0"), "the exit medium's Euler angles are listed");
 
-        var sic = DesignReport.Build(Sample("passler-2017/sic-otto.json"), 700, 1000, 100);
+        var sic = DesignReport.Build(Sample("passler-2017/sic-otto.berr"), 700, 1000, 100);
         Check(Table(sic, "SiC").All(r => r.Length == 7 && r[1] == r[3] && r[1] != r[5]), "a uniaxial crystal: n, k along x, y, z, x and y equal");
 
-        var krs = DesignReport.Build(Sample("passler-2017/sic-otto.json"), 100, 300, 100);
+        var krs = DesignReport.Build(Sample("passler-2017/sic-otto.berr"), 100, 300, 100);
         Check(krs.Contains("# 100: ") && krs.Contains("outside the Sellmeier formula's range"), "a value outside a material's range is a comment saying why");
 
         var (f, t, s) = DesignReport.DefaultRange(ga);

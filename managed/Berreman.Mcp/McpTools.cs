@@ -33,7 +33,7 @@ public sealed partial class McpServer
     {
         var o = new JsonObject
         {
-            ["path"] = S("A stack file (.json)."),
+            ["path"] = S("A stack file (.berr; the content is JSON)."),
             ["stack"] = S("The stack JSON itself, instead of a path."),
         };
         foreach (var (k, v) in more) o[k] = v!.DeepClone();

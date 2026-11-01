@@ -34,7 +34,7 @@ static int Help()
         berreman — a Berreman 4x4 evaluator for stratified media
 
         Commands:
-          evaluate <stack.json> [options]   evaluate a stack file and print a table
+          evaluate <stack.berr> [options]   evaluate a stack file and print a table
               --jones          add the Jones coefficients (re, im)
               --ellipsometry   add Psi and Delta (degrees), from r_pp / r_ss
               --absorption     add the absorption in each layer
@@ -42,9 +42,9 @@ static int Help()
               --quantities <a,b,...>  add these quantities by name (berreman quantities lists them)
               --csv <file>     write the table to a CSV file instead of the console
           quantities                        every quantity --quantities can name, with what it is
-          report <stack.json> [--from a --to b --step s] [--out file]
+          report <stack.berr> [--from a --to b --step s] [--out file]
                                             the layers and every material as tables (docs/user-guide.md)
-          convert <in> <out>                a ThinFilmDesigner design (.tfd) to a stack file (.json),
+          convert <in> <out>                a ThinFilmDesigner design (.tfd) to a stack file (.berr),
                                             or an isotropic stack to a .tfd (docs/user-guide.md)
           status                            whether the native engine loads, and its ABI version
           help                              this text
@@ -85,7 +85,7 @@ static int Convert(string from, string to)
     bool tfdIn = from.EndsWith(".tfd", StringComparison.OrdinalIgnoreCase), tfdOut = to.EndsWith(".tfd", StringComparison.OrdinalIgnoreCase);
     if (tfdIn == tfdOut)
     {
-        Console.Error.WriteLine("berreman: convert reads a .tfd and writes a .json, or reads a .json and writes a .tfd");
+        Console.Error.WriteLine("berreman: convert reads a .tfd and writes a .berr, or reads a .berr and writes a .tfd");
         return 2;
     }
     var text = File.ReadAllText(from);

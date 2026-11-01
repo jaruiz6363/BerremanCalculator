@@ -110,7 +110,7 @@ internal static class ApiTests
     {
         /* KRS5, Rodney and Malitson's Sellmeier formula: 2.37069 at 10 µm, the value in Passler's
          * table at 1000 cm⁻¹; and refused outside its stated range. */
-        var krs5 = Sample("passler-2017/sic-otto.json").Materials["KRS5"];
+        var krs5 = Sample("passler-2017/sic-otto.berr").Materials["KRS5"];
         Near(Complex.Sqrt(krs5.At(10_000, 0)[0, 0]).Real, 2.37069, 5e-6, "KRS5 Sellmeier at 10 µm");
         bool refused = false;
         try { krs5.At(100_000, 0); } catch (StackFormatException) { refused = true; }
@@ -118,7 +118,7 @@ internal static class ApiTests
 
         /* Phonon oscillators in exp(−iωt): Im ε > 0 (absorbing), and Re ε < 0 in the Reststrahlen
          * band. 6H-SiC ordinary: TO 794.78, LO 967.93 cm⁻¹. */
-        var sic = Sample("passler-2017/sic-otto.json").Materials["SiC"];
+        var sic = Sample("passler-2017/sic-otto.berr").Materials["SiC"];
         foreach (var w in new[] { 600.0, 794.78, 850, 967.93, 1200 })
         {
             var e = sic.At(1e7 / w, 0)[0, 0];
@@ -171,7 +171,7 @@ internal static class ApiTests
     /// </summary>
     private static void MansuripurQuadrilayer()
     {
-        var doc = Sample("mansuripur-1990/quadrilayer.json");
+        var doc = Sample("mansuripur-1990/quadrilayer.berr");
         var r = Evaluator.Evaluate(doc);
         Check(r.Status == BcStatus.Ok, "Mansuripur quadrilayer evaluates");
 

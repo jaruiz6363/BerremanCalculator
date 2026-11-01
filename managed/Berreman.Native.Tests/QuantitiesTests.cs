@@ -52,7 +52,7 @@ internal static class QuantitiesTests
         Check(standard, "isotropic: Mr = [[1, −N, 0, 0], [−N, 1, 0, 0], [0, 0, C, −S], [0, 0, S, C]] with N = cos 2Ψ, C = sin 2Ψ cos Δ, S = sin 2Ψ sin Δ");
 
         /* Any Jones-derived matrix: Σ M_ij² = 4 M11². On the monoclinic sample, off-diagonal blocks and all. */
-        var ga = Evaluator.Evaluate(ApiTests.Sample("schubert-2016/ga2o3-010.json"));
+        var ga = Evaluator.Evaluate(ApiTests.Sample("schubert-2016/ga2o3-010.berr"));
         double worst = 0, offBlock = 0;
         foreach (var p in ga.Points.Where((_, i) => i % 50 == 0))
         {

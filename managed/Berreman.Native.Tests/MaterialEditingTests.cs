@@ -128,7 +128,7 @@ internal static class MaterialEditingTests
 
     private static void ResponseAndChecks()
     {
-        var ga = ApiTests.Sample("schubert-2016/ga2o3-010.json").Materials["Ga2O3"];
+        var ga = ApiTests.Sample("schubert-2016/ga2o3-010.berr").Materials["Ga2O3"];
         var x = MaterialResponse.Grid(150, 1200, 106);
         var angles = MaterialResponse.Curves(ga, x, "cm-1", ResponseQuantity.AxisAngles);
         Check(angles.Count == 6 && angles.All(c => c.Y.Length == x.Length), "six angle curves");
@@ -146,7 +146,7 @@ internal static class MaterialEditingTests
         var el = MaterialResponse.Curves(ga, x, "cm-1", ResponseQuantity.Element, 0, 1);
         Check(el.Count == 2 && el[0].Name == "Re M[1,2]", "one element, real and imaginary");
 
-        var fer = ApiTests.Sample("thompson-1956/transverse-ferrite.json");
+        var fer = ApiTests.Sample("thompson-1956/transverse-ferrite.berr");
         var name = fer.Materials.First(p => p.Value is FerriteMaterial).Key;
         var ghz = MaterialResponse.Grid(8, 12, 5);
         Check(MaterialResponse.Checks(fer.Materials[name], ghz, "GHz").Contains("Not reciprocal"), "a ferrite is reported non-reciprocal");

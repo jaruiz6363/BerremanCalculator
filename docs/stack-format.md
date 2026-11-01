@@ -1,8 +1,11 @@
 # The stack file
 
-A stack file is JSON. It describes the materials, the stack, the units and the sweep to evaluate,
-and it records where the example comes from. `berreman evaluate <file>` and the MCP tool
-`evaluate_stack` both read it. This is version 1.
+A stack file has the extension `.berr`, and its content is JSON text. It describes the materials,
+the stack, the units and the sweep to evaluate, and it records where the example comes from.
+`berreman evaluate <file>` and the MCP tool `evaluate_stack` both read it. This is version 1.
+
+The program saves stacks as `.berr`. It still reads a stack file named `.json`, since the content
+is the same.
 
 ```json
 {

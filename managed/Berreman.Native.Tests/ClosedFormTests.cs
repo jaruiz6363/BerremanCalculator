@@ -25,8 +25,8 @@ internal static class ClosedFormTests
 
     public static void Run()
     {
-        GyrotropicSlab("berreman-1972/faraday-slab.json");
-        GyrotropicSlab("poddar-2020/gyrotropic-slab.json");
+        GyrotropicSlab("berreman-1972/faraday-slab.berr");
+        GyrotropicSlab("poddar-2020/gyrotropic-slab.berr");
         FerriteFaradaySlab();
         TransverseFerriteHalfSpace();
         AdamsResonanceField();
@@ -154,7 +154,7 @@ internal static class ClosedFormTests
     /// </summary>
     private static void TransverseFerriteHalfSpace()
     {
-        var doc = ApiTests.Sample("thompson-1956/transverse-ferrite.json");
+        var doc = ApiTests.Sample("thompson-1956/transverse-ferrite.berr");
         var res = Evaluator.Evaluate(doc);
         var fer = (FerriteMaterial)doc.Materials["ferrite"];
         double worst = 0;
@@ -204,7 +204,7 @@ internal static class ClosedFormTests
     /// </summary>
     private static void MeiTiltedBilayer()
     {
-        var doc = ApiTests.Sample("mei-2012/tilted-bilayer.json");
+        var doc = ApiTests.Sample("mei-2012/tilted-bilayer.berr");
         var res = Evaluator.Evaluate(doc);
         double worstR = 0, worstT = 0;
         foreach (var p in res.Points)
@@ -242,7 +242,7 @@ internal static class ClosedFormTests
     /// <summary>Ra'di et al. (2015), Section V A 1: ε = μ has the impedance of free space.</summary>
     private static void RadiMatchedSlab()
     {
-        var doc = ApiTests.Sample("radi-2015/matched-slab.json");
+        var doc = ApiTests.Sample("radi-2015/matched-slab.berr");
         var res = Evaluator.Evaluate(doc);
         var a = new Complex(3, 0.4);
         double worst = 0;
@@ -271,7 +271,7 @@ internal static class ClosedFormTests
     /// </summary>
     private static void SalisburyScreen()
     {
-        var doc = ApiTests.Sample("costa-2016/salisbury.json");
+        var doc = ApiTests.Sample("costa-2016/salisbury.berr");
         var res = Evaluator.Evaluate(doc);
         double worst = 0;
         foreach (var p in res.Points)

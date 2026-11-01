@@ -33,7 +33,7 @@ internal static class PasslerTests
 
     public static void Run()
     {
-        foreach (var s in new[] { "sic-otto.json", "gan-sic-otto.json", "sic-gan-sic-otto.json" })
+        foreach (var s in new[] { "sic-otto.berr", "gan-sic-otto.berr", "sic-gan-sic-otto.berr" })
             AgreesWithTheBlockReference(s);
         SiCCriticalCoupling();
         GaNOnSiCModes();
@@ -130,7 +130,7 @@ internal static class PasslerTests
         var depth = new Dictionary<double, double>();
         foreach (var (gap, (f, r)) in figure)
         {
-            var d = DeepestIn(Evaluator.Evaluate(Doc("sic-otto.json", gap)), 893, 930);
+            var d = DeepestIn(Evaluator.Evaluate(Doc("sic-otto.berr", gap)), 893, 930);
             depth[gap] = d.R;
             Near(d.F, f, gap == 2 ? 8 : 4, $"Fig. 2(a): the SPhP dip at {gap} µm is at the figure's frequency");
             Console.WriteLine($"  Passler Fig. 2(a), gap {gap} µm: dip at {d.F} cm-1, R_p {d.R:F2} (figure: about {f}, {r:F2})");
@@ -147,7 +147,7 @@ internal static class PasslerTests
     /// <summary>Fig. 3: resonances near 680 (broad), 810–820 and 1000 cm⁻¹ at the 3.5 µm gap.</summary>
     private static void GaNOnSiCModes()
     {
-        var m = Minima(Evaluator.Evaluate(Doc("gan-sic-otto.json")), 0.7);
+        var m = Minima(Evaluator.Evaluate(Doc("gan-sic-otto.berr")), 0.7);
         Console.WriteLine($"  Passler Fig. 3: minima at {string.Join(", ", m.Select(x => $"{x.F} ({x.R:F2})"))}");
         HasMinimumNear(m, 680, 20, "Fig. 3: mode (i), the broad GaN SPhP, near 680");
         HasMinimumNear(m, 815, 8, "Fig. 3: mode (ii) near 810–820");
@@ -160,7 +160,7 @@ internal static class PasslerTests
     /// </summary>
     private static void SiCGaNSiCModes()
     {
-        var m = Minima(Evaluator.Evaluate(Doc("sic-gan-sic-otto.json")), 0.7);
+        var m = Minima(Evaluator.Evaluate(Doc("sic-gan-sic-otto.berr")), 0.7);
         Console.WriteLine($"  Passler Fig. 4: minima at {string.Join(", ", m.Select(x => $"{x.F} ({x.R:F2})"))}");
         HasMinimumNear(m, 765, 15, "Fig. 4: mode (ii) at the upper GaN edge");
         Check(m.Count(x => x.F > 860 && x.F < 950) == 2, "Fig. 4: two modes, (iii) and (iv), around 900");

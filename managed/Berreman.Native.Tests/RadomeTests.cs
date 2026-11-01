@@ -39,7 +39,7 @@ internal static class RadomeTests
     /// </summary>
     private static void AnshinSandwich()
     {
-        var res = Evaluator.Evaluate(ApiTests.Sample("anshin-2024/sandwich-radome.json"));
+        var res = Evaluator.Evaluate(ApiTests.Sample("anshin-2024/sandwich-radome.berr"));
         Check(res.Status == BcStatus.Ok, "Anshin evaluates");
         var figure = new (string Pol, double Angle, double Db, double Ghz)[]
         {
@@ -66,7 +66,7 @@ internal static class RadomeTests
     /// </summary>
     private static void PeshlovHoneycombAgainstMeasurement()
     {
-        var res = Evaluator.Evaluate(ApiTests.Sample("peshlov-2006/honeycomb-model3.json"));
+        var res = Evaluator.Evaluate(ApiTests.Sample("peshlov-2006/honeycomb-model3.berr"));
         Check(res.Status == BcStatus.Ok, "Peshlov Model 3 evaluates");
         var measured = new (string Pol, double Angle, double Db, double Bar)[]
         {
@@ -91,7 +91,7 @@ internal static class RadomeTests
     /// </summary>
     private static void PeshlovTwintexSWaveSeesOnlyTheInPlanePermittivity()
     {
-        var doc = ApiTests.Sample("peshlov-2006/twintex.json");
+        var doc = ApiTests.Sample("peshlov-2006/twintex.berr");
         var aniso = Evaluator.Evaluate(doc);
         var iso = Evaluator.Evaluate(StackDocument.Parse("""
             { "format": "berreman-stack", "version": 1,

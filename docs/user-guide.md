@@ -29,7 +29,9 @@ evaluates on demand. Every edit can be undone (**Ctrl+Z**) and redone (**Ctrl+Y*
 ### Files
 
 - **File > New stack** (Ctrl+N) starts from air, one 100 nm layer of index 1.38, and glass.
-- **Open…** (Ctrl+O) opens a stack file. **Save** (Ctrl+S) and **Save as…** (Ctrl+Shift+S) write it.
+- **Open…** (Ctrl+O) opens a stack file (`.berr`, or a stack saved as `.json`). **Save** (Ctrl+S) and
+  **Save as…** (Ctrl+Shift+S) write it as `.berr`. On Windows the installer associates `.berr` with
+  the program, so double-clicking a stack opens it.
 - **File > Browse samples…** lists the literature samples. Search their titles, sources and notes,
   read each one's source, contents and notes, and open one as a copy (Save as… keeps it). **File >
   Open sample** opens one directly by name.
@@ -51,7 +53,7 @@ evaluates on demand. Every edit can be undone (**Ctrl+Z**) and redone (**Ctrl+Y*
   Values are in the material's own axes. The tables are tab-separated, and every other line starts
   with `#` or `[`. `berreman report` writes the same, with `--from`, `--to` and `--step`.
 - Opening another stack, or closing the window, with unsaved changes asks whether to save them.
-- Opening a stack file from Explorer, Finder or a file manager (`berreman-gui file.json`)
+- Opening a stack file from Explorer, Finder or a file manager (`berreman-gui file.berr`)
   evaluates it at once.
 
 ### The Stack tab
@@ -235,21 +237,21 @@ angle (or ξ) and one azimuth.
 ## The command line
 
 ```
-berreman evaluate stack.json                      print R, T and A for every point
-berreman evaluate stack.json --jones              add the Jones coefficients
-berreman evaluate stack.json --ellipsometry       add Ψ and Δ
-berreman evaluate stack.json --absorption         add the absorption in each layer
-berreman evaluate stack.json --mueller            add the Mueller matrix in reflection (each / M11)
-berreman evaluate stack.json --quantities Mr34,Psi_ps   add quantities by name
+berreman evaluate stack.berr                      print R, T and A for every point
+berreman evaluate stack.berr --jones              add the Jones coefficients
+berreman evaluate stack.berr --ellipsometry       add Ψ and Δ
+berreman evaluate stack.berr --absorption         add the absorption in each layer
+berreman evaluate stack.berr --mueller            add the Mueller matrix in reflection (each / M11)
+berreman evaluate stack.berr --quantities Mr34,Psi_ps   add quantities by name
 berreman quantities                               list every quantity, with what it is
-berreman report stack.json --step 10 --out r.txt  the layers and every material as tables
-berreman convert design.tfd stack.json            read a ThinFilmDesigner design as a stack file
-berreman convert stack.json design.tfd            write an isotropic stack as a ThinFilmDesigner design
-berreman evaluate stack.json --csv out.csv        write the table to a file
+berreman report stack.berr --step 10 --out r.txt  the layers and every material as tables
+berreman convert design.tfd stack.berr            read a ThinFilmDesigner design as a stack file
+berreman convert stack.berr design.tfd            write an isotropic stack as a ThinFilmDesigner design
+berreman evaluate stack.berr --csv out.csv        write the table to a file
 berreman status                                   whether the engine loads
 ```
 
-Writing a ThinFilmDesigner design is done only from the command line (`convert stack.json
+Writing a ThinFilmDesigner design is done only from the command line (`convert stack.berr
 design.tfd`); the window imports designs but does not export them.
 - **What it needs.** Every material must be isotropic and in a form ThinFilmDesigner holds, with no
   twisted layer. Anything else is refused, and the message names the material or layer.

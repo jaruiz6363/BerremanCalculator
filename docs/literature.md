@@ -241,7 +241,7 @@ Two things the paper does not say:
   ε∞,a = 3.21 and ε∞,c\* = 3.75, every LO frequency of Table II is reproduced to within 1 cm⁻¹. As
   printed, the errors reach 10 cm⁻¹. Table II's B_u LO angles then agree when measured from c\*.
 
-The sample [schubert-2016/ga2o3-010.json](../samples/literature/schubert-2016/ga2o3-010.json)
+The sample [schubert-2016/ga2o3-010.berr](../samples/literature/schubert-2016/ga2o3-010.berr)
 follows both readings above. The B_u LPP frequencies of Table III are not reproduced: the model
 gives 924.6 cm⁻¹ for the highest, as the paper's Fig. 12 shows, where the table has 967.1. The
 tests print these and do not assert them.
