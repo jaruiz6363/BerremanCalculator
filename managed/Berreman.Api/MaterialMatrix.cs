@@ -92,6 +92,17 @@ public sealed class MaterialMatrix
         for (int bi = 0; bi < 2; ++bi)
             for (int bj = 0; bj < 2; ++bj)
             {
+                /* A block that is a scalar times the identity is unchanged by any rotation, so it is
+                 * copied, not computed: R (a I) Rᵀ in floating point leaves off-diagonal round-off,
+                 * and the engine's isotropy test is exact. Without this a sample azimuth turned an
+                 * isotropic outer medium into a "anisotropic" one, whose degenerate modes the engine
+                 * then labels in its own basis instead of p and s. */
+                if (BlockIsScalar(bi, bj))
+                {
+                    for (int i = 0; i < 3; ++i)
+                        for (int j = 0; j < 3; ++j) o[3 * bi + i, 3 * bj + j] = this[3 * bi + i, 3 * bj + j];
+                    continue;
+                }
                 bool wasHermitian = bi == bj && BlockIsHermitian(bi);
                 for (int i = 0; i < 3; ++i)
                     for (int j = 0; j < 3; ++j)
@@ -115,6 +126,16 @@ public sealed class MaterialMatrix
                 for (int j = 0; j < 3; ++j)
                     o[3 + i, j] = Complex.Conjugate(o[j, 3 + i]);
         return o;
+    }
+
+    /// <summary>True when block (bi, bj) is exactly a scalar times the identity (zero included).</summary>
+    private bool BlockIsScalar(int bi, int bj)
+    {
+        var a = this[3 * bi, 3 * bj];
+        for (int i = 0; i < 3; ++i)
+            for (int j = 0; j < 3; ++j)
+                if (this[3 * bi + i, 3 * bj + j] != (i == j ? a : Complex.Zero)) return false;
+        return true;
     }
 
     private bool BlockIsHermitian(int b)

@@ -65,6 +65,25 @@ internal static class QuantitiesTests
         Check(worst < 1e-10, $"a Jones-derived Mueller matrix has Σ M_ij² = 4 (worst {worst:G3})");
         Check(offBlock > 0.05, $"the monoclinic sample converts p and s (off-diagonal block up to {offBlock:G3})");
 
+        /* A sample azimuth must leave isotropic outer media exactly isotropic, so the Jones matrix
+           stays in p and s: turning the sample by an azimuth equals adding it to the layer's φ. Before
+           the fix, R I Rᵀ's round-off made air "anisotropic" at some azimuths (-70°, 120°) and the
+           Jones matrix came back in the engine's own basis for its degenerate modes. */
+        string Stack(string euler, double az) => $$"""
+            { "format": "berreman-stack", "version": 1, "units": { "length": "um", "spectral": "um" },
+              "materials": { "in": { "n": 1 }, "out": { "n": 1.5 }, "film": { "no": 1.52, "ne": 1.63 } },
+              "incident": { "material": "in" }, "layers": [ { "material": "film", "thickness": 2.3, "euler_deg": {{euler}} } ],
+              "exit": { "material": "out" }, "sweep": { "spectral": 0.6, "angle_deg": 30, "azimuth_deg": {{az}} } }
+            """;
+        double azWorst = 0;
+        foreach (var az in new[] { -70.0, 120.0, -200.0, 20.0, 33.3 })
+        {
+            var a1 = Evaluator.Evaluate(StackDocument.Parse(Stack("[140, 35, 0]", az))).Points[0];
+            var a2 = Evaluator.Evaluate(StackDocument.Parse(Stack($"[{(140 + az).ToString(System.Globalization.CultureInfo.InvariantCulture)}, 35, 0]", 0))).Points[0];
+            azWorst = Math.Max(azWorst, a1.Jones.Zip(a2.Jones).Max(t => (t.First - t.Second).Magnitude));
+        }
+        Check(azWorst < 1e-13, $"a sample azimuth equals adding it to the layer's φ: the Jones matrix stays in p and s ({azWorst:G3})");
+
         /* Names. */
         var all = Quantities.All();
         Check(all.Select(q => q.Name).Distinct().Count() == all.Count, $"the {all.Count} quantity names are distinct");
