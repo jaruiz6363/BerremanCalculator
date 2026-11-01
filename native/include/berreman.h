@@ -15,9 +15,10 @@
  *   5. An unimplemented path is LOUD: a distinct status, and output buffers left untouched.
  *
  * STATUS. bc_evaluate computes any stack of layers between any outer media (the incident one
- * lossless, that is exactly Hermitian): Jones, R/T/A, per-layer absorption and diagnostics. Still
- * loud (rule 5): requesting fields against depth makes the whole call return BC_NOT_IMPLEMENTED,
- * touching nothing.
+ * lossless, that is exactly Hermitian): Jones, R/T/A, per-layer absorption, fields against depth
+ * and diagnostics. A depth is measured from the first interface: negative in the incident medium,
+ * past the last interface in the exit medium; an interface belongs to the medium behind it.
+ * Fields are per unit incident amplitude.
  *
  * An incident wave that carries no power has NaN for its R, T, A and layer absorption; its Jones
  * column is still written. If neither incident wave carries power the point fails with

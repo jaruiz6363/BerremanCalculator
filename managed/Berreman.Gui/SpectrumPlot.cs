@@ -62,6 +62,9 @@ public sealed class SpectrumPlot : Control
     /// </summary>
     public bool Compact { get; init; }
 
+    /// <summary>x positions drawn as faint vertical lines under the curves: a profile's interfaces.</summary>
+    public IReadOnlyList<double>? Markers { get; set; }
+
     /// <summary>The panel's name in compact mode, "M12".</summary>
     public string Title { get; set; } = "";
 
@@ -197,6 +200,15 @@ public sealed class SpectrumPlot : Control
         }
 
         var clip = context.PushClip(new Rect(left, top, right - left, bottom - top));   // curves stay inside the axes when zoomed
+        if (Markers is { } marks)
+        {
+            var markPen = new Pen(new SolidColorBrush(Color.FromRgb(0x90, 0x90, 0x90)), 1, new DashStyle([3.0, 3.0], 0));
+            foreach (var m in marks)
+            {
+                double mx = _model.ToPixelX(m);
+                context.DrawLine(markPen, new Point(mx, top), new Point(mx, bottom));
+            }
+        }
         foreach (var s in series)
         {
             var runs = _model.Segments(s).Where(r => r.Count >= 2).ToList();

@@ -172,6 +172,20 @@ value:
 - **Reading and saving.** Hovering reads a value, and the map saves as PNG or CSV (angle, azimuth,
   value).
 
+### Field profile
+
+**Analysis > Field profile…** shows the fields against depth at one point: one spectral value, one
+angle (or ξ) and one azimuth.
+- **Depth** runs from the first interface into the stack, with margins in front and behind, and
+  the interfaces are drawn as dashed lines.
+- **Quantities.** |E|², or |Ex|², |Ey|² and |Ez|² separately, |H̃|², or the real parts of E, for
+  incident p, incident s or the unpolarised mean.
+- **Scale.** Fields are per unit incident amplitude, so |E|² is relative to the incident wave. The
+  status line gives the point's R and T.
+- **Index profile.** The same window shows n and k along x, y and z through the stack, at that
+  wavelength and azimuth, each layer's orientation applied.
+- **Saving.** PNG, or CSV with every depth's six complex components for both incident waves.
+
 ## The command line
 
 ```

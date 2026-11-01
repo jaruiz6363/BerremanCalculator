@@ -480,6 +480,33 @@ public static class WindowTests
         });
     }
 
+    public static void TheFieldProfileShowsTheFieldsThroughTheStack(Harness h, HeadlessUnitTestSession session)
+    {
+        h.Section("Analysis > Field profile computes the fields against depth and the index profile");
+        WithWindow(session, w =>
+        {
+            w.LoadSample(Sample("mansuripur-1990 / quadrilayer"), "q");
+            Pump(w);
+            var f = w.OpenFieldProfile();
+            Pump(w, 200);
+            Click(f, Find<Button>(f, "ComputeProfileButton"));
+            h.Expect(PumpUntil(w, () => f.Profile is not null && f.Plot.Series is { Count: > 0 }, 30), $"the profile is computed ({Find<TextBlock>(f, "ProfileStatus").Text})");
+            if (f.Profile is not { } p) return;
+            h.Expect(p.Depths.Length == 1001 && p.Boundaries.Length == w.Workspace.Model.Layers.Count + 1, "1001 depths, and an interface per layer boundary");
+            h.Expect(f.Plot.Markers?.Count == p.Boundaries.Length, "the interfaces are drawn");
+            if (Environment.GetEnvironmentVariable("BC_SHOT_DIR") is { Length: > 0 } dir) { Pump(w, 200); f.CaptureRenderedFrame()?.Save(System.IO.Path.Combine(dir, "field-profile.png")); }
+            Find<ComboBox>(f, "ProfileQuantityBox").SelectedIndex = 4;
+            Pump(w);
+            h.Expect(f.Plot.Series is { Count: 6 } && f.Plot.Series[0].Name == "n_x", "the index profile shows n and k along x, y, z");
+            var csv = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"berreman-profile-{Guid.NewGuid():N}.csv");
+            f.SaveTo(csv, png: false);
+            var lines = File.ReadAllLines(csv);
+            h.Expect(lines.Length == 1002 && lines[0].Split(',').Length == 25, "the fields save as CSV: depth and 24 columns");
+            File.Delete(csv);
+            f.Close();
+        });
+    }
+
     public static void MaterialsComeFromLibraries(Harness h, HeadlessUnitTestSession session)
     {
         h.Section("From library… adds database materials and catalogue glasses; Save keeps one in my materials");

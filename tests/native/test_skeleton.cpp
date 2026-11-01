@@ -1,4 +1,4 @@
-/* test_skeleton.cpp — the calls exist, refuse bad input, and fail loudly where nothing is built.
+/* test_skeleton.cpp — the calls exist, refuse bad input, and write every output asked for.
  *
  * No test framework, as in ThinFilmDesigner: a dependency that buys a nicer assertion message is
  * not worth the build friction. Failures print what was expected and what came out.
@@ -76,11 +76,11 @@ static void AValidProblemPlansAndSizesScratchFromTheLayerCount()
     Fixture f;
     int64_t bytes = -1;
     check_status(bc_plan(&f.p, &bytes), BC_OK, "plan a valid problem");
-    check(bytes == 3 * 12 * 16, "scratch = (n_layers + 1) * 12 complex");
+    check(bytes == 3 * 16 * 16, "scratch = (n_layers + 1) * 16 complex");
 
     f.p.n_layers = 0;
     check_status(bc_plan(&f.p, &bytes), BC_OK, "plan a bare interface");
-    check(bytes == 12 * 16, "scratch for a bare interface");
+    check(bytes == 16 * 16, "scratch for a bare interface");
 }
 
 static void PlanRefusesWhatTheEngineCouldNotUse()
@@ -101,41 +101,47 @@ static void PlanRefusesWhatTheEngineCouldNotUse()
     { Fixture f; f.p.field_depths = nullptr; check_status(bc_plan(&f.p, &bytes), BC_INVALID_ARGUMENT, "depths counted but absent"); }
 }
 
-/* Rule 5. Every output buffer is filled with a sentinel; after the call, every byte must still be
- * the sentinel. Plausible zeros would be the silent failure this rule exists to prevent. */
-static void EvaluateIsNotImplementedAndTouchesNothing()
+/* Every output is written. The fixture is vacuum everywhere, so the field at each depth is the
+ * incident wave itself, of unit amplitude, with the phase e^{i k0 q z}; nothing is reflected. */
+static void EvaluateWritesEveryOutput()
 {
     Fixture f;
     int64_t bytes = 0;
     bc_plan(&f.p, &bytes);
 
-    unsigned char scratch[3 * 12 * 16];
+    unsigned char scratch[3 * 16 * 16];
     bc_complex jones[3 * 8];
     double power[3 * 6];
     double absorption[3 * 2 * 2];
     bc_complex fields[3 * 2 * 2 * 6];
     bc_point_diagnostics diagnostics[3];
-
-    std::memset(jones, 0xA5, sizeof jones);
-    std::memset(power, 0xA5, sizeof power);
-    std::memset(absorption, 0xA5, sizeof absorption);
     std::memset(fields, 0xA5, sizeof fields);
-    std::memset(diagnostics, 0xA5, sizeof diagnostics);
 
     bc_output out{jones, power, absorption, fields, diagnostics};
-    check_status(bc_evaluate(&f.p, 0, 3, scratch, bytes, &out), BC_NOT_IMPLEMENTED,
-                 "evaluate reports NOT_IMPLEMENTED");
+    check_status(bc_evaluate(&f.p, 0, 3, scratch, bytes, &out), BC_OK, "evaluate succeeds, fields included");
 
-    auto untouched = [](const void* buf, size_t n) {
-        const unsigned char* b = static_cast<const unsigned char*>(buf);
-        for (size_t i = 0; i < n; ++i) if (b[i] != 0xA5) return false;
-        return true;
-    };
-    check(untouched(jones, sizeof jones), "jones untouched");
-    check(untouched(power, sizeof power), "power untouched");
-    check(untouched(absorption, sizeof absorption), "layer_absorption untouched");
-    check(untouched(fields, sizeof fields), "fields untouched");
-    check(untouched(diagnostics, sizeof diagnostics), "diagnostics untouched");
+    const double PI = 3.14159265358979323846;
+    double worst = 0.0;
+    for (int pt = 0; pt < 3; ++pt)
+    {
+        const double k0 = 2 * PI / f.wavelength[f.point_spectral[pt]];
+        const double q = std::sqrt(1.0 - f.point_xi[pt] * f.point_xi[pt]);
+        for (int j = 0; j < 2; ++j)
+        {
+            const bc_complex* a = fields + ((pt * 2 + j) * 2 + 0) * 6;   /* depth 0 */
+            const bc_complex* b = fields + ((pt * 2 + j) * 2 + 1) * 6;   /* depth 50 */
+            const double c = std::cos(k0 * q * 50.0), sn = std::sin(k0 * q * 50.0);
+            double e2 = 0.0;
+            for (int k = 0; k < 6; ++k)
+            {
+                const double re = a[k].re * c - a[k].im * sn, im = a[k].re * sn + a[k].im * c;
+                worst = std::fmax(worst, std::hypot(b[k].re - re, b[k].im - im));
+                if (k < 3) e2 += a[k].re * a[k].re + a[k].im * a[k].im;
+            }
+            worst = std::fmax(worst, std::fabs(std::sqrt(e2) - 1.0));
+        }
+    }
+    check(worst < 1e-12, "in vacuum the field is the incident wave, |E| = 1, with phase e^{i k0 q z}");
 
     check_status(bc_evaluate(&f.p, 0, 3, scratch, bytes - 1, &out), BC_SCRATCH_TOO_SMALL,
                  "less scratch than planned");
@@ -149,7 +155,7 @@ int main()
     TheLayoutIsWhatCSharpMirrors();
     AValidProblemPlansAndSizesScratchFromTheLayerCount();
     PlanRefusesWhatTheEngineCouldNotUse();
-    EvaluateIsNotImplementedAndTouchesNothing();
+    EvaluateWritesEveryOutput();
 
     std::printf("%d checks, %d failures\n", g_checks, g_failures);
     return g_failures == 0 ? 0 : 1;

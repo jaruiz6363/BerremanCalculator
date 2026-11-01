@@ -35,6 +35,7 @@ public partial class MainWindow
         }
         ViewBox.SelectionChanged += (_, _) => Redraw();
         ConoscopeItem.Click += (_, _) => OpenConoscope();
+        FieldProfileItem.Click += (_, _) => OpenFieldProfile();
         XAxisBox.SelectionChanged += (_, _) => { if (!_settingAxes) Redraw(); };
         MoreQuantitiesButton.Click += async (_, _) =>
         {
@@ -85,6 +86,14 @@ public partial class MainWindow
     }
 
     private void Redraw() => RedrawCore();
+
+    /// <summary>Analysis > Field profile: a window of its own, on a copy of the stack as it is now.</summary>
+    public FieldProfileWindow OpenFieldProfile()
+    {
+        var w = new FieldProfileWindow(_ws.Model);
+        w.Show(this);
+        return w;
+    }
 
     /// <summary>Analysis > Conoscopic map: a window of its own, on a copy of the stack as it is now.</summary>
     public ConoscopeWindow OpenConoscope()

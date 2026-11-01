@@ -168,7 +168,9 @@ From the native engine, per evaluation point:
    the Poynting vector, so they are correct for anisotropic and absorbing exit media.
 3. **Absorption in each layer**, from the Poynting flux at the layer's two faces. The layers' sum
    and R + T + A = 1 are checked on every evaluation.
-4. **Fields against depth**, at depths the caller chooses (Section 6).
+4. **Fields against depth**, at depths the caller chooses (Section 6), per unit incident amplitude:
+   (E_x, E_y, E_z, H̃_x, H̃_y, H̃_z) for each incident wave. Depth is measured from the first interface,
+   negative in the incident medium, and an interface belongs to the medium behind it.
 
 Derived in C# from the above:
 

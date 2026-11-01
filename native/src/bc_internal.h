@@ -6,8 +6,10 @@
 #include "berreman.h"
 
 /* Scratch for one worker. Engine design, Section 4: one record per interface, n_layers + 1 of
- * them, each holding a 4×2 orthonormal basis W (8 complex) and a 2×2 factor (4 complex). */
-#define BC_RECORD_COMPLEX 12
+ * them, each holding a 4×2 orthonormal basis W (8 complex), a 2×2 factor (4 complex), and the 2×2
+ * amplitudes on W of the field there for each incident wave (4 complex), which the fields against
+ * depth start from. */
+#define BC_RECORD_COMPLEX 16
 
 BC_HD static inline int64_t bc_scratch_bytes(int32_t n_layers)
 {

@@ -14,17 +14,15 @@ One shared API drives three programs:
 - **the command line**, for scripts;
 - **an MCP server**, so an AI assistant can set up and evaluate stacks with the program.
 
-**Status: the engine evaluates, from C++ only.** The native engine computes any stack of layers,
-of any material, between any outer media. The incident medium must be lossless. It returns:
+**Status.** The native engine computes any stack of layers, of any material, between any outer
+media. The incident medium must be lossless. It returns:
 - the Jones coefficients;
 - reflectance, transmittance and absorptance;
 - the absorption in each layer;
+- the fields against depth, inside the stack and in the outer media;
 - per-point diagnostics.
 
 It is tested against closed forms (see the [engine design](docs/engine-design.md), Section 6).
-
-Fields against depth are not built yet. A request for them is refused with a distinct status
-rather than computed wrongly.
 
 The C# API reads [stack files](docs/stack-format.md), including twisted (cholesteric) layers, which
 it evaluates as sublayers and checks by doubling them. Materials are constants, dispersive (Sellmeier,
@@ -38,6 +36,11 @@ this way ([the material model](docs/material-model.md)).
   optic axis) and twist; the outer media, also orientable; the units and the sweep. Its Materials
   tab edits n and k, or each term's law and 6×6 shape; plots a material's response and principal
   axes; and adds materials from ThinFilmDesigner's databases and five vendors' glass catalogues.
+  Its analyses are:
+  - any derived quantity, against any swept variable;
+  - the Mueller matrix as sixteen panels;
+  - conoscopic maps;
+  - field and index profiles through the stack.
   It evaluates as you edit, with undo and redo, and plots R, T, A and Ψ/Δ.
 
 Eighteen literature samples are reproduced: Mansuripur (1990), nine closed forms, three of Passler

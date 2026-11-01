@@ -214,7 +214,18 @@ records that it was opaque. Reflection is not affected, because it depends only 
   The sum over layers, plus R and T, must make 1; the residual is reported.
 - **Fields against depth.** A depth z inside layer k is reached from the layer's back face,
   stepping backward with the same bounded steps. This is the stable direction for the same reason
-  as the sweep. It needs no storage beyond the interface fields.
+  as the sweep. It needs no storage beyond the interface fields, whose amplitudes the forward
+  recovery leaves in each interface's record.
+  - **The outer media.** Each mode is an eigenvector of the medium's Δ and propagates exactly as
+    e^{ik₀qz}, with q its Rayleigh quotient. So the exit medium's transmitted waves cannot pick up a
+    growing backward wave from round-off.
+  - **Depths.** A depth is measured from the first interface. An interface belongs to the medium
+    behind it, which matters only for E_z and H̃_z, the components that jump.
+  - **The test.** `test_fields` compares isotropic stacks, metals included, with the block reference
+    carried forward from the front face: all six components at every depth, both polarisations,
+    oblique incidence, to 5 × 10⁻¹⁵. In random general stacks, S_z through the depths is constant
+    when the stack is lossless, and drops by each layer's reported absorption when it is not, both to
+    2 × 10⁻¹⁵.
 
 ## 5. Status codes and diagnostics
 

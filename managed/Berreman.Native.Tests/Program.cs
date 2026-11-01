@@ -47,7 +47,7 @@ Equal(report.NativeAbi, (int?)NativeMethods.AbiVersion, "native ABI matches the 
 Equal(report.PlanStatus, (BcStatus?)BcStatus.Ok, "bc_plan accepts a trivial problem");
 Equal(report.EvaluateStatus, (BcStatus?)BcStatus.Ok, "bc_evaluate evaluates a vacuum stack");
 
-EvaluateLeavesOutputsUntouched();
+EvaluateWritesFieldsFromCSharp();
 
 // ---- the MCP server ------------------------------------------------------------------------
 
@@ -105,6 +105,7 @@ Berreman.Native.Tests.LatticeTests.Run();
 Berreman.Native.Tests.TaucLorentzTests.Run();
 Berreman.Native.Tests.QuantitiesTests.Run();
 Berreman.Native.Tests.ConoscopeTests.Run();
+Berreman.Native.Tests.FieldProfileTests.Run();
 checks += Berreman.Native.Tests.ApiTests.Checks;
 failures += Berreman.Native.Tests.ApiTests.Failures;
 checks += Berreman.Native.Tests.ClosedFormTests.Checks;
@@ -135,6 +136,8 @@ checks += Berreman.Native.Tests.QuantitiesTests.Checks;
 failures += Berreman.Native.Tests.QuantitiesTests.Failures;
 checks += Berreman.Native.Tests.ConoscopeTests.Checks;
 failures += Berreman.Native.Tests.ConoscopeTests.Failures;
+checks += Berreman.Native.Tests.FieldProfileTests.Checks;
+failures += Berreman.Native.Tests.FieldProfileTests.Failures;
 
 Console.WriteLine($"{checks} checks, {failures} failures");
 return failures == 0 ? 0 : 1;
@@ -148,9 +151,9 @@ static JsonObject Request(int id, string method, JsonObject? parameters = null)
     return r;
 }
 
-// Rule 5 from C#: fields against depth are not built yet. Every output is filled with a sentinel,
-// and after the NOT_IMPLEMENTED call every element must still be the sentinel.
-unsafe void EvaluateLeavesOutputsUntouched()
+// Fields against depth through the C# binding: vacuum, so the field at a depth is the incident wave
+// with the phase e^{i k0 q z}. Every output starts as a sentinel and must be written.
+unsafe void EvaluateWritesFieldsFromCSharp()
 {
     var m = new PinnedBuffer<Complex>(3 * 36);
     for (int k = 0; k < 3; ++k) for (int i = 0; i < 6; ++i) m[k * 36 + 7 * i] = Complex.One;
@@ -188,14 +191,26 @@ unsafe void EvaluateLeavesOutputsUntouched()
         Jones = jones.Pointer, Power = power.Pointer, LayerAbsorption = absorption.Pointer,
         Fields = fields.Pointer, Diagnostics = diagnostics.Pointer,
     };
-    Equal(NativeMethods.bc_evaluate(&p, 0, 2, scratch.Pointer, bytes, &o), BcStatus.NotImplemented,
-          "evaluate with every output requested");
+    Equal(NativeMethods.bc_evaluate(&p, 0, 2, scratch.Pointer, bytes, &o), BcStatus.Ok,
+          "evaluate with every output requested, fields included");
 
-    Check(jones.Span.ToArray().All(z => z == sentinelC), "jones untouched");
-    Check(fields.Span.ToArray().All(z => z == sentinelC), "fields untouched");
-    Check(power.Span.ToArray().All(x => x == -7.25), "power untouched");
-    Check(absorption.Span.ToArray().All(x => x == -7.25), "layer_absorption untouched");
-    Check(diagnostics.Span.ToArray().All(d => d.Equals(sentinelD)), "diagnostics untouched");
+    Check(jones.Span.ToArray().All(z => z != sentinelC), "jones written");
+    Check(fields.Span.ToArray().All(z => z != sentinelC), "fields written");
+    Check(power.Span.ToArray().All(x => x != -7.25), "power written");
+    Check(absorption.Span.ToArray().All(x => x != -7.25), "layer_absorption written");
+    double worstPhase = 0;
+    for (int pt = 0; pt < 2; ++pt)
+    {
+        double q = Math.Sqrt(1 - xi[pt] * xi[pt]), k0 = 2 * Math.PI / 633.0;
+        for (int j = 0; j < 2; ++j)
+            for (int c = 0; c < 6; ++c)
+            {
+                var a = fields[((pt * 2 + j) * 2 + 0) * 6 + c];   /* depth 0 */
+                var b = fields[((pt * 2 + j) * 2 + 1) * 6 + c];   /* depth 25 */
+                worstPhase = Math.Max(worstPhase, (b - a * Complex.Exp(new Complex(0, k0 * q * 25))).Magnitude);
+            }
+    }
+    Check(worstPhase < 1e-12, $"in vacuum the field at depth 25 is the field at 0 times e^(i k0 q z) ({worstPhase:G3})");
 
     GC.KeepAlive(m); GC.KeepAlive(wavelength); GC.KeepAlive(thickness); GC.KeepAlive(spectral);
     GC.KeepAlive(xi); GC.KeepAlive(depths); GC.KeepAlive(scratch); GC.KeepAlive(jones);

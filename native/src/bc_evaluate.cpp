@@ -2,10 +2,20 @@
  *
  * WHAT IS BUILT. Any outer media (closed-form modes when isotropic, Schur otherwise) and any
  * layers. The backward sweep, the front solve, the forward recovery of transmission and per-layer
- * absorption, and the diagnostics.
+ * absorption, the fields against depth, and the diagnostics.
  *
- * WHAT IS NOT, AND IS LOUD (rule 5):
- *   - fields against depth: the whole call returns BC_NOT_IMPLEMENTED, touching nothing.
+ * FIELDS AGAINST DEPTH (engine design, Section 4). Depth z is measured from the first interface;
+ * layer k spans [z_{k-1}, z_k), so an interface belongs to the medium behind it, and z = 0 to the
+ * first layer. Per unit incident amplitude:
+ *   - inside a layer, the field is reached from the layer's BACK face,
+ *     psi(z) = exp(-i k0 (z_k - z) Delta) psi(z_k), in the same bounded steps as the sweep; the
+ *     back-face field is W c from the forward recovery. That is the stable direction, for the
+ *     sweep's reason: through an absorbing layer the field is larger at the front, and errors in
+ *     the wave that decays backward shrink.
+ *   - in the outer media, each mode is an eigenvector of the medium's Delta and propagates as
+ *     e^{i k0 q z} exactly, q its Rayleigh quotient. No stepping, so the exit medium's transmitted
+ *     waves cannot pick up a growing backward wave from round-off.
+ * E_z and H_z come from G of the medium containing z (bc_build_delta).
  *
  * THE TRANSMISSION FACTOR. Sweeping backward, each step gives P W_old = W_new R. The amplitudes
  * at the back of a layer follow from those at its front by c_back = R₁⁻¹ R₂⁻¹ ⋯ R_n⁻¹ c_front (R₁
@@ -52,6 +62,139 @@ BC_HD static inline double bc_cond1_4(const bc_complex* A)
     for (int k = 0; k < 16; ++k) { T[k] = A[k]; I[k] = bc_c((k % 5 == 0) ? 1.0 : 0.0, 0.0); }
     if (bc_solve4(T, I, 4) != BC_OK) return INFINITY;
     return bc_norm1_4(A) * bc_norm1_4(I);
+}
+
+/* The Rayleigh quotient v^H Delta v / v^H v: the eigenvalue q of a mode v of Delta. */
+BC_HD static inline bc_complex bc_mode_q(const bc_complex* D, const bc_complex* modes, int col)
+{
+    bc_complex num = bc_c(0.0, 0.0);
+    double den = 0.0;
+    for (int i = 0; i < 4; ++i)
+    {
+        bc_complex dv = bc_c(0.0, 0.0);
+        for (int k = 0; k < 4; ++k) dv = bc_add(dv, bc_mul(D[i * 4 + k], modes[k * 4 + col]));
+        num = bc_add(num, bc_mul(bc_conj(modes[i * 4 + col]), dv));
+        den += modes[i * 4 + col].re * modes[i * 4 + col].re + modes[i * 4 + col].im * modes[i * 4 + col].im;
+    }
+    return bc_scale(num, 1.0 / den);
+}
+
+/* e^{i k0 q z} */
+BC_HD static inline bc_complex bc_phase(double k0, bc_complex q, double z)
+{
+    const double a = -k0 * q.im * z, b = k0 * q.re * z;
+    const double m = exp(a);
+    return bc_c(m * cos(b), m * sin(b));
+}
+
+/* The fields at every depth, for both incident waves (see the header). rr and t are the solve's
+ * [outgoing][incident] amplitudes; the records hold W and the amplitudes at every interface. */
+static bc_status bc_fields(const bc_problem* p, int32_t pt, const bc_config* cfg, double k0,
+                           const bc_complex* Ms, const bc_complex* rec, const bc_complex* m_in,
+                           const bc_complex* m_ex, const bc_complex* rr, const bc_complex* t,
+                           bc_complex* fields)
+{
+    const int32_t N = p->n_layers;
+    const double xi = p->point_xi[pt];
+    // BC_FIXED_OK: 4×4 Delta
+    bc_complex D[16];
+    // BC_FIXED_OK: 2×4 G
+    bc_complex G[8];
+    // BC_FIXED_OK: 4×4 step exponential
+    bc_complex E[16];
+    // BC_FIXED_OK: 4×4 argument of the exponential
+    bc_complex A[16];
+    // BC_FIXED_OK: 4-vector
+    bc_complex psi[4];
+    // BC_FIXED_OK: 4-vector
+    bc_complex nxt[4];
+    // BC_FIXED_OK: 6-vector
+    bc_complex v[6];
+    // BC_FIXED_OK: the four mode eigenvalues of an outer medium
+    bc_complex q[4];
+
+    double total = 0.0;
+    for (int32_t k = 0; k < N; ++k) total += p->thickness[k];
+
+    for (int32_t di = 0; di < p->n_depths; ++di)
+    {
+        const double z = p->field_depths[di];
+        bc_complex* dst0 = fields + (((int64_t)pt * 2 + 0) * p->n_depths + di) * 6;
+        bc_complex* dst1 = fields + (((int64_t)pt * 2 + 1) * p->n_depths + di) * 6;
+        if (z < 0.0 || z >= total)
+        {
+            /* An outer medium: its modes, each with its own exponential. */
+            const bool incident = z < 0.0;
+            const bc_complex* Mo = incident ? Ms : Ms + (int64_t)(N + 1) * 36;
+            const bc_complex* modes = incident ? m_in : m_ex;
+            bc_status st = bc_build_delta(Mo, xi, D, G);
+            if (st != BC_OK) return st;
+            for (int m = 0; m < 4; ++m) q[m] = bc_mode_q(D, modes, m);
+            for (int j = 0; j < 2; ++j)
+            {
+                for (int i = 0; i < 4; ++i) psi[i] = bc_c(0.0, 0.0);
+                if (incident)
+                {
+                    const bc_complex e = bc_phase(k0, q[j], z);
+                    for (int i = 0; i < 4; ++i) psi[i] = bc_mul(modes[i * 4 + j], e);
+                    for (int m = 0; m < 2; ++m)
+                    {
+                        const bc_complex a = bc_mul(rr[m * 2 + j], bc_phase(k0, q[2 + m], z));
+                        for (int i = 0; i < 4; ++i) psi[i] = bc_add(psi[i], bc_mul(modes[i * 4 + 2 + m], a));
+                    }
+                }
+                else
+                    for (int m = 0; m < 2; ++m)
+                    {
+                        const bc_complex a = bc_mul(t[m * 2 + j], bc_phase(k0, q[m], z - total));
+                        for (int i = 0; i < 4; ++i) psi[i] = bc_add(psi[i], bc_mul(modes[i * 4 + m], a));
+                    }
+                bc_full_field(G, psi, v);
+                bc_complex* dst = j == 0 ? dst0 : dst1;
+                for (int k = 0; k < 6; ++k) dst[k] = v[k];
+            }
+            continue;
+        }
+
+        /* Inside a layer: find it (a zero-thickness layer holds no depth), then step from its
+         * back face toward z. */
+        int32_t layer = 1;
+        double back = p->thickness[0];
+        while (layer < N && z >= back) { ++layer; back += p->thickness[layer - 1]; }
+        bc_status st = bc_build_delta(Ms + (int64_t)layer * 36, xi, D, G);
+        if (st != BC_OK) return st;
+        const bc_complex* rb = (layer == N) ? rec : rec + (int64_t)(layer + 1) * BC_RECORD_COMPLEX;
+        const double s = back - z;   /* > 0: z lies before the back face */
+        int32_t n = 0;
+        if (s > 0.0)
+        {
+            double nsteps = ceil(k0 * s * bc_norm1_4(D) / cfg->beta);
+            if (nsteps < 1.0) nsteps = 1.0;
+            n = (int32_t)nsteps;
+            const double h = s / nsteps;
+            for (int k = 0; k < 16; ++k) A[k] = bc_mul(bc_c(0.0, -k0 * h), D[k]);
+            st = bc_expm_pade(A, cfg->pade_m, E);
+            if (st != BC_OK) return st;
+        }
+        for (int j = 0; j < 2; ++j)
+        {
+            bc_field(rb, rb + 12, j, psi);
+            for (int32_t step = 0; step < n; ++step)
+            {
+                for (int i = 0; i < 4; ++i)
+                {
+                    bc_complex a = bc_c(0.0, 0.0);
+                    for (int k = 0; k < 4; ++k) a = bc_add(a, bc_mul(E[i * 4 + k], psi[k]));
+                    nxt[i] = a;
+                }
+                for (int i = 0; i < 4; ++i) psi[i] = nxt[i];
+            }
+            bc_full_field(G, psi, v);
+            bc_complex* dst = j == 0 ? dst0 : dst1;
+            for (int k = 0; k < 6; ++k) dst[k] = v[k];
+        }
+    }
+    return BC_OK;
 }
 
 /* One point. Writes its outputs only when it returns BC_OK; the diagnostics record is written by
@@ -183,8 +326,9 @@ static bc_status bc_point(const bc_problem* p, int32_t pt, const bc_config* cfg,
 
     for (int32_t layer = 1; layer <= N; ++layer)
     {
-        const bc_complex* r = rec + (int64_t)layer * BC_RECORD_COMPLEX;
+        bc_complex* r = rec + (int64_t)layer * BC_RECORD_COMPLEX;
         const bc_complex* back = (layer == N) ? rec : rec + (int64_t)(layer + 1) * BC_RECORD_COMPLEX;
+        for (int k = 0; k < 4; ++k) r[12 + k] = c[k];     /* amplitudes at this layer's front */
         bc_mul_22(r + 8, c, cb);
         for (int j = 0; j < 2; ++j)
         {
@@ -197,6 +341,8 @@ static bc_status bc_point(const bc_problem* p, int32_t pt, const bc_config* cfg,
         for (int k = 0; k < 4; ++k) c[k] = cb[k];
     }
 
+    for (int k = 0; k < 4; ++k) rec[12 + k] = c[k];       /* amplitudes at the last interface */
+
     // BC_FIXED_OK: 2×2
     bc_complex t[4];
     bc_mul_22(rec + 8, c, t);
@@ -206,6 +352,12 @@ static bc_status bc_point(const bc_problem* p, int32_t pt, const bc_config* cfg,
     diag->opaque = (tmax < 1e-250) ? 1 : 0;
     if (diag->opaque) for (int k = 0; k < 4; ++k) t[k] = bc_c(0.0, 0.0);
     diag->max_steps = max_steps;
+
+    if (out->fields != nullptr && p->n_depths > 0)
+    {
+        st = bc_fields(p, pt, cfg, k0, Ms, rec, m_in, m_ex, rr, t, out->fields);
+        if (st != BC_OK) return st;
+    }
 
     /* ---- outputs ---------------------------------------------------------------------------
      * Jones: r then t, each [incident][outgoing] row-major, so (pp, ps, sp, ss) with the FIRST
@@ -249,9 +401,6 @@ bc_status bc_evaluate_with(const bc_problem* problem, int32_t first_point, int32
     if ((int64_t)first_point + n_points > problem->n_points) return BC_INVALID_ARGUMENT;
     if (scratch_bytes < bc_scratch_bytes(problem->n_layers)) return BC_SCRATCH_TOO_SMALL;
     if (scratch == nullptr) return BC_INVALID_ARGUMENT;
-
-    /* Fields against depth are not built yet. Loud, and nothing is written. */
-    if (output->fields != nullptr && problem->n_depths > 0) return BC_NOT_IMPLEMENTED;
 
     bc_complex* rec = static_cast<bc_complex*>(scratch);
     bc_status first_failure = BC_OK;

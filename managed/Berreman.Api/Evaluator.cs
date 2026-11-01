@@ -25,6 +25,15 @@ public sealed record PointResult(
     double[] LayerAbsorption,   // [incident wave][document layer]
     BcPointDiagnostics Diagnostics)
 {
+    /// <summary>
+    /// The fields at the evaluation's depths, when it was asked for them: [incident wave][depth][6],
+    /// (E_x, E_y, E_z, H̃_x, H̃_y, H̃_z) per unit incident amplitude (contract, Section 5).
+    /// </summary>
+    public Complex[]? Fields { get; init; }
+
+    /// <summary>One field component: wave 0 or 1, depth index, component 0–5.</summary>
+    public Complex Field(int wave, int depth, int component, int nDepths) => Fields![(wave * nDepths + depth) * 6 + component];
+
     public BcStatus Status => (BcStatus)Diagnostics.Status;
     public Complex Rpp => Jones[0];
     public Complex Rss => Jones[3];
@@ -46,6 +55,9 @@ public sealed class EvaluationResult
     public required IReadOnlyList<PointResult> Points { get; init; }
     public required BcStatus Status { get; init; }
 
+    /// <summary>The depths the fields were computed at, in nm from the first interface; empty when none.</summary>
+    public double[] DepthsNm { get; init; } = [];
+
     /// <summary>
     /// When the stack has twisted layers: the largest change in any R, T or A when the number of
     /// sublayers is doubled. Null when nothing was discretised.
@@ -55,12 +67,14 @@ public sealed class EvaluationResult
 
 public static class Evaluator
 {
-    public static EvaluationResult Evaluate(StackDocument doc, int? workers = null)
+    /// <param name="depthsNm">Depths for the fields, in nm from the first interface (negative in the
+    /// incident medium, past the last interface in the exit medium); null for none.</param>
+    public static EvaluationResult Evaluate(StackDocument doc, int? workers = null, double[]? depthsNm = null)
     {
-        var result = Core(doc, workers, 1);
+        var result = Core(doc, workers, 1, depthsNm ?? []);
         if (!doc.Layers.Any(l => l.Twist is not null)) return result;
 
-        var finer = Core(doc, workers, 2);
+        var finer = Core(doc, workers, 2, []);
         double change = 0;
         for (int p = 0; p < result.Points.Count; ++p)
             for (int k = 0; k < 6; ++k)
@@ -68,7 +82,7 @@ public static class Evaluator
                 double a = result.Points[p].Power[k], b = finer.Points[p].Power[k];
                 if (double.IsFinite(a) && double.IsFinite(b)) change = Math.Max(change, Math.Abs(a - b));
             }
-        return new EvaluationResult { Document = doc, Points = result.Points, Status = result.Status, SublayerChange = change };
+        return new EvaluationResult { Document = doc, Points = result.Points, Status = result.Status, SublayerChange = change, DepthsNm = result.DepthsNm };
     }
 
     /// <summary>One medium as the engine sees it: a material, its rotation (null for none), its thickness, and the document layer it came from (−1 for the outer media).</summary>
@@ -99,7 +113,7 @@ public static class Evaluator
         return media;
     }
 
-    private static EvaluationResult Core(StackDocument doc, int? workers, int refine)
+    private static EvaluationResult Core(StackDocument doc, int? workers, int refine, double[] depthsNm)
     {
         var media = Expand(doc, refine);
         int nMedia = media.Count, nLayers = nMedia - 2, nDocLayers = doc.Layers.Count;
@@ -170,6 +184,10 @@ public static class Evaluator
         var power = new PinnedBuffer<double>((long)nPoints * 6);
         var absorption = new PinnedBuffer<double>((long)nPoints * 2 * nLayers);
         var diagnostics = new PinnedBuffer<BcPointDiagnostics>(nPoints);
+        int nDepths = depthsNm.Length;
+        var depths = PinnedBuffer<double>.From(depthsNm);
+        var fields = new PinnedBuffer<Complex>(Math.Max(1L, (long)nPoints * 2 * nDepths * 6));
+        fields.Span.Fill(new Complex(double.NaN, double.NaN));
 
         // A point that fails leaves its outputs untouched (rule 5), so they start as NaN: a failed
         // point then reads as NaN everywhere, never as plausible zeros.
@@ -182,9 +200,9 @@ public static class Evaluator
         {
             var problem = new BcProblem
             {
-                NLayers = nLayers, NSpectral = nSpectral, NPoints = nPoints, NDepths = 0,
+                NLayers = nLayers, NSpectral = nSpectral, NPoints = nPoints, NDepths = nDepths,
                 M = m.Pointer, Wavelength = wavelength.Pointer, Thickness = thickness.Pointer,
-                PointSpectral = pointSpectral.Pointer, PointXi = pointXi.Pointer, FieldDepths = null,
+                PointSpectral = pointSpectral.Pointer, PointXi = pointXi.Pointer, FieldDepths = nDepths > 0 ? depths.Pointer : null,
             };
             var (plan, scratchBytes) = Plan(problem);
             if (plan != BcStatus.Ok) throw new StackFormatException($"the engine refused the stack at bc_plan: {plan}");
@@ -193,7 +211,7 @@ public static class Evaluator
             {
                 Jones = jones.Pointer, Power = power.Pointer,
                 LayerAbsorption = nLayers > 0 ? absorption.Pointer : null,
-                Fields = null, Diagnostics = diagnostics.Pointer,
+                Fields = nDepths > 0 ? fields.Pointer : null, Diagnostics = diagnostics.Pointer,
             };
 
             int nw = Math.Max(1, Math.Min(workers ?? Environment.ProcessorCount, (nPoints + 63) / 64));
@@ -207,7 +225,7 @@ public static class Evaluator
         }
         GC.KeepAlive(m); GC.KeepAlive(wavelength); GC.KeepAlive(pointSpectral); GC.KeepAlive(pointXi);
         GC.KeepAlive(thickness); GC.KeepAlive(jones); GC.KeepAlive(power); GC.KeepAlive(absorption);
-        GC.KeepAlive(diagnostics);
+        GC.KeepAlive(diagnostics); GC.KeepAlive(depths); GC.KeepAlive(fields);
 
         var points = new PointResult[nPoints];
         for (int p = 0; p < nPoints; ++p)
@@ -227,9 +245,12 @@ public static class Evaluator
                 jones.Span.Slice(p * 8, 8).ToArray(),
                 power.Span.Slice(p * 6, 6).ToArray(),
                 layerAbs,
-                diagnostics[p]);
+                diagnostics[p])
+            {
+                Fields = nDepths > 0 ? fields.Span.Slice((int)((long)p * 2 * nDepths * 6), 2 * nDepths * 6).ToArray() : null,
+            };
         }
-        return new EvaluationResult { Document = doc, Points = points, Status = status };
+        return new EvaluationResult { Document = doc, Points = points, Status = status, DepthsNm = depthsNm };
     }
 
     private static unsafe (BcStatus, long) Plan(BcProblem problem)
