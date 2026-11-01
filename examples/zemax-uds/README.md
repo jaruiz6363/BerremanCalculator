@@ -102,6 +102,19 @@ Transmitted intensity through the cholesteric file, from OpticStudio's polarizat
 | 0.6 µm (in band) | 0.906 / 0.048 | 0.893 / 0.061 |
 | 0.7 µm (outside) | 0.888 / 0.762 | 0.920 / 0.899 |
 
+## Installing
+
+The Windows installer includes the built DLL. It is in `examples\zemax-uds\` in the install
+folder, together with this page, the source and the two lens files. The Start menu also has a
+shortcut to that folder: *OpticStudio surface example*.
+
+1. Copy `US_BERREMAN.dll` into OpticStudio's `Documents\Zemax\DLL\Surfaces` folder. Its exact
+   place is under Setup › Project Preferences › Folders.
+2. Open one of the lens files.
+
+The DLL is self-contained. It has the engine compiled in and the C runtime linked statically, so
+nothing else needs to be installed.
+
 ## Building
 
 The DLL is a target of the main CMake build:
