@@ -30,6 +30,7 @@ internal static class StackModelTests
         UnitChangesKeepTheStack();
         AxisDirectionIsTheRotatedZ();
         UnknownKeysSurvive();
+        EveryMaterialWritesAsTerms();
     }
 
     private static bool Same(EvaluationResult a, EvaluationResult b)
@@ -58,6 +59,41 @@ internal static class StackModelTests
             var again = Evaluator.Evaluate(StackDocument.Parse(written));
             Check(Same(original, again), $"{s.Name}: the written file evaluates to exactly the same numbers");
         }
+    }
+
+    /// <summary>Every sample material, rewritten as terms (and through JSON text), evaluates to exactly the same M.</summary>
+    private static void EveryMaterialWritesAsTerms()
+    {
+        int compared = 0;
+        foreach (var s in SampleCatalog.List(SampleCatalog.DefaultRoot))
+        {
+            var root = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(s.Path),
+                documentOptions: new() { CommentHandling = System.Text.Json.JsonCommentHandling.Skip })!;
+            var doc = StackDocument.Parse(File.ReadAllText(s.Path));
+            var lambdas = new[] { doc.Spectral[0], doc.Spectral[doc.Spectral.Length / 2], doc.Spectral[^1] }
+                .Select(v => Units.ToWavelengthNm(v, doc.SpectralUnit)).ToArray();
+            foreach (var (name, node) in root["materials"]!.AsObject())
+            {
+                var spec = node!.AsObject();
+                var terms = MaterialTerms.ToTerms(spec);
+                if (terms is null)
+                {
+                    Check(spec["model"]?.GetValue<string>() == "resistive_sheet", $"{s.Name}/{name}: only a resistive sheet has no terms");
+                    continue;
+                }
+                var again = MaterialParser.Parse(System.Text.Json.Nodes.JsonNode.Parse(terms.ToJsonString()), name);
+                bool same = true;
+                foreach (var l in lambdas)
+                {
+                    var a = doc.Materials[name].At(l, 100);
+                    var b = again.At(l, 100);
+                    for (int k = 0; k < 36; ++k) same &= a.M[k] == b.M[k];
+                }
+                Check(same, $"{s.Name}/{name}: written as terms, the same M");
+                ++compared;
+            }
+        }
+        Check(compared >= 30, $"materials compared as terms ({compared})");
     }
 
     private static void SweepTextRoundTrips()

@@ -145,6 +145,68 @@ public sealed class TableDispersion(string unit, double[] x, Complex[] values, b
     }
 }
 
+/// <summary>
+/// One Lorentz oscillator, in exp(−iωt): f = S / (ω₀² − ω² − iγω), with S, ω₀ and γ in a unit
+/// proportional to frequency (cm-1, eV, THz, GHz). Schubert et al. (PRB 93, 125209 (2016), Eq. 10)
+/// tabulate √S as the amplitude.
+/// </summary>
+public sealed class LorentzDispersion(string unit, double strength, double center, double gamma) : Dispersion
+{
+    public override Complex Eps(double wavelengthNm)
+    {
+        double w = Units.FromWavelengthNm(wavelengthNm, unit);
+        return strength / new Complex(center * center - w * w, -gamma * w);
+    }
+}
+
+/// <summary>Free carriers (Drude), in exp(−iωt): f = −ω_p² / (ω² + iγω), in a frequency unit.</summary>
+public sealed class DrudeDispersion(string unit, double plasma, double gamma) : Dispersion
+{
+    public override Complex Eps(double wavelengthNm)
+    {
+        double w = Units.FromWavelengthNm(wavelengthNm, unit);
+        return -plasma * plasma / new Complex(w * w, gamma * w);
+    }
+}
+
+/// <summary>Cauchy: n = A + B/λ² + C/λ⁴ with λ in the given wavelength unit, k = 0; f = n².</summary>
+public sealed class CauchyDispersion(string unit, double a, double b, double c, double[]? range) : Dispersion
+{
+    public override Complex Eps(double wavelengthNm)
+    {
+        double l = Units.FromWavelengthNm(wavelengthNm, unit);
+        if (range is not null && (l < range[0] || l > range[1]))
+            throw new StackFormatException($"{l:G6} {unit} is outside the Cauchy formula's range [{range[0]}, {range[1]}] {unit}");
+        double l2 = l * l, n = a + b / l2 + c / (l2 * l2);
+        return n * n;
+    }
+}
+
+/// <summary>A conductivity σ in S/m as a contribution to ε: f = iσ/(ωε₀) (exp(−iωt)).</summary>
+public sealed class ConductivityDispersion(double sigmaSPerM) : Dispersion
+{
+    // σ / (ω ε0) = σ Z0 λ / (2π), λ in metres, as ConductorMaterial.
+    public override Complex Eps(double wavelengthNm) =>
+        Complex.ImaginaryOne * sigmaSPerM * Material.Z0 * wavelengthNm * 1e-9 / (2 * Math.PI);
+}
+
+/// <summary>
+/// One of the two scalars of the Polder tensor, μ or κ, exactly as <see cref="FerriteMaterial"/>
+/// computes them; the ferrite written as terms puts μ on the xx and yy places of the μ block and
+/// κ on [[0, −i], [i, 0]].
+/// </summary>
+public sealed class PolderDispersion(double fourPiMsGauss, double h0Oe, double alpha, double gammaMHzPerOe, bool kappa) : Dispersion
+{
+    public override Complex Eps(double wavelengthNm)
+    {
+        double f = Units.C / (wavelengthNm * 1e-9) / 1e6;   // MHz
+        Complex w0 = new Complex(gammaMHzPerOe * h0Oe, -alpha * f);
+        double wm = gammaMHzPerOe * fourPiMsGauss;
+        Complex den = w0 * w0 - f * f;
+        return kappa ? f * wm / den : 1 + w0 * wm / den;
+    }
+}
+
 /// <summary>A material whose principal ε values follow dispersion laws: isotropic, uniaxial (axis z) or biaxial.</summary>
 public sealed class DispersiveMaterial(Dispersion x, Dispersion y, Dispersion z, Complex[,] mu) : Material
 {

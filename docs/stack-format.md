@@ -88,6 +88,50 @@ scalar. Every law has a `unit`, the spectral unit its parameters are in.
 All the laws are in the program's exp(−iωt) convention, with losses positive. Outside a table, or
 outside a formula's `range`, the evaluation is refused rather than extrapolated.
 
+`lorentz`, `drude`, `cauchy`, `conductivity` and `polder`, described under "General materials", may
+also be used here, as a whole material's law or as one principal value's.
+
+### General materials
+
+A material may instead be a list of terms. Each term is a law times a constant shape, and M is
+their sum ([material-model.md](material-model.md)). Any element of the 6×6 matrix may disperse,
+and each oscillator may have its own direction. This is how a monoclinic or triclinic crystal, a
+dispersing gyration or a chiral medium is written.
+
+```json
+"Ga2O3": { "terms": [
+  { "eps": [[3.21, -0.08, 0], [-0.08, 3.75, 0], [0, 0, 3.71]] },
+  { "lorentz": { "unit": "cm-1", "amplitude": 266.2, "center": 743.48, "gamma": 11.0 }, "axis_deg": 47.8 },
+  { "lorentz": { "unit": "cm-1", "amplitude": 544.9, "center": 663.17, "gamma": 3.2 }, "axis": [0, 0, 1] },
+  { "drude": { "unit": "cm-1", "plasma": 1058.3, "gamma": 370 }, "axis": [1, 0, 0] }
+] }
+```
+
+**A term** has at most one law and at least one shape. A term with no law is a constant. A term
+may also have a `label`, which is shown and otherwise ignored. A material written as terms has
+nothing else beside them, except `source` and `notes`.
+
+| Shape key | The shape |
+|---|---|
+| `eps`, `mu`, `rho`, `rho_prime` | That 3×3 block: a complex scalar (times the identity) or a 3×3 array. Several may be given together. |
+| `matrix` | The whole 6×6, alone |
+| `axis` | [x, y, z], normalised: êêᵀ in the ε block |
+| `axis_deg` | α: ê = (cos α, sin α, 0); or [α, β], lifted by β towards z |
+
+When no term gives μ, μ = 1.
+
+| Law | Parameters | f |
+|---|---|---|
+| `lorentz` | `unit` (a frequency: cm-1, eV, THz, GHz); `center`; `gamma` (default 0); `strength` S or `amplitude` A | S/(ω₀² − ω² − iγω), S = A² |
+| `drude` | `unit` (a frequency); `plasma`; `gamma` (default 0) | −ω_p²/(ω² + iγω) |
+| `cauchy` | `unit` (a wavelength); `a`; `b`, `c` (default 0); optional `range` | n², n = a + b/λ² + c/λ⁴ |
+| `conductivity` | `sigma_s_per_m` | iσ/(ωε₀) |
+| `polder` | as the ferrite model, and `part`: `"mu"` or `"kappa"` | the Polder μ or κ |
+| `sellmeier`, `phonon`, `phonon_additive`, `table` | as above | the law's ε |
+
+A material that is not passive, or not reciprocal, is evaluated as written. The editor reports both
+properties ([material-model.md](material-model.md), "Checks").
+
 ### Models
 
 A material with a `model` key is computed at each frequency. Its parameters are physical, so it

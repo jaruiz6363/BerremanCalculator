@@ -41,6 +41,31 @@ gives the form that agrees, and the test shows the printed form does not:
 | Schubert (1996), Eq. C5 | differences in the denominators of r₁₂pp and r₁₂ss, which makes each 1 | sums, as in his r₀₁ | ρ: 3 × 10⁻¹⁵ against an error of 1.7 |
 | Mei et al. (2012), Eq. 18b | the same sign of ε_xz for both slabs | opposite signs (his Eqs. 9–14) | see the Mei sample |
 
+## Monoclinic crystals
+
+**[literature/schubert-2016/ga2o3-010.json](literature/schubert-2016/ga2o3-010.json):** β-Ga₂O₃,
+from Schubert et al., *Phys. Rev. B* **93**, 125209 (2016).
+- **How the material is written.** It is given as terms (stack-format.md, "General materials"):
+  ε∞, 8 B_u oscillators along their own directions in the a–c plane, 4 A_u oscillators along b,
+  and free carriers.
+- **What is checked.** The test recomputes the numbers the paper derives from its own model, from
+  this file:
+
+  | Quantity | Agreement |
+  |---|---|
+  | The four static constants | within 0.1 |
+  | All 12 LO frequencies | within 1 cm⁻¹ |
+  | The 8 B_u LO angles | within 3° |
+  | The 5 A_u LPP frequencies | within 2 cm⁻¹ |
+
+- **What the agreement needs.** Two readings that the paper does not state: the amplitudes enter
+  squared, and Table IV's a and c\* columns are switched. A 2020 paper by the same group confirms
+  the switch ([literature.md](../docs/literature.md), "Schubert et al. (2016)").
+- **What is not reproduced.** The B_u LPP frequencies of Table III, which are printed for
+  comparison.
+- **What is not compared yet.** The Mueller-matrix figures, because the program does not output
+  Mueller matrices yet.
+
 ## Radome walls
 
 **Anshin (2024)** prints every input: two fibreglass skins and a syntactic-foam core, with ε′ and

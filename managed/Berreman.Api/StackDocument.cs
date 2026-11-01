@@ -224,9 +224,27 @@ public static class MaterialParser
     public static Material Parse(JsonNode? node, string where)
     {
         if (node is not JsonObject o) throw new StackFormatException($"{where} must be an object");
-        foreach (var key in new[] { "cauchy", "drude", "lorentz" })
-            if (o.ContainsKey(key))
-                throw new StackFormatException($"{where}: the dispersion law '{key}' is not implemented yet");
+
+        /* The general form: a list of terms, each a law times a 6×6 shape. */
+        if (o.ContainsKey("terms"))
+        {
+            var others = o.Select(p => p.Key).Where(k => k != "terms" && k != "source" && k != "notes").ToList();
+            if (others.Count > 0)
+                throw new StackFormatException($"{where}: a material given by \"terms\" takes nothing else beside them ({string.Join(", ", others)}); write a constant as a term with no law");
+            if (o["terms"] is not JsonArray list || list.Count == 0)
+                throw new StackFormatException($"{where}.terms must be a non-empty array");
+            var terms = new List<MaterialTerm>();
+            bool hasMu = false, hasEps = false;
+            for (int i = 0; i < list.Count; ++i)
+            {
+                var (term, givesEps, givesMu) = ParseTerm(list[i], $"{where}.terms[{i + 1}]");
+                terms.Add(term);
+                hasEps |= givesEps; hasMu |= givesMu;
+            }
+            if (!hasEps) throw new StackFormatException($"{where}: no term gives ε");
+            if (!hasMu) terms.Add(new MaterialTerm(null, MaterialMatrix.FromBlocks(new Complex[3, 3], MaterialMatrix.Scalar(1))));
+            return new TermMaterial(terms);
+        }
 
         /* Dispersive: one law for all three principal values, or one per principal axis. */
         if (DispersionKeys.Any(o.ContainsKey) || o.ContainsKey("uniaxial") || o.ContainsKey("biaxial"))
@@ -346,7 +364,12 @@ public static class MaterialParser
         return MaterialMatrix.Diagonal(x * x, y * y, z * z);
     }
 
-    private static readonly string[] DispersionKeys = ["sellmeier", "phonon", "phonon_additive", "table"];
+    /// <summary>The scalar laws, each a key whose value is the law's parameters.</summary>
+    public static readonly string[] DispersionKeys =
+        ["sellmeier", "cauchy", "lorentz", "drude", "phonon", "phonon_additive", "table", "conductivity", "polder"];
+
+    /// <summary>The keys that give a term's shape (docs/stack-format.md, "General materials").</summary>
+    public static readonly string[] ShapeKeys = ["eps", "mu", "rho", "rho_prime", "matrix", "axis", "axis_deg"];
 
     /// <summary>One scalar dispersion law: a constant (n or eps), or one of DispersionKeys.</summary>
     private static Dispersion ParseDispersion(JsonNode? node, string where)
@@ -358,15 +381,152 @@ public static class MaterialParser
         var w = $"{where}.{key}";
         if (key == "n") { var n = Cplx(o["n"], w); return new ConstantDispersion(n * n); }
         if (key == "eps") return new ConstantDispersion(Cplx(o["eps"], w));
+        return ParseLaw(key, o[key], w);
+    }
 
-        var s = o[key] as JsonObject ?? throw new StackFormatException($"{w} must be an object");
+    /// <summary>
+    /// One term of a general material: an optional law (none means the constant 1) and its shape.
+    /// Also says whether the shape gives ε and μ, so the material can default an absent μ to 1.
+    /// </summary>
+    private static (MaterialTerm Term, bool Eps, bool Mu) ParseTerm(JsonNode? node, string where)
+    {
+        if (node is not JsonObject o) throw new StackFormatException($"{where} must be an object");
+        var unknown = o.Select(p => p.Key).Where(k => !DispersionKeys.Contains(k) && !ShapeKeys.Contains(k) && k != "label").ToList();
+        if (unknown.Count > 0)
+            throw new StackFormatException($"{where}: '{unknown[0]}' is not a law ({string.Join(", ", DispersionKeys)}) or a shape ({string.Join(", ", ShapeKeys)})");
+        var laws = DispersionKeys.Where(o.ContainsKey).ToList();
+        if (laws.Count > 1) throw new StackFormatException($"{where}: a term has one law, not {string.Join(" and ", laws)}");
+        var law = laws.Count == 1 ? ParseLaw(laws[0], o[laws[0]], $"{where}.{laws[0]}") : null;
+
+        var shapes = ShapeKeys.Where(o.ContainsKey).ToList();
+        if (shapes.Count == 0) throw new StackFormatException($"{where}: say where the term goes, with one of {string.Join(", ", ShapeKeys)}");
+        bool axis = o.ContainsKey("axis") || o.ContainsKey("axis_deg");
+        if (o.ContainsKey("axis") && o.ContainsKey("axis_deg")) throw new StackFormatException($"{where}: give axis or axis_deg, not both");
+        if (axis && (o.ContainsKey("eps") || o.ContainsKey("matrix")))
+            throw new StackFormatException($"{where}: an axis is a shape in the ε block; give it or eps, not both");
+        if (o.ContainsKey("matrix") && shapes.Count > 1)
+            throw new StackFormatException($"{where}: a 6×6 matrix is the whole shape; give no other shape beside it");
+
+        MaterialMatrix shape;
+        if (o.ContainsKey("matrix")) shape = Matrix6(o["matrix"], $"{where}.matrix");
+        else
+        {
+            Complex[,] eps;
+            if (axis)
+            {
+                var e = o.ContainsKey("axis") ? AxisVector(o["axis"], $"{where}.axis") : AxisFromDegrees(o["axis_deg"], $"{where}.axis_deg");
+                eps = new Complex[3, 3];
+                for (int i = 0; i < 3; ++i) for (int j = 0; j < 3; ++j) eps[i, j] = e[i] * e[j];
+            }
+            else eps = o.ContainsKey("eps") ? Block(o["eps"], $"{where}.eps") : new Complex[3, 3];
+            shape = MaterialMatrix.FromBlocks(eps,
+                o.ContainsKey("mu") ? Block(o["mu"], $"{where}.mu") : new Complex[3, 3],
+                o.ContainsKey("rho") ? Block(o["rho"], $"{where}.rho") : null,
+                o.ContainsKey("rho_prime") ? Block(o["rho_prime"], $"{where}.rho_prime") : null);
+        }
+        bool givesEps = axis || o.ContainsKey("eps") || o.ContainsKey("matrix");
+        bool givesMu = o.ContainsKey("mu") || o.ContainsKey("matrix");
+        return (new MaterialTerm(law, shape), givesEps, givesMu);
+    }
+
+    /// <summary>A unit direction from [x, y, z] (normalised here).</summary>
+    private static double[] AxisVector(JsonNode? n, string where)
+    {
+        if (n is not JsonArray a || a.Count != 3) throw new StackFormatException($"{where} must be [x, y, z]");
+        var v = new[] { StackDocument.Num(a[0], where + "[1]"), StackDocument.Num(a[1], where + "[2]"), StackDocument.Num(a[2], where + "[3]") };
+        double len = Math.Sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+        if (!(len > 0)) throw new StackFormatException($"{where} must not be zero");
+        return [v[0] / len, v[1] / len, v[2] / len];
+    }
+
+    /// <summary>
+    /// A direction from angles in degrees: a number α is (cos α, sin α, 0), in the x–y plane from x
+    /// towards y; [α, β] is lifted by β out of that plane towards z.
+    /// </summary>
+    private static double[] AxisFromDegrees(JsonNode? n, string where)
+    {
+        double az, el = 0;
+        if (n is JsonArray a)
+        {
+            if (a.Count != 2) throw new StackFormatException($"{where} must be an angle or [angle, elevation]");
+            az = StackDocument.Num(a[0], where + "[1]");
+            el = StackDocument.Num(a[1], where + "[2]");
+        }
+        else az = StackDocument.Num(n, where);
+        const double d = Math.PI / 180;
+        return [Math.Cos(el * d) * Math.Cos(az * d), Math.Cos(el * d) * Math.Sin(az * d), Math.Sin(el * d)];
+    }
+
+    /// <summary>A complex scalar (times the identity) or a 3×3 array.</summary>
+    private static Complex[,] Block(JsonNode? n, string where) =>
+        n is JsonArray a && a.Count == 3 && a[0] is JsonArray ? Matrix3(n, where) : MaterialMatrix.Scalar(Cplx(n, where));
+
+    private static MaterialMatrix Matrix6(JsonNode? n, string where)
+    {
+        if (n is not JsonArray rows || rows.Count != 6) throw new StackFormatException($"{where} must be a 6×6 array");
+        var m = new MaterialMatrix();
+        for (int i = 0; i < 6; ++i)
+        {
+            if (rows[i] is not JsonArray row || row.Count != 6) throw new StackFormatException($"{where}[{i + 1}] must have 6 entries");
+            for (int j = 0; j < 6; ++j) m[i, j] = Cplx(row[j], $"{where}[{i + 1}][{j + 1}]");
+        }
+        return m;
+    }
+
+    private static bool IsFrequencyUnit(string unit) => unit is "GHz" or "THz" or "cm-1" or "eV";
+
+    /// <summary>The parameters of one law, the value of its key.</summary>
+    private static Dispersion ParseLaw(string key, JsonNode? node, string w)
+    {
+        var s = node as JsonObject ?? throw new StackFormatException($"{w} must be an object");
+        double N(JsonNode? x, string at) => StackDocument.Num(x, at);
+        double Opt(string k, double fallback) => s.ContainsKey(k) ? N(s[k], $"{w}.{k}") : fallback;
+        JsonArray Arr(string k) => s[k] as JsonArray ?? throw new StackFormatException($"{w}.{k} must be an array");
+
+        /* The two laws that are not in a spectral unit. */
+        if (key == "conductivity")
+        {
+            var sigma = N(s["sigma_s_per_m"], $"{w}.sigma_s_per_m");
+            if (!(sigma >= 0)) throw new StackFormatException($"{w}.sigma_s_per_m must not be negative");
+            return new ConductivityDispersion(sigma);
+        }
+        if (key == "polder")
+        {
+            var part = StackDocument.Str(s, "part", null, w);
+            if (part is not ("mu" or "kappa")) throw new StackFormatException($"{w}.part must be \"mu\" or \"kappa\"");
+            var alpha = Opt("alpha", 0);
+            if (alpha < 0) throw new StackFormatException($"{w}.alpha must not be negative");
+            return new PolderDispersion(N(s["four_pi_ms_gauss"], $"{w}.four_pi_ms_gauss"), N(s["h0_oe"], $"{w}.h0_oe"),
+                                        alpha, Opt("gamma_mhz_per_oe", 2.8), part == "kappa");
+        }
+
         var unit = StackDocument.Str(s, "unit", null, w);
         if (!Units.IsSpectralUnit(unit)) throw new StackFormatException($"{w}.unit: '{unit}' is not a spectral unit");
-        double N(JsonNode? x, string at) => StackDocument.Num(x, at);
-        JsonArray Arr(string k) => s[k] as JsonArray ?? throw new StackFormatException($"{w}.{k} must be an array");
 
         switch (key)
         {
+            case "lorentz":
+            case "drude":
+            {
+                if (!IsFrequencyUnit(unit))
+                    throw new StackFormatException($"{w}.unit: a {key} law is written in frequency (cm-1, eV, THz, GHz), not '{unit}'");
+                double gamma = Opt("gamma", 0);
+                if (gamma < 0) throw new StackFormatException($"{w}.gamma must not be negative");
+                if (key == "drude") return new DrudeDispersion(unit, N(s["plasma"], $"{w}.plasma"), gamma);
+                double center = N(s["center"], $"{w}.center");
+                if (!(center > 0)) throw new StackFormatException($"{w}.center must be positive");
+                if (s.ContainsKey("strength") == s.ContainsKey("amplitude"))
+                    throw new StackFormatException($"{w}: give one of strength (S) or amplitude (√S)");
+                double strength = s.ContainsKey("strength") ? N(s["strength"], $"{w}.strength") : Math.Pow(N(s["amplitude"], $"{w}.amplitude"), 2);
+                return new LorentzDispersion(unit, strength, center, gamma);
+            }
+            case "cauchy":
+            {
+                if (IsFrequencyUnit(unit))
+                    throw new StackFormatException($"{w}.unit: a Cauchy formula is written in wavelength (nm, um, ...), not '{unit}'");
+                double[]? range = s["range"] is JsonArray r ? [N(r[0], $"{w}.range[1]"), N(r[1], $"{w}.range[2]")] : null;
+                return new CauchyDispersion(unit, N(s["a"], $"{w}.a"), Opt("b", 0), Opt("c", 0), range);
+            }
             case "sellmeier":
             {
                 var terms = Arr("terms").Select((t, i) =>

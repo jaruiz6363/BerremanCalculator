@@ -217,6 +217,12 @@ public sealed class StackWorkspace
     {
         if (Model.Material(material) is not { } m) return "missing";
         if (m.Spec["model"] is { } model) return $"model: {model}";
+        string terms = m.Spec["terms"] is System.Text.Json.Nodes.JsonArray list ? $"{list.Count} terms; " : "";
+        return terms + Describe(m);
+    }
+
+    private string Describe(NamedMaterial m)
+    {
         try
         {
             var mat = MaterialParser.Parse(m.Spec, $"materials.{m.Name}");

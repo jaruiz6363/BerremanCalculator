@@ -214,6 +214,39 @@ examples. Its closed forms:
 | Eigenvalues of an arbitrary biaxial medium | 21–22 | Closed form |
 | A continuously twisted biaxial slab at normal incidence | 28–35 | Closed form, stated to be exact |
 
+### Schubert et al. (2016): monoclinic β-Ga₂O₃
+
+M. Schubert, R. Korlacki, S. Knight, T. Hofmann, S. Schöche, V. Darakchieva, E. Janzén,
+B. Monemar, D. Gogova, Q.-T. Thieu, R. Togashi, H. Murakami, Y. Kumagai, K. Goto, A. Kuramata,
+S. Yamakoshi and M. Higashiwaki, "Anisotropy, phonon modes, and free charge carrier parameters in
+monoclinic β-gallium oxide single crystals," *Phys. Rev. B* **93**, 125209 (2016).
+
+Conventions: exp(−iωt) (their Eq. 10 has −iωγ). The lab frame has z into the sample and the plane
+of incidence x–z, as ours, and the Euler matrices of Eqs. 31–33 are ours. This is the literature
+case the general material model (material-model.md) was built for: 8 B_u oscillators, each
+polarised along its own direction in the a–c plane, so the principal axes of ε turn with
+wavelength, and no single rotation diagonalises it.
+
+What the paper gives that a program can recompute: the static constants from Eqs. 16–19 (Table IV),
+the LO frequencies and angles (Table II, from Eqs. 22–24 with zero broadening) and the LPP
+frequencies (Table III and Fig. 12, Eqs. 25–26).
+
+Two things the paper does not say:
+- **The amplitudes of Table II are √S.** Eq. 10 reproduces the paper's derived numbers only with A²
+  in the numerator. With A to the first power, the oscillators add about 10⁻³ to ε_DC.
+- **Table IV's a and c\* columns are switched.** P. Gopalan et al., "The anisotropic quasi-static
+  permittivity of single-crystal β-Ga₂O₃," arXiv:2010.03107 (2020), has Schubert as a co-author and
+  says on p. 4: "due to a misprint, values reported in Ref. 16 for permittivity parameters
+  corresponding to a and c\* were accidentally switched." The switch also covers ε∞. With
+  ε∞,a = 3.21 and ε∞,c\* = 3.75, every LO frequency of Table II is reproduced to within 1 cm⁻¹. As
+  printed, the errors reach 10 cm⁻¹. Table II's B_u LO angles then agree when measured from c\*.
+
+The sample [schubert-2016/ga2o3-010.json](../samples/literature/schubert-2016/ga2o3-010.json)
+follows both readings above. The B_u LPP frequencies of Table III are not reproduced: the model
+gives 924.6 cm⁻¹ for the highest, as the paper's Fig. 12 shows, where the table has 967.1. The
+tests print these and do not assert them. The paper's figures are Mueller-matrix elements, which
+the program does not output yet.
+
 ### Not usable as solver tests
 
 - R.-C. Ma, L.-L. Gao, T. Zhang and Y. Jin, Proc. SPIE 10452, 104525A (2017). It uses a

@@ -60,6 +60,16 @@ public static class WindowTests
         window.UpdateLayout();
     }
 
+    /// <summary>
+    /// Lets a pending automatic evaluation start and finish, so it cannot overwrite the status line
+    /// between an action and the check that reads it.
+    /// </summary>
+    private static void Settle(MainWindow window)
+    {
+        Pump(window, 400);
+        PumpUntil(window, () => !window.IsEvaluating);
+    }
+
     /// <summary>Runs the dispatcher until the condition holds, or the time is up.</summary>
     private static bool PumpUntil(Window window, Func<bool> done, int seconds = 20)
     {
@@ -250,13 +260,14 @@ public static class WindowTests
             Find<TextBox>(w, "MaterialNameBox").Text = "quartz";
             Click(w, Find<Button>(w, "RenameMaterialButton"));
             h.Expect(w.Workspace.Model.Material("quartz") is not null, "Rename renames it");
+            Settle(w);
             Find<TextBox>(w, "MaterialSpecBox").Text = """{ "n": 1.5, "eps": 2 }""";
             Click(w, Find<Button>(w, "ApplyMaterialButton"));
             h.Expect(w.Workspace.Summary("quartz").StartsWith("uniaxial") && Find<SelectableTextBlock>(w, "StatusText").Text!.Contains("only one"),
                      "a material the parser refuses is not applied, and the status says why");
             var list = Find<ListBox>(w, "MaterialList");
             list.SelectedIndex = w.Workspace.Model.Materials.FindIndex(m => m.Name == "low");
-            Pump(w);
+            Settle(w);
             Click(w, Find<Button>(w, "RemoveMaterialButton"));
             h.Expect(w.Workspace.Model.Material("low") is not null && Find<SelectableTextBlock>(w, "StatusText").Text!.Contains("layer 1"),
                      "a material in use stays, and the status says where it is used");
