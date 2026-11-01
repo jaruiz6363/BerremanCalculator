@@ -99,8 +99,9 @@ public static class WindowTests
     /// <summary>A value typed into a box and the focus moved on, as Tab or a click elsewhere does.</summary>
     private static void TypeAndLeave(MainWindow window, TextBox box, string text)
     {
-        box.Focus();
-        Pump(window, 10);
+        /* The cell takes its value when it loses focus, so it must have it first; Focus() can take
+           a moment while the grid is still settling. */
+        PumpUntil(window, () => { if (!box.IsFocused) box.Focus(); return box.IsFocused; }, 5);
         box.Text = text;
         Find<Button>(window, "EvaluateButton").Focus();
         Pump(window);
@@ -183,6 +184,26 @@ public static class WindowTests
         });
     }
 
+    /// <summary>
+    /// The typed cells of a layer's row, as the grid shows it now. After an edit the grid rebuilds its
+    /// rows, and an old container can still be in the visual tree for a moment with a row object
+    /// that is no longer the grid's; typing into it would go nowhere. So the row is the one whose
+    /// object is the grid's current one, after letting the grid settle.
+    /// </summary>
+    private static List<TextBox> RowBoxes(MainWindow w, int index)
+    {
+        List<TextBox>? boxes = null;
+        PumpUntil(w, () =>
+        {
+            var current = Rows(w)[index];
+            var row = Find<DataGrid>(w, "LayerGrid").GetVisualDescendants().OfType<DataGridRow>()
+                .FirstOrDefault(r => ReferenceEquals(r.DataContext, current) && r.IsEffectivelyVisible);
+            boxes = row?.GetVisualDescendants().OfType<TextBox>().ToList();
+            return boxes is { Count: 4 };
+        }, 5);
+        return boxes ?? [];
+    }
+
     public static void CellsAreEditedByTyping(Harness h, HeadlessUnitTestSession session)
     {
         h.Section("thickness and orientation are typed into the table's cells");
@@ -190,19 +211,15 @@ public static class WindowTests
         {
             w.LoadSample(Sample("mansuripur-1990 / quadrilayer"), "q");
             Pump(w);
-            var row = Find<DataGrid>(w, "LayerGrid").GetVisualDescendants().OfType<DataGridRow>().First(r => r.DataContext is LayerRow { Index: 1 });
-            var boxes = row.GetVisualDescendants().OfType<TextBox>().ToList();   // thickness, φ, θ, ψ
+            var boxes = RowBoxes(w, 1);   // thickness, φ, θ, ψ
             h.Expect(boxes.Count == 4, $"a row has four typed cells ({boxes.Count})");
             if (boxes.Count != 4) return;
             TypeAndLeave(w, boxes[0], "25");
             h.Expect(w.Workspace.Model.Layers[1].Thickness == 25, "the thickness typed is the layer's");
-            row = Find<DataGrid>(w, "LayerGrid").GetVisualDescendants().OfType<DataGridRow>().First(r => r.DataContext is LayerRow { Index: 1 });
-            boxes = row.GetVisualDescendants().OfType<TextBox>().ToList();
-            TypeAndLeave(w, boxes[2], "40");
+            TypeAndLeave(w, RowBoxes(w, 1)[2], "40");
             h.Expect(w.Workspace.Model.Layers[1].EulerDeg[1] == 40, "θ typed in the row turns the layer");
             h.Expect(Rows(w)[1].AxisText.StartsWith("tilt 40°"), $"and the optic-axis column follows ({Rows(w)[1].AxisText})");
-            TypeAndLeave(w, Find<DataGrid>(w, "LayerGrid").GetVisualDescendants().OfType<DataGridRow>().First(r => r.DataContext is LayerRow { Index: 1 })
-                               .GetVisualDescendants().OfType<TextBox>().First(), "-5");
+            TypeAndLeave(w, RowBoxes(w, 1)[0], "-5");
             h.Expect(w.Workspace.Model.Layers[1].Thickness == 25 && Find<SelectableTextBlock>(w, "StatusText").Text!.Contains("zero or positive"),
                      $"a negative thickness is refused, with why ({Find<SelectableTextBlock>(w, "StatusText").Text})");
         });
