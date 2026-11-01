@@ -360,6 +360,50 @@ public static class WindowTests
         });
     }
 
+    public static void MaterialsComeFromLibraries(Harness h, HeadlessUnitTestSession session)
+    {
+        h.Section("From library… adds database materials and catalogue glasses; Save keeps one in my materials");
+        var userFile = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"berreman-gui-user-{Guid.NewGuid():N}.json");
+        MaterialLibrary.UserFile = userFile;   // never the real one
+        try
+        {
+            WithWindow(session, w =>
+            {
+                ShowTab(w, "Materials");
+                void Choose(string collection, string search, string name)
+                {
+                    Click(w, Find<Button>(w, "LibraryButton"));
+                    var d = Dialog<LibraryDialog>(w);
+                    h.Expect(d is not null, "the library dialog opens");
+                    if (d is null) return;
+                    Find<ComboBox>(d, "CollectionBox").SelectedItem = collection;
+                    Find<TextBox>(d, "SearchBox").Text = search;
+                    Pump(w);
+                    var list = Find<ListBox>(d, "EntryList");
+                    list.SelectedItem = list.Items.Cast<object>().FirstOrDefault(i => i.ToString()!.StartsWith(name + " ", StringComparison.Ordinal) || i.ToString() == name);
+                    Pump(w);
+                    h.Expect(list.SelectedItem is not null && Find<SelectableTextBlock>(d, "EntryDetail").Text!.Contains(name), $"{name} is found in {collection}");
+                    if (Environment.GetEnvironmentVariable("BC_SHOT_DIR") is { Length: > 0 } dir) d.CaptureRenderedFrame()?.Save(System.IO.Path.Combine(dir, $"library-{collection.Replace(":", "")}.png"));
+                    Click(d, Find<Button>(d, "OkButton"));
+                    Pump(w, 100);
+                }
+                Choose("Glass: SCHOTT", "N-BK7", "N-BK7");
+                h.Expect(w.Workspace.Model.Material("N-BK7")?.Spec.ToJsonString() == """{"glass":{"catalog":"SCHOTT","name":"N-BK7"}}""",
+                         "a glass is added by name");
+                Choose("Thin-film materials", "MgF2", "MgF2 (uniaxial)");
+                h.Expect(w.Workspace.Model.Material("MgF2 (uniaxial)")?.Spec["uniaxial"] is not null, "a crystal is added as one uniaxial material");
+                h.Expect(w.Workspace.Summary("MgF2 (uniaxial)").StartsWith("uniaxial"), $"and is summarised as uniaxial ({w.Workspace.Summary("MgF2 (uniaxial)")})");
+
+                Click(w, Find<Button>(w, "SaveToLibraryButton"));
+                h.Expect(MaterialLibrary.ReadUserFile(userFile).Any(e => e.Name == "MgF2 (uniaxial)"), "Save to my materials writes the selected one");
+                Choose("My materials", "", "MgF2 (uniaxial)");
+                h.Expect(w.Workspace.Model.Materials.Count(m => m.Spec["uniaxial"] is not null) == 2,
+                         "and From library… offers it back, under a new name in this stack");
+            });
+        }
+        finally { System.IO.File.Delete(userFile); }
+    }
+
     public static void MaterialsAreAddedEditedAndProtected(Harness h, HeadlessUnitTestSession session)
     {
         h.Section("the Materials tab adds, edits, renames, and will not remove a material in use");

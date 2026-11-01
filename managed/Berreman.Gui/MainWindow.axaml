@@ -243,10 +243,14 @@
         <TabItem Header="Materials">
           <Grid ColumnDefinitions="210,*" Margin="4">
             <DockPanel Margin="4">
-              <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="4" Margin="0,6,0,0">
-                <Button x:Name="NewMaterialButton" Content="New"/>
-                <Button x:Name="DuplicateMaterialButton" Content="Duplicate"/>
-                <Button x:Name="RemoveMaterialButton" Content="Remove"/>
+              <StackPanel DockPanel.Dock="Bottom" Spacing="4" Margin="0,6,0,0">
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                  <Button x:Name="NewMaterialButton" Content="New"/>
+                  <Button x:Name="DuplicateMaterialButton" Content="Duplicate"/>
+                  <Button x:Name="RemoveMaterialButton" Content="Remove"/>
+                </StackPanel>
+                <Button x:Name="LibraryButton" Content="From library…" HorizontalAlignment="Stretch"/>
+                <Button x:Name="SaveToLibraryButton" Content="Save to my materials" HorizontalAlignment="Stretch"/>
               </StackPanel>
               <ListBox x:Name="MaterialList">
                 <ListBox.ItemTemplate>

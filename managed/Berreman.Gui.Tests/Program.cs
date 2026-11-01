@@ -14,6 +14,7 @@ WindowTests.LayerPropertiesSetTheOpticAxisAndTwist(h, session);
 WindowTests.ADesignStringBuildsLayers(h, session);
 WindowTests.MaterialsAreAddedEditedAndProtected(h, session);
 WindowTests.MaterialsAreEditedAsFormsTermsAndResponse(h, session);
+WindowTests.MaterialsComeFromLibraries(h, session);
 WindowTests.UnitsConvertAndTheFileFollows(h, session);
 WindowTests.ClosingAChangedStackAsks(h, session);
 

@@ -42,6 +42,7 @@ All are in exp(−iωt), with losses positive.
 | `phonon` | ε∞ Π (ω_L² − ω² − iγ_Lω)/(ω_T² − ω² − iγ_Tω) |
 | `phonon_additive` | ε∞ [1 + Σ (ω_T² − ω_L²)/(ω² − ω_T² + iγω)] |
 | `table` | n + ik or ε′ + iε″ against λ, linear |
+| `glass` | n² of a catalogue glass, read from the vendor's AGF |
 | `conductivity` | iσ/(ωε₀) |
 | `polder` | the ferrite's μ or κ |
 
@@ -88,6 +89,17 @@ exactly the same M, bit for bit.
 
 The resistive sheet is the one exception. Its ε depends on the thickness of the layer that holds
 it, so it stays a model.
+
+## Libraries
+
+The databases a material can come from are listed in [materials/README.md](../materials/README.md):
+- **ThinFilmDesigner's two databases.** A database material is copied into the stack, which then
+  owns it.
+- **Five vendors' glass catalogues.** A glass is named, never copied, so its index always comes
+  from the vendor's data.
+- **The user's own file.** Any material can be saved there, terms included.
+
+A crystal listed as `X (o)` and `X (e)` is also offered as one uniaxial material.
 
 ## Checks
 

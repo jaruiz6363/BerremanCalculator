@@ -78,6 +78,16 @@ material is used.
 - **New** and **Duplicate** add a material.
 - **Rename** follows the material into every layer and medium.
 - **Remove** is refused while the material is used.
+- **From library…** adds materials from a library ([materials](../materials/README.md)). Choose a
+  library, search it, and select one or several entries. Below the list, the dialog shows each
+  entry's source and its index at the stack's first spectral point.
+  - **ThinFilmDesigner's databases.** A material from them is copied into the stack.
+  - **Five vendors' glass catalogues.** A glass is named, and its index is always read from the
+    catalogue.
+  - **Your own materials.** These are the materials you saved with the next button.
+
+  A crystal listed as (o) and (e) is also offered as one uniaxial material.
+- **Save to my materials** keeps the selected material, in any form, for use in other stacks.
 
 The selected material has four views. Every change in them is one undoable edit, and a material
 that would not evaluate is refused, with the reason in the status line.

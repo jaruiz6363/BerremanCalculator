@@ -102,7 +102,7 @@ internal static class MaterialEditingTests
             try
             {
                 var m = MaterialParser.Parse(spec, law);
-                var lambda = law is "table" or "sellmeier" or "cauchy" ? 600 : law is "conductivity" or "polder" ? 3e7 : 2e4;
+                var lambda = law is "table" or "sellmeier" or "cauchy" or "glass" ? 600 : law is "conductivity" or "polder" ? 3e7 : 2e4;
                 m.At(lambda, 100);
             }
             catch (StackFormatException e) { error = e.Message; }

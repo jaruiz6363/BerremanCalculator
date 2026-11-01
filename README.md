@@ -28,16 +28,22 @@ rather than computed wrongly.
 
 The C# API reads [stack files](docs/stack-format.md), including twisted (cholesteric) layers, which
 it evaluates as sublayers and checks by doubling them. Materials are constants, dispersive (Sellmeier,
-phonon oscillators, tables) or models (ferrite, conductor, resistive sheet).
+Cauchy, Lorentz, Drude, phonon oscillators, tables, catalogue glasses) or models (ferrite, conductor,
+resistive sheet). Or they are a list of terms, each a dispersion law times a 6×6 shape, so any
+element may disperse: a monoclinic crystal, whose principal axes turn with wavelength, is written
+this way ([the material model](docs/material-model.md)).
 - `berreman evaluate <file>` prints or writes a table.
 - The MCP tool `evaluate_stack` returns the same table.
 - The GUI edits a stack in tables: layers with their thickness, orientation (Euler angles or the
-  optic axis) and twist; the outer media, also orientable; the materials; the units and the sweep.
+  optic axis) and twist; the outer media, also orientable; the units and the sweep. Its Materials
+  tab edits n and k, or each term's law and 6×6 shape; plots a material's response and principal
+  axes; and adds materials from ThinFilmDesigner's databases and five vendors' glass catalogues.
   It evaluates as you edit, with undo and redo, and plots R, T, A and Ψ/Δ.
 
-Seventeen literature samples are reproduced: Mansuripur (1990), nine closed forms, three of Passler
-and Paarmann's (2017) infrared Otto-geometry examples, Ting's (2006) cholesteric, and three
-microwave radome walls (Anshin 2024; Peshlov 2006, against measurements). See
+Eighteen literature samples are reproduced: Mansuripur (1990), nine closed forms, three of Passler
+and Paarmann's (2017) infrared Otto-geometry examples, Ting's (2006) cholesteric, three microwave
+radome walls (Anshin 2024; Peshlov 2006, against measurements), and monoclinic β-Ga₂O₃ (Schubert
+et al. 2016). See
 [samples](samples/README.md).
 
 The tests come before each part of the engine, as listed in the [engine design](docs/engine-design.md).
@@ -52,6 +58,8 @@ The tests come before each part of the engine, as listed in the [engine design](
 | [Engine design](docs/engine-design.md) | How one point is computed, why it is stable, and the tests written before the code. |
 | [Derivation of Δ](docs/derivation-delta.md) | Berreman's 4×4 matrix from Maxwell's equations, in the program's conventions, with the checks. |
 | [The stack file](docs/stack-format.md) | The file the CLI and MCP server evaluate: materials, layers, units and the sweep. |
+| [The material model](docs/material-model.md) | How a material becomes the 6×6 matrix: laws times shapes, the short forms, the checks. |
+| [Materials](materials/README.md) | The shipped databases and glass catalogues, and the user's own materials. |
 | [User guide](docs/user-guide.md) | The GUI, the command line and the MCP server. |
 | [Samples](samples/README.md) | The examples from the literature, and how closely each is reproduced. |
 
@@ -89,6 +97,7 @@ managed/    C#: API, GUI, CLI, MCP server, and their tests
 tests/      the engine's tests, and fixtures both sides read
 tools/      build checks, including the rules above
 samples/    the examples from the literature
+materials/  material databases and glass catalogues
 ```
 
 | Project | Builds |

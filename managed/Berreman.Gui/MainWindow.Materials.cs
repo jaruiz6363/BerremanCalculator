@@ -36,6 +36,15 @@ public partial class MainWindow
 
     private void InitMaterialEditor()
     {
+        // ---- libraries ---------------------------------------------------------------------------
+        LibraryButton.Click += async (_, _) => await AddFromLibrary();
+        SaveToLibraryButton.Click += (_, _) =>
+        {
+            if (_selectedMaterial is not { } name || _ws.Model.Material(name) is not { } mat) return;
+            Try(() => MaterialLibrary.SaveToUserFile(name, mat.Spec),
+                $"'{name}' saved to your materials ({MaterialLibrary.UserFile}); From library… offers it in any stack.");
+        };
+
         // ---- simple ------------------------------------------------------------------------------
         SimpleKindBox.SelectionChanged += (_, _) => { if (!_showingMaterial) SimpleRows(); };
         ApplySimpleButton.Click += (_, _) => ApplySimple();
@@ -99,6 +108,36 @@ public partial class MainWindow
             box.KeyDown += (_, e) => { if (e.Key == Key.Enter) { e.Handled = true; PlotResponse(); } };
         ResponsePlot.EmptyText = "Choose a material and a range, then Plot.";
         MaterialTabs.SelectionChanged += (_, e) => { if (e.Source == MaterialTabs && MaterialTabs.SelectedIndex == 2 && !_showingMaterial) PlotResponse(); };
+    }
+
+    /// <summary>The library dialog; what it returns is added to the stack as one undoable edit.</summary>
+    private async Task AddFromLibrary()
+    {
+        double nm;
+        string at;
+        try
+        {
+            var doc = _ws.Model.ToDocument();
+            nm = Units.ToWavelengthNm(doc.Spectral[0], doc.SpectralUnit);
+            at = $"{doc.Spectral[0].ToString("G6", Inv)} {doc.SpectralUnit}";
+        }
+        catch (StackFormatException) { nm = 550; at = "550 nm"; }
+        var chosen = await new LibraryDialog(nm, at).ShowDialog<List<LibraryEntry>?>(this);
+        if (chosen is null || chosen.Count == 0) return;
+        var added = new List<string>();
+        Try(() => _ws.Edit(m =>
+        {
+            foreach (var e in chosen)
+            {
+                var name = m.UniqueName(e.Name);
+                m.Materials.Add(new NamedMaterial(name, (JsonObject)e.Spec.DeepClone()));
+                added.Add(name);
+            }
+        }), null);
+        if (added.Count == 0) return;
+        Status(added.Count == 1 ? $"'{added[0]}' added from {chosen[0].Collection}." : $"{added.Count} materials added: {string.Join(", ", added)}.");
+        _selectedMaterial = added[^1];
+        ShowMaterials();
     }
 
     private static int Move(JsonArray t, int at, int by)

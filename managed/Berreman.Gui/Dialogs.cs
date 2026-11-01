@@ -293,3 +293,88 @@ public sealed class DesignStringDialog : Window
         }
     }
 }
+
+/// <summary>
+/// Materials from the shipped databases, the glass catalogues and the user's own file
+/// (materials/README.md). Returns the entries chosen; the window adds them to the stack.
+/// </summary>
+public sealed class LibraryDialog : Window
+{
+    public LibraryDialog(double referenceNm, string referenceText)
+    {
+        Title = "Add materials from a library";
+        Width = 760;
+        Height = 620;
+        WindowStartupLocation = WindowStartupLocation.CenterOwner;
+
+        var collections = MaterialLibrary.Collections();
+        var collection = new ComboBox { Name = "CollectionBox", ItemsSource = collections, SelectedIndex = 0, Width = 260 };
+        var search = new TextBox { Name = "SearchBox", Watermark = "search names and sources", Width = 300 };
+        var list = new ListBox { Name = "EntryList", SelectionMode = SelectionMode.Multiple };
+        var detail = new SelectableTextBlock { Name = "EntryDetail", TextWrapping = TextWrapping.Wrap };
+        var error = new TextBlock { Name = "ErrorText", Foreground = Brushes.Firebrick, TextWrapping = TextWrapping.Wrap };
+        IReadOnlyList<LibraryEntry> entries = [];
+
+        void Load()
+        {
+            try { entries = MaterialLibrary.Entries(collection.SelectedItem as string ?? collections[0]); error.Text = ""; }
+            catch (Exception e) when (e is FormatException or IOException) { entries = []; error.Text = e.Message; }
+            Filter();
+        }
+        void Filter()
+        {
+            var q = (search.Text ?? "").Trim();
+            list.ItemsSource = entries
+                .Where(e => q.Length == 0 || e.Name.Contains(q, StringComparison.OrdinalIgnoreCase) || e.Source.Contains(q, StringComparison.OrdinalIgnoreCase))
+                .Select(e => new Item(e)).ToList();
+        }
+        collection.SelectionChanged += (_, _) => Load();
+        search.TextChanged += (_, _) => Filter();
+        list.SelectionChanged += (_, _) =>
+        {
+            if (list.SelectedItems?.OfType<Item>().LastOrDefault() is not { } it) { detail.Text = ""; return; }
+            string value;
+            try
+            {
+                var m = MaterialParser.Parse(it.Entry.Spec, it.Entry.Name).At(referenceNm, 0);
+                System.Numerics.Complex n0 = System.Numerics.Complex.Sqrt(m[0, 0]), n2 = System.Numerics.Complex.Sqrt(m[2, 2]);
+                value = n0 == n2 ? $"n + ik = {n0.Real:G6} + {Math.Abs(n0.Imaginary):G4}i" : $"nₒ = {n0.Real:G6}, nₑ = {n2.Real:G6}";
+                value += $" at {referenceText}.";
+            }
+            catch (StackFormatException e) { value = $"At {referenceText}: {e.Message}"; }
+            detail.Text = $"{it.Entry.Name}\n{value}\n{it.Entry.Source}";
+        };
+        Load();
+
+        Content = new DockPanel
+        {
+            Margin = new Thickness(16),
+            Children =
+            {
+                Top(Dialogs.Row(Dialogs.Label("Library", 60), collection, Dialogs.Label("", 12), search)),
+                Top(Dialogs.Hint("A database material is copied into the stack, which then owns it. A catalogue glass is named and always read from the catalogue. Select several with Ctrl or Shift.")),
+                Bottom(Dialogs.Buttons(this, Ok)),
+                Bottom(error),
+                Bottom(new Border { Child = detail, Padding = new Thickness(0, 8), MinHeight = 80 }),
+                list,
+            },
+        };
+
+        bool Ok()
+        {
+            var chosen = list.SelectedItems?.OfType<Item>().Select(i => i.Entry).ToList() ?? [];
+            if (chosen.Count == 0) { error.Text = "Select a material first."; return false; }
+            Close(chosen);
+            return true;
+        }
+    }
+
+    private static Control Top(Control c) { DockPanel.SetDock(c, Dock.Top); c.Margin = new Thickness(0, 0, 0, 8); return c; }
+    private static Control Bottom(Control c) { DockPanel.SetDock(c, Dock.Bottom); return c; }
+
+    private sealed record Item(LibraryEntry Entry)
+    {
+        public override string ToString() =>
+            Entry.Source.Length == 0 ? Entry.Name : $"{Entry.Name}   —   {(Entry.Source.Length > 90 ? Entry.Source[..90] + "…" : Entry.Source)}";
+    }
+}

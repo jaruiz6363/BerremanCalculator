@@ -84,6 +84,7 @@ scalar. Every law has a `unit`, the spectral unit its parameters are in.
 | `phonon` | `unit`; `eps_inf`; `modes`: `[{ "to", "lo", "gamma_to", "gamma_lo" }]` | ε∞ Π (ω_L² − ω² − iγ_L ω) / (ω_T² − ω² − iγ_T ω), the factorised TO–LO form |
 | `phonon_additive` | `unit`; `eps_inf`; `modes`: `[{ "to", "lo", "gamma" }]` | ε∞ [1 + Σ (ω_T² − ω_L²) / (ω² − ω_T² + iγω)] |
 | `table` | `unit`; `columns`: `["x", "n", "k"]` or `["x", "eps_re", "eps_im"]`; `data`: rows | Linear interpolation in x. A table must be monotonic in x. |
+| `glass` | `catalog` (SCHOTT, OHARA, HOYA, CDGM, SUMITA); `name` | n² from the vendor's catalogue ([materials](../materials/README.md)); k = 0. The glass is named, never copied. |
 
 All the laws are in the program's exp(−iωt) convention, with losses positive. Outside a table, or
 outside a formula's `range`, the evaluation is refused rather than extrapolated.

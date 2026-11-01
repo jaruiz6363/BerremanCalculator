@@ -366,7 +366,7 @@ public static class MaterialParser
 
     /// <summary>The scalar laws, each a key whose value is the law's parameters.</summary>
     public static readonly string[] DispersionKeys =
-        ["sellmeier", "cauchy", "lorentz", "drude", "phonon", "phonon_additive", "table", "conductivity", "polder"];
+        ["sellmeier", "cauchy", "lorentz", "drude", "phonon", "phonon_additive", "table", "glass", "conductivity", "polder"];
 
     /// <summary>The keys that give a term's shape (docs/stack-format.md, "General materials").</summary>
     public static readonly string[] ShapeKeys = ["eps", "mu", "rho", "rho_prime", "matrix", "axis", "axis_deg"];
@@ -483,7 +483,9 @@ public static class MaterialParser
         double Opt(string k, double fallback) => s.ContainsKey(k) ? N(s[k], $"{w}.{k}") : fallback;
         JsonArray Arr(string k) => s[k] as JsonArray ?? throw new StackFormatException($"{w}.{k} must be an array");
 
-        /* The two laws that are not in a spectral unit. */
+        /* The laws that are not in a spectral unit. */
+        if (key == "glass")
+            return new GlassDispersion(GlassCatalogs.Find(StackDocument.Str(s, "catalog", null, w), StackDocument.Str(s, "name", null, w)));
         if (key == "conductivity")
         {
             var sigma = N(s["sigma_s_per_m"], $"{w}.sigma_s_per_m");

@@ -34,7 +34,7 @@ public static class MaterialEditing
     private static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
 
     public static readonly string[] LawChoices =
-        ["none (constant)", "sellmeier", "cauchy", "lorentz", "drude", "phonon", "phonon_additive", "table", "conductivity", "polder"];
+        ["none (constant)", "sellmeier", "cauchy", "lorentz", "drude", "phonon", "phonon_additive", "table", "glass", "conductivity", "polder"];
 
     /// <summary>What a law means, for the line under its choice.</summary>
     public static string LawFormula(string? law) => law switch
@@ -47,6 +47,7 @@ public static class MaterialEditing
         "phonon" => "f = ε∞ Π (ω_L² − ω² − iγ_L ω)/(ω_T² − ω² − iγ_T ω)",
         "phonon_additive" => "f = ε∞ [1 + Σ (ω_T² − ω_L²)/(ω² − ω_T² + iγω)]",
         "table" => "f = (n + ik)² or ε′ + iε″, interpolated linearly in x; refused outside the rows",
+        "glass" => "f = n², n from the vendor's catalogue (materials/glass), k = 0; refused outside the catalogue's range",
         "conductivity" => "f = iσ/(ωε₀), σ in S/m",
         "polder" => "the ferrite's Polder μ (part mu) or κ (part kappa); bias along z",
         _ => "",
@@ -62,6 +63,7 @@ public static class MaterialEditing
         "phonon" => """{ "unit": "cm-1", "eps_inf": 1, "modes": [ { "to": 500, "lo": 600, "gamma_to": 5, "gamma_lo": 5 } ] }""",
         "phonon_additive" => """{ "unit": "cm-1", "eps_inf": 1, "modes": [ { "to": 500, "lo": 600, "gamma": 5 } ] }""",
         "table" => """{ "unit": "um", "columns": ["x", "n", "k"], "data": [ [0.4, 1.5, 0], [0.8, 1.5, 0] ] }""",
+        "glass" => """{ "catalog": "SCHOTT", "name": "N-BK7" }""",
         "conductivity" => """{ "sigma_s_per_m": 1000000 }""",
         "polder" => """{ "four_pi_ms_gauss": 1000, "h0_oe": 500, "alpha": 0, "gamma_mhz_per_oe": 2.8, "part": "mu" }""",
         _ => throw new ArgumentException($"'{law}' is not a law"),
