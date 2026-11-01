@@ -234,6 +234,13 @@ public sealed class StackWorkspace
         return c.Invalid is not null ? "invalid" : $"{c.Kind} · {c.ShortLaw}";
     }
 
+    /// <summary>
+    /// Whether turning the material can change anything: false only for an isotropic one, so the
+    /// window hides the orientation boxes of an isotropic medium. A missing or invalid material
+    /// keeps them, since what it will be is not known.
+    /// </summary>
+    public bool NeedsOrientation(string material) => !Kind(material).StartsWith("isotropic ·");
+
     private sealed record MaterialClass(string Kind, string Detail, string At, string Law, string ShortLaw, string? Invalid = null);
 
     /// <summary>

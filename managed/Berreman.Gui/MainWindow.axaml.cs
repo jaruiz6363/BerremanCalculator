@@ -279,6 +279,8 @@ public partial class MainWindow : Window
             SetText(ExitPhi, Angle(m.Exit.EulerDeg[0])); SetText(ExitTheta, Angle(m.Exit.EulerDeg[1])); SetText(ExitPsi, Angle(m.Exit.EulerDeg[2]));
             IncidentInfo.Text = _ws.Summary(m.Incident.Material);
             ExitInfo.Text = _ws.Summary(m.Exit.Material);
+            IncidentAngles.IsVisible = _ws.NeedsOrientation(m.Incident.Material);
+            ExitAngles.IsVisible = _ws.NeedsOrientation(m.Exit.Material);
 
             var selected = LayerGrid.SelectedIndex;
             LayerGrid.Columns[3].Header = $"Thickness ({(m.LengthUnit == "um" ? "µm" : m.LengthUnit)})";

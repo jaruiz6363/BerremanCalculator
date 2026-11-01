@@ -66,8 +66,10 @@ evaluates on demand. Every edit can be undone (**Ctrl+Z**) and redone (**Ctrl+Y*
 - **Units**: lengths (nm, µm, mm, cm, m) and the spectral axis (wavelength, GHz, THz, cm⁻¹ or eV).
   Changing a unit converts every number it applies to, so the stack stays physically the same.
   Thicknesses are always physical: there is no QWOT or FWOT (contract, Section 1a).
-- **Incident medium** and **exit medium**: a material each, with its own Euler angles φ, θ, ψ, so an
-  anisotropic substrate or prism can be oriented. Beside each, the material in a few words.
+- **Incident medium** and **exit medium**: a material each. An anisotropic medium also has its own
+  Euler angles φ, θ, ψ, so a substrate or prism can be oriented. For an isotropic medium, such as
+  air or glass, the angles are hidden, because turning it changes nothing. Beside each medium is
+  a short description of its material.
 - **The layer table**. Layer 1 faces the incident medium. Its columns:
 
   | Column | |

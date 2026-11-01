@@ -152,9 +152,12 @@
               <WrapPanel>
                 <TextBlock Classes="label" Text="Incident medium" FontWeight="SemiBold" Width="120"/>
                 <ComboBox x:Name="IncidentBox" MinWidth="160" Margin="0,0,12,0"/>
-                <TextBlock Classes="label" Text="φ"/><TextBox x:Name="IncidentPhi" Classes="angle" Margin="0,0,6,0"/>
-                <TextBlock Classes="label" Text="θ"/><TextBox x:Name="IncidentTheta" Classes="angle" Margin="0,0,6,0"/>
-                <TextBlock Classes="label" Text="ψ"/><TextBox x:Name="IncidentPsi" Classes="angle" Margin="0,0,8,0"/>
+                <!-- The orientation, shown only when the medium is anisotropic: it does nothing to an isotropic one. -->
+                <StackPanel x:Name="IncidentAngles" Orientation="Horizontal">
+                  <TextBlock Classes="label" Text="φ"/><TextBox x:Name="IncidentPhi" Classes="angle" Margin="0,0,6,0"/>
+                  <TextBlock Classes="label" Text="θ"/><TextBox x:Name="IncidentTheta" Classes="angle" Margin="0,0,6,0"/>
+                  <TextBlock Classes="label" Text="ψ"/><TextBox x:Name="IncidentPsi" Classes="angle" Margin="0,0,8,0"/>
+                </StackPanel>
                 <TextBlock x:Name="IncidentInfo" Classes="hint" VerticalAlignment="Center"/>
               </WrapPanel>
             </Border>
@@ -181,9 +184,11 @@
               <WrapPanel>
                 <TextBlock Classes="label" Text="Exit medium" FontWeight="SemiBold" Width="120"/>
                 <ComboBox x:Name="ExitBox" MinWidth="160" Margin="0,0,12,0"/>
-                <TextBlock Classes="label" Text="φ"/><TextBox x:Name="ExitPhi" Classes="angle" Margin="0,0,6,0"/>
-                <TextBlock Classes="label" Text="θ"/><TextBox x:Name="ExitTheta" Classes="angle" Margin="0,0,6,0"/>
-                <TextBlock Classes="label" Text="ψ"/><TextBox x:Name="ExitPsi" Classes="angle" Margin="0,0,8,0"/>
+                <StackPanel x:Name="ExitAngles" Orientation="Horizontal">
+                  <TextBlock Classes="label" Text="φ"/><TextBox x:Name="ExitPhi" Classes="angle" Margin="0,0,6,0"/>
+                  <TextBlock Classes="label" Text="θ"/><TextBox x:Name="ExitTheta" Classes="angle" Margin="0,0,6,0"/>
+                  <TextBlock Classes="label" Text="ψ"/><TextBox x:Name="ExitPsi" Classes="angle" Margin="0,0,8,0"/>
+                </StackPanel>
                 <TextBlock x:Name="ExitInfo" Classes="hint" VerticalAlignment="Center"/>
               </WrapPanel>
             </Border>

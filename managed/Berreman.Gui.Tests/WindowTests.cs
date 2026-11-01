@@ -638,6 +638,23 @@ public static class WindowTests
         });
     }
 
+    public static void MediaShowOrientationOnlyWhenAnisotropic(Harness h, HeadlessUnitTestSession session)
+    {
+        h.Section("an isotropic incident or exit medium shows no φ, θ, ψ: turning it changes nothing");
+        WithWindow(session, w =>
+        {
+            w.LoadSample(Sample("passler-2017 / sic-otto"), "passler-2017 / sic-otto");
+            Pump(w);
+            h.Expect(!Find<StackPanel>(w, "IncidentAngles").IsVisible, "the KRS5 prism (isotropic) has no orientation boxes");
+            h.Expect(Find<StackPanel>(w, "ExitAngles").IsVisible, "the SiC substrate (uniaxial) has them");
+            w.Workspace.Edit(m => m.Exit.Material = "air");
+            Pump(w);
+            h.Expect(!Find<StackPanel>(w, "ExitAngles").IsVisible, "made air, the exit medium loses them");
+            Click(w, Find<Button>(w, "UndoButton"));
+            h.Expect(Find<StackPanel>(w, "ExitAngles").IsVisible, "and Undo brings them back with the SiC");
+        });
+    }
+
     public static void ClosingAChangedStackAsks(Harness h, HeadlessUnitTestSession session)
     {
         h.Section("closing a changed stack asks whether to save it");
