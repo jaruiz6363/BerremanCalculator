@@ -224,7 +224,9 @@ internal static class Schubert2016Tests
         var lossy = At(Variant(lossless: false, carriers: true), 600);
         Check(MaterialChecks.LeastLoss(lossy) >= -1e-12, $"Ga₂O₃ is passive (least loss {MaterialChecks.LeastLoss(lossy):G3})");
         Check(MaterialChecks.NonReciprocity(lossy) == 0, "Ga₂O₃ is reciprocal");
-        Check(Math.Abs(MaterialChecks.LeastLoss(At(Variant(lossless: true, carriers: false), 600))) < 1e-12, "with no broadening it is lossless");
+        var (least, greatest) = MaterialChecks.LossRange(At(Variant(lossless: true, carriers: false), 600));
+        Check(Math.Abs(least) < 1e-12 && Math.Abs(greatest) < 1e-12, "with no broadening it is lossless");
+        Check(MaterialChecks.LossRange(lossy).Greatest > 0.1, "with its broadening it absorbs (the greatest loss is positive, though the least is 0 from μ)");
 
         var gain = MaterialParser.Parse(JsonNode.Parse("""{ "terms": [ { "eps": [[2, [0, -0.1], 0], [[0, 0.1], 2, 0], [0, 0, [2, -0.01]]] } ] }"""), "g");
         var g = gain.At(500, 0);

@@ -130,7 +130,11 @@ public partial class MainWindow : Window
         foreach (var (box, k) in new[] { (ExitPhi, 0), (ExitTheta, 1), (ExitPsi, 2) })
             Commit(box, t => _ws.Edit(m => m.Exit.EulerDeg[k] = StackWorkspace_Parse(t, $"exit medium {angleNames[k]}")));
 
-        LayerRow.Error += message => Status(message, error: true);
+        /* LayerRow.Error is static: a window that closed must stop listening, or a stale handler
+           runs ahead of this one (and keeps the closed window alive). */
+        Action<string> rowError = message => Status(message, error: true);
+        LayerRow.Error += rowError;
+        Closed += (_, _) => LayerRow.Error -= rowError;
         LayerGrid.AddHandler(Button.ClickEvent, async (_, e) =>
         {
             if (e.Source is Button { Classes: var c, DataContext: LayerRow row } && c.Contains("layerProperties"))
@@ -189,6 +193,7 @@ public partial class MainWindow : Window
             }, $"'{name}' updated.");
         };
         RevertMaterialButton.Click += (_, _) => ShowMaterial();
+        InitMaterialEditor();
 
         // ---- the file tab ----------------------------------------------------------------------
         ApplyTextButton.Click += (_, _) => Try(() => _ws.EditText(Editor.Text ?? ""), "The file text is applied.");
@@ -291,10 +296,6 @@ public partial class MainWindow : Window
         if (!box.IsFocused || box.Text is null) box.Text = text;
     }
 
-    private sealed record MaterialItem(string Name, string Summary)
-    {
-        public override string ToString() => $"{Name}  —  {Summary}";
-    }
 
     private void ShowMaterials()
     {
@@ -319,6 +320,7 @@ public partial class MainWindow : Window
         MaterialSpecBox.Text = mat is null ? "" : JsonText.Write(mat.Spec).TrimEnd();
         foreach (var c in new Control[] { RenameMaterialButton, ApplyMaterialButton, RevertMaterialButton, DuplicateMaterialButton, RemoveMaterialButton, MaterialSpecBox, MaterialNameBox })
             c.IsEnabled = mat is not null;
+        ShowMaterialViews();
     }
 
     // ---- editing helpers -----------------------------------------------------------------------
@@ -501,7 +503,12 @@ public partial class MainWindow : Window
                 msg += $" {failed} failed (first: {first.Status}); they show as gaps.";
             }
             if (result.SublayerChange is { } dc) msg += $" Sublayers: doubling them changes R, T and A by at most {dc:G3}.";
-            Status(msg, error: failed > 0);
+            /* A clean evaluation reports beside the summary, so it never hides what the status line
+               says about the last edit; a failure is the status. */
+            EvaluationText.Text = msg;
+            ToolTip.SetTip(EvaluationText, msg);
+            if (failed > 0) Status(msg, error: true);
+            else if (!auto) Status("Evaluated.");
         }
         catch (StackFormatException e) { Status(e.Message, error: true); }
         catch (Exception e) { Status($"Evaluation failed: {e.Message}", error: true); }
@@ -549,4 +556,10 @@ public partial class MainWindow : Window
             StatusText.Foreground = error ? Avalonia.Media.Brushes.Firebrick : Avalonia.Media.Brushes.Black;
         });
     }
+}
+
+/// <summary>One entry of the materials list: its name, and a few words about it.</summary>
+public sealed record MaterialItem(string Name, string Summary)
+{
+    public override string ToString() => $"{Name}  —  {Summary}";
 }

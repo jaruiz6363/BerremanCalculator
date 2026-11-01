@@ -44,7 +44,14 @@ public static class MaterialChecks
     /// absorbs power for every field, so this is ≥ 0; a negative value means gain for some field.
     /// Exactly 0 for a lossless medium.
     /// </summary>
-    public static double LeastLoss(MaterialMatrix m)
+    public static double LeastLoss(MaterialMatrix m) => LossRange(m).Least;
+
+    /// <summary>
+    /// The least and greatest eigenvalues of (M − M†)/2i. Both are 0 exactly when the medium is
+    /// lossless. The least alone cannot tell: a lossless μ block already contributes zeros, so an
+    /// absorbing ε with μ = 1 has least 0 and greatest > 0.
+    /// </summary>
+    public static (double Least, double Greatest) LossRange(MaterialMatrix m)
     {
         // The Hermitian H = (M − M†)/2i, as the real symmetric 12×12 [[A, −B], [B, A]], H = A + iB.
         var s = new double[12, 12];
@@ -55,7 +62,8 @@ public static class MaterialChecks
                 s[i, j] = h.Real; s[i + 6, j + 6] = h.Real;
                 s[i, j + 6] = -h.Imaginary; s[i + 6, j] = h.Imaginary;
             }
-        return SymmetricEigen(s, out _).Min();
+        var e = SymmetricEigen(s, out _);
+        return (e.Min(), e.Max());
     }
 
     /// <summary>

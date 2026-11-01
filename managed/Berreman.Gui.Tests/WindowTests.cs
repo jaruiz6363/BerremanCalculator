@@ -12,6 +12,7 @@ using Avalonia.Input;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Berreman.Api;
+using System.Text.Json.Nodes;
 using Berreman.Gui.Core;
 
 namespace Berreman.Gui.Tests;
@@ -84,6 +85,8 @@ public static class WindowTests
 
     private static void Click(Window window, Control control)
     {
+        control.BringIntoView();   // as a person scrolls to it first
+        Pump(window, 20);
         var root = control.GetVisualRoot() as TopLevel ?? window;
         var centre = control.TranslatePoint(new Point(control.Bounds.Width / 2, control.Bounds.Height / 2), root)
                      ?? throw new InvalidOperationException($"{control.Name ?? control.GetType().Name} was never laid out");
@@ -114,6 +117,20 @@ public static class WindowTests
     private static void ShowTab(MainWindow window, string header)
     {
         var tab = Find<TabControl>(window, "Tabs").Items.OfType<TabItem>().First(t => (string?)t.Header == header);
+        Click(window, tab);
+    }
+
+    /// <summary>A frame of the window saved as PNG, when BC_SHOT_DIR names a folder (to look at, not to test).</summary>
+    private static void Shot(MainWindow window, string name)
+    {
+        if (Environment.GetEnvironmentVariable("BC_SHOT_DIR") is not { Length: > 0 } dir) return;
+        Pump(window, 100);
+        window.CaptureRenderedFrame()?.Save(System.IO.Path.Combine(dir, name + ".png"));
+    }
+
+    private static void ShowMaterialTab(MainWindow window, string header)
+    {
+        var tab = Find<TabControl>(window, "MaterialTabs").Items.OfType<TabItem>().First(t => (string?)t.Header == header);
         Click(window, tab);
     }
 
@@ -246,6 +263,103 @@ public static class WindowTests
         });
     }
 
+    public static void MaterialsAreEditedAsFormsTermsAndResponse(Harness h, HeadlessUnitTestSession session)
+    {
+        h.Section("the Materials tab edits n and k, edits terms field by field, and plots the response");
+        WithWindow(session, w =>
+        {
+            w.LoadSample(Sample("schubert-2016 / ga2o3-010"), "ga");
+            Settle(w);
+            ShowTab(w, "Materials");
+            var list = Find<ListBox>(w, "MaterialList");
+
+            /* Simple: air is n = 1. */
+            list.SelectedIndex = w.Workspace.Model.Materials.FindIndex(m => m.Name == "air");
+            Pump(w);
+            h.Expect(Find<TabControl>(w, "MaterialTabs").SelectedIndex == 0 && Find<TextBox>(w, "SimpleN0").Text == "1", $"a constant material opens on Simple, n = 1 (tab {Find<TabControl>(w, "MaterialTabs").SelectedIndex}, n {Find<TextBox>(w, "SimpleN0").Text}, selected {list.SelectedIndex})");
+            Find<TextBox>(w, "SimpleN0").Text = "1.0003";
+            Click(w, Find<Button>(w, "ApplySimpleButton"));
+            h.Expect(w.Workspace.Model.Material("air")!.Spec["n"]!.GetValue<double>() == 1.0003, "Apply writes n");
+
+            /* Terms: Ga2O3 opens on its 16 terms. */
+            list.SelectedIndex = w.Workspace.Model.Materials.FindIndex(m => m.Name == "Ga2O3");
+            Pump(w);
+            h.Expect(Find<TabControl>(w, "MaterialTabs").SelectedIndex == 1, "a material written as terms opens on Terms");
+            var terms = Find<ListBox>(w, "TermList");
+            h.Expect(terms.ItemCount == 16, $"its 16 terms are listed ({terms.ItemCount})");
+            terms.SelectedIndex = 1;
+            Pump(w);
+            h.Expect(Find<ComboBox>(w, "TermLawBox").SelectedItem as string == "lorentz" && Find<TextBox>(w, "AxisAngleBox").Text == "47.8",
+                     "Bu-1 shows its law and its direction");
+            var center = Find<TextBox>(w, "Law_center");
+            h.Expect(center.Text == "743.48", $"its centre is a field ({center.Text})");
+            center.Text = "750";
+            Click(w, Find<Button>(w, "ApplyTermButton"));
+            JsonNode Term(int i) => w.Workspace.Model.Material("Ga2O3")!.Spec["terms"]![i]!;
+            h.Expect(Term(1)["lorentz"]!["center"]!.GetValue<double>() == 750 && Term(1)["axis_deg"]!.GetValue<double>() == 47.8,
+                     "Apply term changes the centre and keeps the direction");
+            w.Workspace.Undo();
+            Pump(w);
+            h.Expect(Term(1)["lorentz"]!["center"]!.GetValue<double>() == 743.48, "Undo takes it back");
+
+            /* The 6×6 shape: Bu-1 as a matrix is cos² and sin² on ε. */
+            terms.SelectedIndex = 1;
+            Pump(w);
+            Find<ComboBox>(w, "ShapeModeBox").SelectedIndex = 2;
+            Pump(w);
+            var c = Math.Cos(47.8 * Math.PI / 180);
+            h.Expect(Math.Abs(MaterialEditing.ParseComplex(Find<TextBox>(w, "Shape00").Text ?? "").Real - c * c) < 1e-15
+                     && string.IsNullOrEmpty(Find<TextBox>(w, "Shape33").Text), "the direction becomes ê êᵀ in the 6×6 cells");
+            Shot(w, "materials-matrix");
+            Find<TextBox>(w, "Shape01").Text = "0.1i";
+            Find<TextBox>(w, "Shape10").Text = "-0.1i";
+            Click(w, Find<Button>(w, "ApplyTermButton"));
+            h.Expect(Term(1)["eps"] is JsonArray, $"a typed matrix is written as an ε block ({Find<SelectableTextBlock>(w, "StatusText").Text}; {Term(1).ToJsonString()})");
+            h.Expect(Find<TextBlock>(w, "MaterialSummary").Text!.Contains("16 terms"), "the summary counts the terms");
+
+            /* Add and delete. */
+            int before = w.Workspace.Model.Material("Ga2O3")!.Spec["terms"]!.AsArray().Count;
+            Click(w, Find<Button>(w, "AddTermButton"));
+            h.Expect(w.Workspace.Model.Material("Ga2O3")!.Spec["terms"]!.AsArray().Count == before + 1, "Add adds a term");
+            Click(w, Find<Button>(w, "DeleteTermButton"));
+            h.Expect(w.Workspace.Model.Material("Ga2O3")!.Spec["terms"]!.AsArray().Count == before, "Delete removes it");
+
+            /* A short-form material is shown as terms and written as terms on Apply. */
+            w.Workspace.Edit(m => m.Materials.Add(new NamedMaterial("SiO2", new JsonObject
+            {
+                ["sellmeier"] = JsonNode.Parse("""{ "unit": "um", "terms": [ { "b": 0.6961663, "c2": 0.0046791 } ] }"""),
+            })));
+            Pump(w);
+            list.SelectedIndex = w.Workspace.Model.Materials.FindIndex(m => m.Name == "SiO2");
+            Pump(w);
+            h.Expect(terms.ItemCount == 2 && Find<ComboBox>(w, "TermLawBox").SelectedItem as string == "sellmeier", "a Sellmeier material shows as its law and μ = 1");
+            h.Expect(Find<TextBox>(w, "Law_terms").Text!.Contains("0.6961663"), "its terms are lines of numbers");
+            list.SelectedIndex = w.Workspace.Model.Materials.FindIndex(m => m.Name == "Ga2O3");
+            Pump(w);
+            terms.SelectedIndex = 2;
+            Pump(w);
+            Shot(w, "materials-terms");
+
+            /* Response. */
+            list.SelectedIndex = w.Workspace.Model.Materials.FindIndex(m => m.Name == "Ga2O3");
+            Pump(w);
+            ShowMaterialTab(w, "Response");
+            h.Expect(Find<SpectrumPlot>(w, "ResponsePlot").Series is { Count: 6 }, "the response plots n and k on three axes");
+            h.Expect(Find<TextBlock>(w, "ResponseChecks").Text!.StartsWith("NOT PASSIVE") || Find<TextBlock>(w, "ResponseChecks").Text!.StartsWith("Passive"),
+                     $"and says whether it is passive ({Find<TextBlock>(w, "ResponseChecks").Text})");
+            Find<ComboBox>(w, "ResponseQuantityBox").SelectedIndex = 1;
+            Pump(w);
+            h.Expect(Find<SpectrumPlot>(w, "ResponsePlot").Series is { Count: 2 }, "one element: real and imaginary");
+            h.Expect(Find<SelectableTextBlock>(w, "ResponseMatrix").Text!.Split((char)10).Length == 7, "M at a point is printed");
+            Find<ComboBox>(w, "ResponseQuantityBox").SelectedIndex = 0;
+            Pump(w);
+            Shot(w, "materials-response-nk");
+            Find<ComboBox>(w, "ResponseQuantityBox").SelectedIndex = 2;
+            Pump(w);
+            Shot(w, "materials-response-axes");
+        });
+    }
+
     public static void MaterialsAreAddedEditedAndProtected(Harness h, HeadlessUnitTestSession session)
     {
         h.Section("the Materials tab adds, edits, renames, and will not remove a material in use");
@@ -254,6 +368,7 @@ public static class WindowTests
             ShowTab(w, "Materials");
             Click(w, Find<Button>(w, "NewMaterialButton"));
             h.Expect(w.Workspace.Model.Material("material") is not null, "New adds a material");
+            ShowMaterialTab(w, "Text");
             Find<TextBox>(w, "MaterialSpecBox").Text = """{ "no": 1.54, "ne": 1.55 }""";
             Click(w, Find<Button>(w, "ApplyMaterialButton"));
             h.Expect(w.Workspace.Summary("material").StartsWith("uniaxial"), $"Apply makes it uniaxial ({w.Workspace.Summary("material")})");
@@ -261,6 +376,7 @@ public static class WindowTests
             Click(w, Find<Button>(w, "RenameMaterialButton"));
             h.Expect(w.Workspace.Model.Material("quartz") is not null, "Rename renames it");
             Settle(w);
+            ShowMaterialTab(w, "Text");
             Find<TextBox>(w, "MaterialSpecBox").Text = """{ "n": 1.5, "eps": 2 }""";
             Click(w, Find<Button>(w, "ApplyMaterialButton"));
             h.Expect(w.Workspace.Summary("quartz").StartsWith("uniaxial") && Find<SelectableTextBlock>(w, "StatusText").Text!.Contains("only one"),

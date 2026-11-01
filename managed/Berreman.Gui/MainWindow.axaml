@@ -93,9 +93,10 @@
     </Menu>
 
     <Border DockPanel.Dock="Bottom" Padding="8,4" BorderBrush="#DDD" BorderThickness="0,1,0,0">
-      <Grid ColumnDefinitions="*,Auto">
+      <Grid ColumnDefinitions="*,Auto,Auto">
         <SelectableTextBlock x:Name="StatusText" TextWrapping="Wrap" Text="Ready."/>
-        <TextBlock Grid.Column="1" x:Name="SummaryText" Foreground="#555" Margin="12,0,0,0"/>
+        <TextBlock Grid.Column="1" x:Name="EvaluationText" Foreground="#555" Margin="12,0,0,0" MaxWidth="520" TextTrimming="CharacterEllipsis"/>
+        <TextBlock Grid.Column="2" x:Name="SummaryText" Foreground="#555" Margin="12,0,0,0"/>
       </Grid>
     </Border>
 
@@ -240,14 +241,23 @@
 
         <!-- ===== Materials ===================================================================== -->
         <TabItem Header="Materials">
-          <Grid ColumnDefinitions="260,*" Margin="4">
+          <Grid ColumnDefinitions="210,*" Margin="4">
             <DockPanel Margin="4">
               <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="4" Margin="0,6,0,0">
                 <Button x:Name="NewMaterialButton" Content="New"/>
                 <Button x:Name="DuplicateMaterialButton" Content="Duplicate"/>
                 <Button x:Name="RemoveMaterialButton" Content="Remove"/>
               </StackPanel>
-              <ListBox x:Name="MaterialList"/>
+              <ListBox x:Name="MaterialList">
+                <ListBox.ItemTemplate>
+                  <DataTemplate x:DataType="local:MaterialItem">
+                    <StackPanel Spacing="1">
+                      <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
+                      <TextBlock Text="{Binding Summary}" TextWrapping="Wrap" FontSize="11" Foreground="#555"/>
+                    </StackPanel>
+                  </DataTemplate>
+                </ListBox.ItemTemplate>
+              </ListBox>
             </DockPanel>
             <DockPanel Grid.Column="1" Margin="8,4,4,4">
               <StackPanel DockPanel.Dock="Top" Spacing="6">
@@ -258,14 +268,155 @@
                 </StackPanel>
                 <TextBlock x:Name="MaterialSummary" TextWrapping="Wrap"/>
                 <TextBlock x:Name="MaterialUses" Classes="hint"/>
-                <TextBlock Classes="hint" Text="The material as the stack file writes it: n, eps, no/ne, nx/ny/nz, a dispersion law (sellmeier, table, phonon) or a model (ferrite, conductor, resistive_sheet). docs/stack-format.md lists every form."/>
               </StackPanel>
-              <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="6" Margin="0,6,0,0">
-                <Button x:Name="ApplyMaterialButton" Content="Apply" FontWeight="SemiBold"/>
-                <Button x:Name="RevertMaterialButton" Content="Revert"/>
-              </StackPanel>
-              <TextBox x:Name="MaterialSpecBox" AcceptsReturn="True" TextWrapping="NoWrap"
-                       FontFamily="Cascadia Mono,Consolas,Menlo,DejaVu Sans Mono,monospace" FontSize="12"/>
+              <TabControl x:Name="MaterialTabs" Margin="0,6,0,0">
+
+                <!-- A constant n and k per principal axis -->
+                <TabItem Header="Simple">
+                  <StackPanel Margin="4" Spacing="8">
+                    <TextBlock x:Name="SimpleHint" Classes="hint" TextWrapping="Wrap"/>
+                    <StackPanel x:Name="SimplePanel" Spacing="8">
+                      <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock Classes="label" Text="Kind" VerticalAlignment="Center"/>
+                        <ComboBox x:Name="SimpleKindBox" Width="180">
+                          <ComboBoxItem Content="isotropic"/>
+                          <ComboBoxItem Content="uniaxial (axis z)"/>
+                          <ComboBoxItem Content="biaxial (axes x, y, z)"/>
+                        </ComboBox>
+                      </StackPanel>
+                      <Grid ColumnDefinitions="120,110,110" RowDefinitions="Auto,Auto,Auto,Auto">
+                        <TextBlock Grid.Column="1" Text="n" Margin="4,0"/>
+                        <TextBlock Grid.Column="2" Text="k" Margin="4,0"/>
+                        <TextBlock x:Name="SimpleLabel0" Grid.Row="1" Text="x" VerticalAlignment="Center"/>
+                        <TextBox x:Name="SimpleN0" Grid.Row="1" Grid.Column="1" Margin="2"/>
+                        <TextBox x:Name="SimpleK0" Grid.Row="1" Grid.Column="2" Margin="2"/>
+                        <TextBlock x:Name="SimpleLabel1" Grid.Row="2" Text="y" VerticalAlignment="Center"/>
+                        <TextBox x:Name="SimpleN1" Grid.Row="2" Grid.Column="1" Margin="2"/>
+                        <TextBox x:Name="SimpleK1" Grid.Row="2" Grid.Column="2" Margin="2"/>
+                        <TextBlock x:Name="SimpleLabel2" Grid.Row="3" Text="z" VerticalAlignment="Center"/>
+                        <TextBox x:Name="SimpleN2" Grid.Row="3" Grid.Column="1" Margin="2"/>
+                        <TextBox x:Name="SimpleK2" Grid.Row="3" Grid.Column="2" Margin="2"/>
+                      </Grid>
+                      <StackPanel Orientation="Horizontal" Spacing="6">
+                        <Button x:Name="ApplySimpleButton" Content="Apply" FontWeight="SemiBold"/>
+                        <Button x:Name="RevertSimpleButton" Content="Revert"/>
+                      </StackPanel>
+                    </StackPanel>
+                    <Button x:Name="MakeSimpleButton" Content="Replace with a constant n, k material"/>
+                  </StackPanel>
+                </TabItem>
+
+                <!-- The general form: laws times 6x6 shapes -->
+                <TabItem Header="Terms">
+                  <Grid RowDefinitions="Auto,*,Auto" Margin="4">
+                    <DockPanel>
+                      <TextBlock DockPanel.Dock="Top" x:Name="TermsHint" Classes="hint" TextWrapping="Wrap" Margin="0,0,0,4"/>
+                      <WrapPanel DockPanel.Dock="Bottom" Margin="0,4,0,0">
+                        <Button x:Name="AddTermButton" Content="Add" Margin="0,0,4,4"/>
+                        <Button x:Name="DuplicateTermButton" Content="Duplicate" Margin="0,0,4,4"/>
+                        <Button x:Name="DeleteTermButton" Content="Delete" Margin="0,0,4,4"/>
+                        <Button x:Name="TermUpButton" Content="Up" Margin="0,0,4,4"/>
+                        <Button x:Name="TermDownButton" Content="Down" Margin="0,0,4,4"/>
+                      </WrapPanel>
+                      <ListBox x:Name="TermList" MaxHeight="190"/>
+                    </DockPanel>
+                    <ScrollViewer Grid.Row="1" Margin="0,8,0,0" HorizontalScrollBarVisibility="Disabled">
+                      <StackPanel x:Name="TermEditor" Spacing="8">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                          <TextBlock Classes="label" Text="Label" VerticalAlignment="Center" Width="60"/>
+                          <TextBox x:Name="TermLabelBox" Width="260"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                          <TextBlock Classes="label" Text="Law" VerticalAlignment="Center" Width="60"/>
+                          <ComboBox x:Name="TermLawBox" Width="180"/>
+                        </StackPanel>
+                        <TextBlock x:Name="TermLawFormula" Classes="hint" TextWrapping="Wrap"/>
+                        <StackPanel x:Name="LawFieldsPanel" Spacing="4"/>
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                          <TextBlock Classes="label" Text="Shape" VerticalAlignment="Center" Width="60"/>
+                          <ComboBox x:Name="ShapeModeBox" Width="260">
+                            <ComboBoxItem Content="a direction, by angles"/>
+                            <ComboBoxItem Content="a direction, by vector"/>
+                            <ComboBoxItem Content="the 6×6 matrix"/>
+                          </ComboBox>
+                        </StackPanel>
+                        <StackPanel x:Name="DirectionAnglesPanel" Orientation="Horizontal" Spacing="6">
+                          <TextBlock Text="angle from x towards y (°)" VerticalAlignment="Center"/>
+                          <TextBox x:Name="AxisAngleBox" Width="80"/>
+                          <TextBlock Text="elevation towards z (°)" VerticalAlignment="Center"/>
+                          <TextBox x:Name="AxisElevationBox" Width="80"/>
+                        </StackPanel>
+                        <StackPanel x:Name="DirectionVectorPanel" Orientation="Horizontal" Spacing="6">
+                          <TextBlock Text="x" VerticalAlignment="Center"/>
+                          <TextBox x:Name="AxisXBox" Width="70"/>
+                          <TextBlock Text="y" VerticalAlignment="Center"/>
+                          <TextBox x:Name="AxisYBox" Width="70"/>
+                          <TextBlock Text="z" VerticalAlignment="Center"/>
+                          <TextBox x:Name="AxisZBox" Width="70"/>
+                        </StackPanel>
+                        <TextBlock x:Name="DirectionHint" Classes="hint" TextWrapping="Wrap"
+                                   Text="The law is added to ε along this direction ê, as f(λ) ê êᵀ, in the material's own axes. The layer's Euler angles turn the whole material."/>
+                        <StackPanel x:Name="ShapeMatrixPanel" Spacing="4">
+                          <TextBlock Classes="hint" TextWrapping="Wrap"
+                                     Text="Rows and columns are (Ex, Ey, Ez, H̃x, H̃y, H̃z): ε top left, ρ top right, ρ′ bottom left, μ bottom right. Type 2, -0.08, 0.1i or 2+0.1i; empty is 0."/>
+                          <Grid x:Name="ShapeGrid"/>
+                        </StackPanel>
+                      </StackPanel>
+                    </ScrollViewer>
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="6" Margin="0,6,0,0">
+                      <Button x:Name="ApplyTermButton" Content="Apply term" FontWeight="SemiBold"/>
+                      <Button x:Name="RevertTermButton" Content="Revert"/>
+                    </StackPanel>
+                  </Grid>
+                </TabItem>
+
+                <!-- What the material does across a range -->
+                <TabItem Header="Response">
+                  <DockPanel Margin="4">
+                    <WrapPanel DockPanel.Dock="Top">
+                      <TextBlock Text="from" VerticalAlignment="Center" Margin="0,0,4,4"/>
+                      <TextBox x:Name="ResponseFromBox" Width="80" Margin="0,0,8,4"/>
+                      <TextBlock Text="to" VerticalAlignment="Center" Margin="0,0,4,4"/>
+                      <TextBox x:Name="ResponseToBox" Width="80" Margin="0,0,4,4"/>
+                      <TextBlock x:Name="ResponseUnit" VerticalAlignment="Center" Margin="0,0,12,4"/>
+                      <TextBlock Text="points" VerticalAlignment="Center" Margin="0,0,4,4"/>
+                      <TextBox x:Name="ResponsePointsBox" Width="60" Text="401" Margin="0,0,12,4"/>
+                      <ComboBox x:Name="ResponseQuantityBox" Width="250" Margin="0,0,8,4">
+                        <ComboBoxItem Content="n and k along the principal axes"/>
+                        <ComboBoxItem Content="one element of M"/>
+                        <ComboBoxItem Content="principal-axis directions"/>
+                      </ComboBox>
+                      <ComboBox x:Name="ResponseRowBox" Width="70" Margin="0,0,4,4"/>
+                      <ComboBox x:Name="ResponseColBox" Width="70" Margin="0,0,8,4"/>
+                      <Button x:Name="ResponsePlotButton" Content="Plot" Margin="0,0,4,4"/>
+                    </WrapPanel>
+                    <TextBlock DockPanel.Dock="Top" x:Name="ResponseChecks" TextWrapping="Wrap" Margin="0,4"/>
+                    <StackPanel DockPanel.Dock="Bottom" Spacing="4" Margin="0,6,0,0">
+                      <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock Text="M at" VerticalAlignment="Center"/>
+                        <TextBox x:Name="ResponseAtBox" Width="80"/>
+                        <TextBlock x:Name="ResponseAtUnit" VerticalAlignment="Center"/>
+                      </StackPanel>
+                      <SelectableTextBlock x:Name="ResponseMatrix" FontFamily="Cascadia Mono,Consolas,Menlo,DejaVu Sans Mono,monospace" FontSize="12"/>
+                    </StackPanel>
+                    <local:SpectrumPlot x:Name="ResponsePlot" MinHeight="220"/>
+                  </DockPanel>
+                </TabItem>
+
+                <!-- The material as the file writes it -->
+                <TabItem Header="Text">
+                  <DockPanel Margin="4">
+                    <TextBlock DockPanel.Dock="Top" Classes="hint" TextWrapping="Wrap" Margin="0,0,0,4"
+                               Text="The material as the stack file writes it: n, eps, no/ne, nx/ny/nz, a dispersion law, terms, or a model. docs/stack-format.md lists every form."/>
+                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="6" Margin="0,6,0,0">
+                      <Button x:Name="ApplyMaterialButton" Content="Apply" FontWeight="SemiBold"/>
+                      <Button x:Name="RevertMaterialButton" Content="Revert"/>
+                    </StackPanel>
+                    <TextBox x:Name="MaterialSpecBox" AcceptsReturn="True" TextWrapping="NoWrap"
+                             FontFamily="Cascadia Mono,Consolas,Menlo,DejaVu Sans Mono,monospace" FontSize="12"/>
+                  </DockPanel>
+                </TabItem>
+              </TabControl>
             </DockPanel>
           </Grid>
         </TabItem>
