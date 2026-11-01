@@ -459,11 +459,16 @@ public sealed class LayerRow(StackWorkspace ws, int index)
     public string Theta { get => Angle(1); set => SetAngle(1, value, "θ"); }
     public string Psi { get => Angle(2); set => SetAngle(2, value, "ψ"); }
 
+    /// <summary>Whether the layer's orientation matters: false for an isotropic material, whose φ, θ, ψ
+    /// cells and optic axis the table leaves blank (the angles are kept).</summary>
+    public bool Oriented => ws.NeedsOrientation(L.Material);
+
     /// <summary>Where the material's z axis (a uniaxial optic axis) points: "tilt 30°, az 45°", or "z" when unrotated.</summary>
     public string AxisText
     {
         get
         {
+            if (!Oriented) return "";
             var e = L.EulerDeg;
             if (e[1] == 0) return e[0] + e[2] == 0 ? "along z" : "along z (turned)";
             var (tilt, az) = MaterialMatrix.AxisDirection(e[0], e[1], e[2]);

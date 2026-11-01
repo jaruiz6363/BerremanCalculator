@@ -77,8 +77,8 @@ evaluates on demand. Every edit can be undone (**Ctrl+Z**) and redone (**Ctrl+Y*
   | Material | chosen from the stack's materials |
   | Type | what the material is, and how it disperses: "uniaxial · Sellmeier", "monoclinic · 16 terms". Hover for its principal indices at the sweep's first wavelength. See below |
   | Thickness | physical, in the length unit |
-  | φ, θ, ψ | the layer's orientation: R = Rz(φ) Rx(θ) Rz(ψ) turns the material from its own axes into the stack's (contract, Section 1) |
-  | Optic axis | where the material's own z axis ends up: its tilt from the normal and its azimuth from x. For a uniaxial material this is the optic axis |
+  | φ, θ, ψ | the layer's orientation: R = Rz(φ) Rx(θ) Rz(ψ) turns the material from its own axes into the stack's (contract, Section 1). Blank for an isotropic material, which turning does not change; the angles are kept |
+  | Optic axis | where the material's own z axis ends up: its tilt from the normal and its azimuth from x. For a uniaxial material this is the optic axis. Blank for an isotropic material |
   | Twist | the pitch and handedness of a twisted (cholesteric) layer |
   | … | the layer's properties |
 

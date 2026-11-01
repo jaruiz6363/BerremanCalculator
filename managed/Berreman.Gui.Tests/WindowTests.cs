@@ -214,6 +214,10 @@ public static class WindowTests
             var boxes = RowBoxes(w, 1);   // thickness, φ, θ, ψ
             h.Expect(boxes.Count == 4, $"a row has four typed cells ({boxes.Count})");
             if (boxes.Count != 4) return;
+            var iso = RowBoxes(w, 0);     // SiOx, isotropic
+            h.Expect(iso.Count == 4 && iso[0].IsVisible && iso.Skip(1).All(b => !b.IsVisible) && Rows(w)[0].AxisText == "",
+                     "an isotropic layer shows its thickness but no φ, θ, ψ or optic axis");
+            h.Expect(boxes.All(b => b.IsVisible), "the magneto-optic layer shows all four");
             TypeAndLeave(w, boxes[0], "25");
             h.Expect(w.Workspace.Model.Layers[1].Thickness == 25, "the thickness typed is the layer's");
             TypeAndLeave(w, RowBoxes(w, 1)[2], "40");
@@ -232,7 +236,7 @@ public static class WindowTests
         {
             w.LoadSample(Sample("mansuripur-1990 / quadrilayer"), "q");
             Pump(w);
-            Find<DataGrid>(w, "LayerGrid").SelectedIndex = 0;
+            Find<DataGrid>(w, "LayerGrid").SelectedIndex = 1;   // the MO layer: an isotropic one has no orientation to show
             Click(w, Find<Button>(w, "PropertiesButton"));
             var d = Dialog<LayerPropertiesDialog>(w);
             h.Expect(d is not null, "the dialog opens");
@@ -245,12 +249,12 @@ public static class WindowTests
             Find<TextBox>(d, "PitchBox").Text = "300";
             Click(d, Find<Button>(d, "OkButton"));
             Pump(w);
-            var l = w.Workspace.Model.Layers[0];
+            var l = w.Workspace.Model.Layers[1];
             h.Expect(l.EulerDeg.SequenceEqual([135.0, 30, 0]), "OK gives the layer those angles");
             h.Expect(l.Twist is { Pitch: 300, Handedness: "right" }, "and the twist");
-            h.Expect(Rows(w)[0].AxisText == "tilt 30°, az 45°" && Rows(w)[0].TwistText == "300 nm right", $"which the table shows ({Rows(w)[0].AxisText}; {Rows(w)[0].TwistText})");
+            h.Expect(Rows(w)[1].AxisText == "tilt 30°, az 45°" && Rows(w)[1].TwistText == "300 nm right", $"which the table shows ({Rows(w)[1].AxisText}; {Rows(w)[1].TwistText})");
             Click(w, Find<Button>(w, "UndoButton"));
-            h.Expect(w.Workspace.Model.Layers[0].Twist is null, "and one Undo takes it all back");
+            h.Expect(w.Workspace.Model.Layers[1].Twist is null, "and one Undo takes it all back");
         });
     }
 

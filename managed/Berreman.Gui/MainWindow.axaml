@@ -227,21 +227,21 @@
                 <DataGridTemplateColumn Header="φ (°)" Width="62" IsReadOnly="True">
                   <DataGridTemplateColumn.CellTemplate>
                     <DataTemplate x:DataType="core:LayerRow">
-                      <TextBox Classes="cell" Text="{Binding Phi, UpdateSourceTrigger=LostFocus}"/>
+                      <TextBox Classes="cell" Text="{Binding Phi, UpdateSourceTrigger=LostFocus}" IsVisible="{Binding Oriented}"/>
                     </DataTemplate>
                   </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
                 <DataGridTemplateColumn Header="θ (°)" Width="62" IsReadOnly="True">
                   <DataGridTemplateColumn.CellTemplate>
                     <DataTemplate x:DataType="core:LayerRow">
-                      <TextBox Classes="cell" Text="{Binding Theta, UpdateSourceTrigger=LostFocus}"/>
+                      <TextBox Classes="cell" Text="{Binding Theta, UpdateSourceTrigger=LostFocus}" IsVisible="{Binding Oriented}"/>
                     </DataTemplate>
                   </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
                 <DataGridTemplateColumn Header="ψ (°)" Width="62" IsReadOnly="True">
                   <DataGridTemplateColumn.CellTemplate>
                     <DataTemplate x:DataType="core:LayerRow">
-                      <TextBox Classes="cell" Text="{Binding Psi, UpdateSourceTrigger=LostFocus}"/>
+                      <TextBox Classes="cell" Text="{Binding Psi, UpdateSourceTrigger=LostFocus}" IsVisible="{Binding Oriented}"/>
                     </DataTemplate>
                   </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
