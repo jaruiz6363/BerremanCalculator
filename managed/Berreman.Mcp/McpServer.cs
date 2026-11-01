@@ -15,7 +15,7 @@ using Berreman.Api;
 
 namespace Berreman.Mcp;
 
-public sealed class McpServer
+public sealed partial class McpServer
 {
     public const string ProtocolVersion = "2024-11-05";
 
@@ -113,13 +113,24 @@ public sealed class McpServer
         ["serverInfo"] = new JsonObject { ["name"] = "berreman", ["version"] = "0.0.0" },
         ["instructions"] =
             "Berreman 4x4 evaluator for stratified, possibly anisotropic, media. It evaluates "
-            + "stacks and never optimises them. evaluate_stack runs a stack file (format in docs/stack-format.md); "
-            + "engine_status reports whether the engine loads.",
+            + "stacks and never optimises them. evaluate_stack runs a stack file (format in docs/stack-format.md). "
+            + "list_samples and read_sample give the literature samples, a good start; describe_stack explains a stack; "
+            + "search_materials finds materials to put in one; build_layers expands a design string; field_profile, "
+            + "conoscope_map and material_response are the analyses; import_tfd and export_tfd exchange designs with "
+            + "ThinFilmDesigner, where isotropic coatings are optimised. Stacks are passed as 'path' or as 'stack' JSON, "
+            + "and tools that change a stack return the new JSON.",
     };
 
     // ---- tools -----------------------------------------------------------------------------
 
-    private static JsonArray DescribeTools() => new(
+    private static JsonArray DescribeTools()
+    {
+        var list = FirstTools();
+        foreach (var t in MoreTools()) list.Add(t);
+        return list;
+    }
+
+    private static JsonArray FirstTools() => new(
         new JsonObject
         {
             ["name"] = "list_quantities",
@@ -203,7 +214,7 @@ public sealed class McpServer
                 return (o.ToJsonString(Wire), !r.Loaded || r.NativeAbi != r.ManagedAbi);
             }
             default:
-                return ($"'{name}' is not a tool. tools/list gives the ones that exist.", true);
+                return CallMore(name, arguments) ?? ($"'{name}' is not a tool. tools/list gives the ones that exist.", true);
         }
     }
 

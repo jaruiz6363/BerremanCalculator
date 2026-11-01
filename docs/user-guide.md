@@ -231,6 +231,24 @@ CSV, with optional Jones coefficients, Ψ/Δ and per-layer absorption. It also t
 `quantities` (a list of names). `list_quantities` names them all, and `engine_status` reports
 whether the engine loads.
 
+The other tools are stateless, like `evaluate_stack`. A stack goes in as `path` or as `stack`
+JSON, and a tool that changes a stack returns the new JSON.
+
+| Tool | What it does |
+|---|---|
+| `list_samples`, `read_sample` | The literature samples: a filtered list, and a sample's stack JSON. |
+| `describe_stack` | A stack in words: units, media, layers with orientation and twist, and each material with its passivity and reciprocity over the sweep. |
+| `search_materials` | Library materials in their stack-file form: ThinFilmDesigner's databases, the glass catalogues and your own. |
+| `build_layers` | Layers from a design string such as `(HL)8 H`, each letter a material and a physical thickness. |
+| `import_tfd`, `export_tfd` | ThinFilmDesigner designs in and out, as File > Import and Export do. |
+| `field_profile` | The fields against depth at one point, as CSV, with the interfaces. |
+| `conoscope_map` | One quantity over every direction of incidence, or the transmission between crossed or parallel polarisers. |
+| `material_response` | One material across a range: n and k along its principal axes, passivity and reciprocity. |
+
+**ZEMAX and Optiland coatings** come in and go out through ThinFilmDesigner, which reads and writes
+both: open the coating there, save it as a .tfd, and import that here; or the reverse for an
+isotropic stack.
+
 ## Conventions
 
 These are fixed, and stated in full in [the contract](contract.md):

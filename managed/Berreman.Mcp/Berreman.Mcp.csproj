@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Berreman.Api\Berreman.Api.csproj" />
+    <ProjectReference Include="..\Berreman.Gui.Core\Berreman.Gui.Core.csproj" />
   </ItemGroup>
 
   <Import Project="..\NativeLibrary.targets" />
