@@ -147,7 +147,7 @@ public static class WindowTests
         h.Section("the window opens with a new stack, and evaluates it without being asked");
         WithWindow(session, w =>
         {
-            foreach (var name in new[] { "LayerGrid", "IncidentBox", "ExitBox", "SpectralBox", "AnglesBox", "AzimuthBox",
+            foreach (var name in new[] { "LayerGrid", "IncidentBox", "ExitBox", "SpectralStartBox", "SpectralEndBox", "SpectralStepBox", "AnglesBox", "AzimuthBox",
                                          "LengthUnitBox", "SpectralUnitBox",
                                          "InsertButton", "DeleteButton", "UpButton", "DownButton", "PropertiesButton",
                                          "DesignStringButton", "UndoButton", "RedoButton", "MaterialList", "MaterialSpecBox",
@@ -628,8 +628,8 @@ public static class WindowTests
         {
             Find<ComboBox>(w, "SpectralUnitBox").SelectedItem = "um";
             Pump(w);
-            h.Expect(Find<TextBox>(w, "SpectralBox").Text == "0.4 to 0.8 count 201",
-                     $"nm to µm converts the sweep ({Find<TextBox>(w, "SpectralBox").Text})");
+            string Sweep() => $"{Find<TextBox>(w, "SpectralStartBox").Text} | {Find<TextBox>(w, "SpectralEndBox").Text} | {Find<TextBox>(w, "SpectralStepBox").Text} {Find<TextBlock>(w, "SpectralUnitLabel").Text}";
+            h.Expect(Sweep() == "0.4 | 0.8 | 0.002 µm", $"nm to µm converts the sweep: start, end and step, in the new unit ({Sweep()})");
             Find<ComboBox>(w, "LengthUnitBox").SelectedItem = "µm";
             Pump(w);
             h.Expect(Rows(w)[0].ThicknessText == "0.1", $"nm to µm converts the thicknesses ({Rows(w)[0].ThicknessText})");
@@ -639,6 +639,30 @@ public static class WindowTests
             editor.Text = editor.Text.Replace("\"title\": \"New stack\"", "\"title\": \"Edited as text\"");
             Click(w, Find<Button>(w, "ApplyTextButton"));
             h.Expect(w.Workspace.Model.Title == "Edited as text", "and Apply takes an edit made there");
+        });
+    }
+
+    public static void TheSpectralSweepIsStartEndAndStep(Harness h, HeadlessUnitTestSession session)
+    {
+        h.Section("the spectral sweep is typed as start, end and step");
+        WithWindow(session, w =>
+        {
+            TextBox Box(string name) => Find<TextBox>(w, name);
+            h.Expect(Box("SpectralStartBox").Text == "400" && Box("SpectralEndBox").Text == "800" && Box("SpectralStepBox").Text == "2"
+                     && Find<TextBlock>(w, "SpectralPoints").Text == "201 points", "a new stack shows 400 to 800, step 2: 201 points");
+            TypeAndLeave(w, Box("SpectralStepBox"), "50");
+            h.Expect(w.Workspace.Model.Spectral == "400 to 800 step 50" && Find<TextBlock>(w, "SpectralPoints").Text == "9 points", $"a new step is the sweep's ({w.Workspace.Model.Spectral})");
+            TypeAndLeave(w, Box("SpectralEndBox"), "");
+            h.Expect(w.Workspace.Model.Spectral == "400" && Box("SpectralStepBox").Text == "", $"an empty end is one wavelength ({w.Workspace.Model.Spectral})");
+            TypeAndLeave(w, Box("SpectralEndBox"), "700");
+            h.Expect(w.Workspace.Model.Spectral == "400 to 700 step 5" && Box("SpectralStepBox").Text == "5",
+                     $"an end typed with no step gets a round one, about a hundred intervals ({w.Workspace.Model.Spectral})");
+            TypeAndLeave(w, Box("SpectralStepBox"), "-5");
+            h.Expect(w.Workspace.Model.Spectral == "400 to 700 step 5" && Find<SelectableTextBlock>(w, "StatusText").Text!.Contains("positive"),
+                     $"a negative step is refused, with why ({Find<SelectableTextBlock>(w, "StatusText").Text})");
+            TypeAndLeave(w, Box("SpectralStepBox"), "100");
+            Shot(w, "stack-spectral");
+            h.Expect(w.Workspace.Model.Spectral == "400 to 700 step 100" && Find<TextBlock>(w, "SpectralPoints").Text == "4 points", $"a typed step is the sweep's ({w.Workspace.Model.Spectral})");
         });
     }
 

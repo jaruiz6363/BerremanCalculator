@@ -125,7 +125,8 @@ public partial class MainWindow : Window
         Commit(TitleBox, t => _ws.Edit(m => m.Title = t));
         Commit(SourceBox, t => _ws.Edit(m => m.Source = t));
         Commit(NotesBox, t => _ws.Edit(m => m.Notes = t), enterCommits: false);
-        Commit(SpectralBox, t => _ws.Edit(m => m.Spectral = t));
+        foreach (var box in new[] { SpectralStartBox, SpectralEndBox, SpectralStepBox })
+            Commit(box, _ => _ws.SetSpectralRange(SpectralStartBox.Text ?? "", SpectralEndBox.Text ?? "", SpectralStepBox.Text ?? ""));
         Commit(AnglesBox, t => _ws.Edit(m => m.Angles = t));
         Commit(AzimuthBox, t => _ws.Edit(m => m.Azimuths = t.Trim() == "0" ? "" : t));
 
@@ -264,10 +265,15 @@ public partial class MainWindow : Window
             SetText(NotesBox, m.Notes);
             LengthUnitBox.SelectedItem = m.LengthUnit == "um" ? "µm" : m.LengthUnit;
             SpectralUnitBox.SelectedItem = m.SpectralUnit;
-            SpectralUnitLabel.Text = m.SpectralUnit;
+            SpectralUnitLabel.Text = m.SpectralUnit switch { "um" => "µm", "cm-1" => "cm⁻¹", var u => u };
             AngleModeBox.SelectedIndex = m.AnglesAreXi ? 1 : 0;
             AngleUnitLabel.Text = m.AnglesAreXi ? "" : "°";
-            SetText(SpectralBox, m.Spectral);
+            var (start, end, step, listCount) = _ws.SpectralRange();
+            SetText(SpectralStartBox, start);
+            SetText(SpectralEndBox, end);
+            SetText(SpectralStepBox, step);
+            SpectralPoints.Text = listCount > 0 ? $"a list of {listCount} values from the file; typing here makes it a range"
+                                : _ws.SpectralPointCount() is int n and > 1 ? $"{n} points" : "";
             SetText(AnglesBox, m.Angles);
             SetText(AzimuthBox, m.Azimuths);
 

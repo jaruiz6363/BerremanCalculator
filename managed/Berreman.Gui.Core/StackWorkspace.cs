@@ -202,6 +202,72 @@ public sealed class StackWorkspace
         m.SpectralUnit = unit;
     });
 
+    /// <summary>
+    /// The spectral sweep as the window's three boxes show it, in the spectral unit. A single value
+    /// is a start with no end or step. A range given by its count shows the step that count makes.
+    /// A list (only a file can give one) shows its first and last values, and ListCount says how
+    /// many it holds, so the window can say that typing replaces it.
+    /// </summary>
+    public (string Start, string End, string Step, int ListCount) SpectralRange()
+    {
+        static string N(double v) => v.ToString("G10", Inv);
+        static double D(System.Text.Json.Nodes.JsonNode? n) => double.Parse(n?.ToJsonString() ?? "0", Inv);
+        System.Text.Json.Nodes.JsonNode node;
+        try { node = SweepText.Parse(Model.Spectral, "spectral"); }
+        catch (StackFormatException) { return ("", "", "", 0); }
+        switch (node)
+        {
+            case System.Text.Json.Nodes.JsonArray a:
+                var v = StackDocument.Values(a, "spectral");
+                return (N(v[0]), N(v[^1]), "", v.Length);
+            case System.Text.Json.Nodes.JsonObject r:
+                double from = D(r["from"]), to = D(r["to"]);
+                double step = r["count"] is { } c
+                    ? (D(c) is var n && n > 1 ? Math.Abs(to - from) / (n - 1) : 0)
+                    : D(r["step"]);
+                return (N(from), N(to), step > 0 ? N(Round(step)) : "", 0);
+            default:
+                return (N(D(node)), "", "", 0);
+        }
+    }
+
+    /// <summary>The smallest of 1, 2, 5 times a power of ten that is at least x.</summary>
+    internal static double RoundStep(double x)
+    {
+        double p = Math.Pow(10, Math.Floor(Math.Log10(x)));
+        foreach (var m in new[] { 1.0, 2, 5, 10 })
+            if (m * p >= x * (1 - 1e-12)) return Round(m * p);
+        return Round(10 * p);
+    }
+
+    /// <summary>How many spectral points the sweep has; null when it does not parse.</summary>
+    public int? SpectralPointCount()
+    {
+        try { return StackDocument.Values(SweepText.Parse(Model.Spectral, "spectral"), "spectral").Length; }
+        catch (StackFormatException) { return null; }
+    }
+
+    /// <summary>
+    /// Sets the spectral sweep from the three boxes: a start alone (or an end equal to it) is one
+    /// value; otherwise start, end and a positive step are a range. With no step, a round one is
+    /// chosen (1, 2 or 5 times a power of ten) giving about a hundred intervals, so typing an end
+    /// alone makes a usable range instead of an error. Undoable, as every edit.
+    /// </summary>
+    public void SetSpectralRange(string start, string end, string step) => Edit(m =>
+    {
+        double s = Parse(start, "the spectral start");
+        if (string.IsNullOrWhiteSpace(end) || Parse(end, "the spectral end") == s)
+        {
+            m.Spectral = Num(s);
+            return;
+        }
+        double e = Parse(end, "the spectral end");
+        double d = string.IsNullOrWhiteSpace(step) ? RoundStep(Math.Abs(e - s) / 100) : Parse(step, "the spectral step");
+        if (!(d > 0)) throw new StackFormatException("the spectral step must be positive");
+        if (Math.Abs(e - s) / d > 1_000_000) throw new StackFormatException($"that is {Math.Abs(e - s) / d + 1:N0} points; make the step larger");
+        m.Spectral = $"{Num(s)} to {Num(e)} step {Num(d)}";
+    });
+
     // Conversions such as nm → GHz give 15 digits of noise; 12 significant figures is plenty.
     private static double Round(double v) => double.Parse(v.ToString("G12", Inv), Inv);
     private static string Num(double v) => v.ToString("R", Inv);

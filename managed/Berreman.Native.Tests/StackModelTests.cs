@@ -28,6 +28,7 @@ internal static class StackModelTests
         WorkspaceEditsAreAtomicAndUndoable();
         MaterialsRenameAndRemove();
         MaterialsAreClassified();
+        SpectralRangeReadsEveryForm();
         UnitChangesKeepTheStack();
         AxisDirectionIsTheRotatedZ();
         UnknownKeysSurvive();
@@ -209,6 +210,25 @@ internal static class StackModelTests
         Check(m.UniqueName("glass") == "glass (2)", "a unique name is made from a taken one");
         var ws = new StackWorkspace();
         Check(ws.Summary("low") == "isotropic, n = 1.38" && ws.Summary("nothing") == "missing", "a material is summarised for lists");
+    }
+
+    /// <summary>The spectral sweep as the window's start, end and step boxes, every form a file can give.</summary>
+    private static void SpectralRangeReadsEveryForm()
+    {
+        var ws = new StackWorkspace();
+        (string, string, string, int) R(string spectral) { ws.Edit(m => m.Spectral = spectral); return ws.SpectralRange(); }
+        Check(R("400 to 800 count 201") == ("400", "800", "2", 0), "a range by count shows its step");
+        Check(R("400 to 800 step 2") == ("400", "800", "2", 0), "a range by step shows it");
+        Check(R("633") == ("633", "", "", 0), "one value is a start alone");
+        Check(R("450, 633, 800") == ("450", "800", "", 3), "a list shows its ends and says how many values it holds");
+        var down = R("749.48 to 374.74 count 201");
+        Check(down.Item1 == "749.48" && down.Item2 == "374.74" && down.Item3 == "1.8737", $"a descending range (nm converted to THz) shows a positive step ({down})");
+        ws.SetSpectralRange("1000", "1500", "");
+        Check(ws.Model.Spectral == "1000 to 1500 step 5", $"no step: a round one for about a hundred intervals ({ws.Model.Spectral})");
+        ws.SetSpectralRange("0.4", "0.43", "");
+        Check(ws.Model.Spectral == "0.4 to 0.43 step 0.0005", $"in µm too ({ws.Model.Spectral})");
+        ws.SetSpectralRange("633", "633", "7");
+        Check(ws.Model.Spectral == "633", "an end equal to the start is one value");
     }
 
     /// <summary>

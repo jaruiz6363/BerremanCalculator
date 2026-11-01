@@ -114,9 +114,19 @@ evaluates on demand. Every edit can be undone (**Ctrl+Z**) and redone (**Ctrl+Y*
   before a letter multiplies the thickness: with H = 60 nm, `0.5H` is 30 nm. The layers replace
   the stack or are inserted after the selected layer, and the leftmost layer can face either
   medium.
-- **The sweep**: the spectral values, the angles of incidence (or ξ = kx/k₀ directly, which an
-  anisotropic or lossy incident medium needs) and the azimuths. Each is a value (`633`), a list
-  (`0, 30, 60`) or a range (`400 to 800 step 2`, `400 to 800 count 201`).
+- **The sweep** sets which wavelengths, angles and azimuths are evaluated.
+  - **Spectral.** Give a **start**, an **end** and a **step**, in the unit chosen under *Spectral
+    axis in*. The unit is shown beside the step, and the number of points beside that.
+    - A start with no end is one value.
+    - An end with no step gets a round step (1, 2 or 5 times a power of ten) of about a hundred
+      intervals, which you can then change.
+    - A file that gives the spectral values as a list shows its first and last values. Typing in
+      the boxes replaces the list with a range.
+  - **Angles.** The angles of incidence, or ξ = kx/k₀ directly, which an anisotropic or lossy
+    incident medium needs.
+  - **Azimuths.** These turn the whole sample about the normal.
+  - The angles and azimuths are each a value (`30`), a list (`0, 30, 60`) or a range
+    (`0 to 80 step 5`).
 
 ### The Materials tab
 
