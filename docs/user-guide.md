@@ -120,13 +120,14 @@ evaluates on demand. Every edit can be undone (**Ctrl+Z**) and redone (**Ctrl+Y*
     - A start with no end is one value.
     - An end with no step gets a round step (1, 2 or 5 times a power of ten) of about a hundred
       intervals, which you can then change.
-    - A file that gives the spectral values as a list shows its first and last values. Typing in
-      the boxes replaces the list with a range.
-  - **Angles.** The angles of incidence, or ξ = kx/k₀ directly, which an anisotropic or lossy
-    incident medium needs.
-  - **Azimuths.** These turn the whole sample about the normal.
-  - The angles and azimuths are each a value (`30`), a list (`0, 30, 60`) or a range
-    (`0 to 80 step 5`).
+    - A file may give the values as a list. An evenly spaced list (`0, 30, 60`) shows as a range,
+      and stays a list in the file until it is edited. Any other list shows its first and last
+      values and how many it holds; typing in the boxes replaces it with a range.
+  - **Angles.** The angles of incidence in degrees, or ξ = kx/k₀ directly, which an anisotropic or
+    lossy incident medium needs. They take the same start, end and step as the spectral values,
+    by the same rules.
+  - **Azimuth.** It turns the whole sample about the normal. Give one value, or a list such as
+    `0, 45, 90`.
 
 ### The Materials tab
 

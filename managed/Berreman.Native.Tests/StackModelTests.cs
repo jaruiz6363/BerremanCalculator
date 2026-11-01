@@ -220,7 +220,8 @@ internal static class StackModelTests
         Check(R("400 to 800 count 201") == ("400", "800", "2", 0), "a range by count shows its step");
         Check(R("400 to 800 step 2") == ("400", "800", "2", 0), "a range by step shows it");
         Check(R("633") == ("633", "", "", 0), "one value is a start alone");
-        Check(R("450, 633, 800") == ("450", "800", "", 3), "a list shows its ends and says how many values it holds");
+        Check(R("450, 633, 800") == ("450", "800", "", 3), "an uneven list shows its ends and says how many values it holds");
+        Check(R("450, 550, 650") == ("450", "650", "100", 0), "an evenly spaced list shows as a range");
         var down = R("749.48 to 374.74 count 201");
         Check(down.Item1 == "749.48" && down.Item2 == "374.74" && down.Item3 == "1.8737", $"a descending range (nm converted to THz) shows a positive step ({down})");
         ws.SetSpectralRange("1000", "1500", "");

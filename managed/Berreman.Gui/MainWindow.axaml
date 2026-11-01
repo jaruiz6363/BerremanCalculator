@@ -179,12 +179,21 @@
                     <TextBlock x:Name="SpectralPoints" Classes="hint" VerticalAlignment="Center"/>
                   </WrapPanel>
                   <ComboBox Grid.Row="1" x:Name="AngleModeBox" Width="114" Margin="0,2,6,2"/>
-                  <TextBox Grid.Row="1" Grid.Column="1" x:Name="AnglesBox" Margin="0,2"/>
-                  <TextBlock Grid.Row="1" Grid.Column="2" x:Name="AngleUnitLabel" Classes="label" Margin="6,0,0,0"/>
+                  <!-- The angles (or ξ) as start, end and step, like the spectral sweep. -->
+                  <WrapPanel Grid.Row="1" Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Classes="label" Text="Start"/>
+                    <TextBox x:Name="AngleStartBox" Width="90" Margin="0,2,10,2"/>
+                    <TextBlock Classes="label" Text="End"/>
+                    <TextBox x:Name="AngleEndBox" Width="90" Margin="0,2,10,2" Watermark="one value"/>
+                    <TextBlock Classes="label" Text="Step"/>
+                    <TextBox x:Name="AngleStepBox" Width="90" Margin="0,2,6,2"/>
+                    <TextBlock x:Name="AngleUnitLabel" Classes="label" Margin="0,0,14,0"/>
+                    <TextBlock x:Name="AnglePoints" Classes="hint" VerticalAlignment="Center"/>
+                  </WrapPanel>
                   <TextBlock Grid.Row="2" Classes="label" Text="Azimuth (°)" FontWeight="SemiBold"/>
-                  <TextBox Grid.Row="2" Grid.Column="1" x:Name="AzimuthBox" Margin="0,2" Watermark="0"/>
+                  <TextBox Grid.Row="2" Grid.Column="1" x:Name="AzimuthBox" Margin="0,2" Watermark="0" Width="200" HorizontalAlignment="Left"/>
                 </Grid>
-                <TextBlock Classes="hint" Text="The angles and the azimuth are each a value, a list (0, 30, 60) or a range (0 to 80 step 5). The azimuth turns the whole sample about the normal."/>
+                <TextBlock Classes="hint" Text="A start with no end is one value. The azimuth turns the whole sample about the normal: one value, or a list such as 0, 45, 90."/>
               </StackPanel>
             </Border>
 

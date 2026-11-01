@@ -203,23 +203,31 @@ public sealed class StackWorkspace
     });
 
     /// <summary>
-    /// The spectral sweep as the window's three boxes show it, in the spectral unit. A single value
-    /// is a start with no end or step. A range given by its count shows the step that count makes.
-    /// A list (only a file can give one) shows its first and last values, and ListCount says how
-    /// many it holds, so the window can say that typing replaces it.
+    /// A sweep as the window's three boxes show it: start, end and step. A single value is a start
+    /// with no end or step. A range given by its count shows the step that count makes. A list
+    /// (only a file can give one) shows as a range when its values are evenly spaced, as most are
+    /// ("0, 30, 60"); otherwise it shows its first and last values, and ListCount says how many it
+    /// holds, so the window can say that typing replaces it.
     /// </summary>
-    public (string Start, string End, string Step, int ListCount) SpectralRange()
+    public (string Start, string End, string Step, int ListCount) SpectralRange() => RangeOf(Model.Spectral);
+
+    /// <summary>The angles (or ξ) as start, end and step; as <see cref="SpectralRange"/>.</summary>
+    public (string Start, string End, string Step, int ListCount) AngleRange() => RangeOf(Model.Angles);
+
+    private static (string Start, string End, string Step, int ListCount) RangeOf(string text)
     {
         static string N(double v) => v.ToString("G10", Inv);
         static double D(System.Text.Json.Nodes.JsonNode? n) => double.Parse(n?.ToJsonString() ?? "0", Inv);
         System.Text.Json.Nodes.JsonNode node;
-        try { node = SweepText.Parse(Model.Spectral, "spectral"); }
+        try { node = SweepText.Parse(text, "sweep"); }
         catch (StackFormatException) { return ("", "", "", 0); }
         switch (node)
         {
             case System.Text.Json.Nodes.JsonArray a:
-                var v = StackDocument.Values(a, "spectral");
-                return (N(v[0]), N(v[^1]), "", v.Length);
+                var v = StackDocument.Values(a, "sweep");
+                double d = v.Length > 1 ? v[1] - v[0] : 0;
+                bool even = d != 0 && Enumerable.Range(1, v.Length - 1).All(i => Math.Abs(v[i] - v[i - 1] - d) <= 1e-9 * Math.Abs(d));
+                return even ? (N(v[0]), N(v[^1]), N(Round(Math.Abs(d))), 0) : (N(v[0]), N(v[^1]), "", v.Length);
             case System.Text.Json.Nodes.JsonObject r:
                 double from = D(r["from"]), to = D(r["to"]);
                 double step = r["count"] is { } c
@@ -241,9 +249,14 @@ public sealed class StackWorkspace
     }
 
     /// <summary>How many spectral points the sweep has; null when it does not parse.</summary>
-    public int? SpectralPointCount()
+    public int? SpectralPointCount() => PointCount(Model.Spectral);
+
+    /// <summary>How many angles (or values of ξ) the sweep has; null when it does not parse.</summary>
+    public int? AnglePointCount() => PointCount(Model.Angles);
+
+    private static int? PointCount(string text)
     {
-        try { return StackDocument.Values(SweepText.Parse(Model.Spectral, "spectral"), "spectral").Length; }
+        try { return StackDocument.Values(SweepText.Parse(text, "sweep"), "sweep").Length; }
         catch (StackFormatException) { return null; }
     }
 
@@ -253,20 +266,23 @@ public sealed class StackWorkspace
     /// chosen (1, 2 or 5 times a power of ten) giving about a hundred intervals, so typing an end
     /// alone makes a usable range instead of an error. Undoable, as every edit.
     /// </summary>
-    public void SetSpectralRange(string start, string end, string step) => Edit(m =>
+    public void SetSpectralRange(string start, string end, string step) =>
+        Edit(m => m.Spectral = RangeText(start, end, step, "spectral"));
+
+    /// <summary>Sets the angles (or ξ) from the three boxes, as <see cref="SetSpectralRange"/>.</summary>
+    public void SetAngleRange(string start, string end, string step) =>
+        Edit(m => m.Angles = RangeText(start, end, step, m.AnglesAreXi ? "ξ" : "angle"));
+
+    private static string RangeText(string start, string end, string step, string what)
     {
-        double s = Parse(start, "the spectral start");
-        if (string.IsNullOrWhiteSpace(end) || Parse(end, "the spectral end") == s)
-        {
-            m.Spectral = Num(s);
-            return;
-        }
-        double e = Parse(end, "the spectral end");
-        double d = string.IsNullOrWhiteSpace(step) ? RoundStep(Math.Abs(e - s) / 100) : Parse(step, "the spectral step");
-        if (!(d > 0)) throw new StackFormatException("the spectral step must be positive");
+        double s = Parse(start, $"the {what} start");
+        if (string.IsNullOrWhiteSpace(end) || Parse(end, $"the {what} end") == s) return Num(s);
+        double e = Parse(end, $"the {what} end");
+        double d = string.IsNullOrWhiteSpace(step) ? RoundStep(Math.Abs(e - s) / 100) : Parse(step, $"the {what} step");
+        if (!(d > 0)) throw new StackFormatException($"the {what} step must be positive");
         if (Math.Abs(e - s) / d > 1_000_000) throw new StackFormatException($"that is {Math.Abs(e - s) / d + 1:N0} points; make the step larger");
-        m.Spectral = $"{Num(s)} to {Num(e)} step {Num(d)}";
-    });
+        return $"{Num(s)} to {Num(e)} step {Num(d)}";
+    }
 
     // Conversions such as nm → GHz give 15 digits of noise; 12 significant figures is plenty.
     private static double Round(double v) => double.Parse(v.ToString("G12", Inv), Inv);

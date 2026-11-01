@@ -127,7 +127,8 @@ public partial class MainWindow : Window
         Commit(NotesBox, t => _ws.Edit(m => m.Notes = t), enterCommits: false);
         foreach (var box in new[] { SpectralStartBox, SpectralEndBox, SpectralStepBox })
             Commit(box, _ => _ws.SetSpectralRange(SpectralStartBox.Text ?? "", SpectralEndBox.Text ?? "", SpectralStepBox.Text ?? ""));
-        Commit(AnglesBox, t => _ws.Edit(m => m.Angles = t));
+        foreach (var box in new[] { AngleStartBox, AngleEndBox, AngleStepBox })
+            Commit(box, _ => _ws.SetAngleRange(AngleStartBox.Text ?? "", AngleEndBox.Text ?? "", AngleStepBox.Text ?? ""));
         Commit(AzimuthBox, t => _ws.Edit(m => m.Azimuths = t.Trim() == "0" ? "" : t));
 
         IncidentBox.SelectionChanged += (_, _) => { if (!_refreshing && IncidentBox.SelectedItem is string s) Try(() => _ws.Edit(m => m.Incident.Material = s)); };
@@ -272,9 +273,14 @@ public partial class MainWindow : Window
             SetText(SpectralStartBox, start);
             SetText(SpectralEndBox, end);
             SetText(SpectralStepBox, step);
-            SpectralPoints.Text = listCount > 0 ? $"a list of {listCount} values from the file; typing here makes it a range"
+            SpectralPoints.Text = listCount > 0 ? $"{listCount} listed values; typing makes a range"
                                 : _ws.SpectralPointCount() is int n and > 1 ? $"{n} points" : "";
-            SetText(AnglesBox, m.Angles);
+            var (aStart, aEnd, aStep, aList) = _ws.AngleRange();
+            SetText(AngleStartBox, aStart);
+            SetText(AngleEndBox, aEnd);
+            SetText(AngleStepBox, aStep);
+            AnglePoints.Text = aList > 0 ? $"{aList} listed values; typing makes a range"
+                             : _ws.AnglePointCount() is int na and > 1 ? $"{na} {(m.AnglesAreXi ? "values of ξ" : "angles")}" : "";
             SetText(AzimuthBox, m.Azimuths);
 
             var names = _ws.MaterialNames;

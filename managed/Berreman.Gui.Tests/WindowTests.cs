@@ -147,7 +147,7 @@ public static class WindowTests
         h.Section("the window opens with a new stack, and evaluates it without being asked");
         WithWindow(session, w =>
         {
-            foreach (var name in new[] { "LayerGrid", "IncidentBox", "ExitBox", "SpectralStartBox", "SpectralEndBox", "SpectralStepBox", "AnglesBox", "AzimuthBox",
+            foreach (var name in new[] { "LayerGrid", "IncidentBox", "ExitBox", "SpectralStartBox", "SpectralEndBox", "SpectralStepBox", "AngleStartBox", "AngleEndBox", "AngleStepBox", "AzimuthBox",
                                          "LengthUnitBox", "SpectralUnitBox",
                                          "InsertButton", "DeleteButton", "UpButton", "DownButton", "PropertiesButton",
                                          "DesignStringButton", "UndoButton", "RedoButton", "MaterialList", "MaterialSpecBox",
@@ -663,6 +663,30 @@ public static class WindowTests
             TypeAndLeave(w, Box("SpectralStepBox"), "100");
             Shot(w, "stack-spectral");
             h.Expect(w.Workspace.Model.Spectral == "400 to 700 step 100" && Find<TextBlock>(w, "SpectralPoints").Text == "4 points", $"a typed step is the sweep's ({w.Workspace.Model.Spectral})");
+        });
+    }
+
+    public static void TheAnglesAreStartEndAndStep(Harness h, HeadlessUnitTestSession session)
+    {
+        h.Section("the angles are typed as start, end and step; a file's even list shows as a range");
+        WithWindow(session, w =>
+        {
+            TextBox Box(string name) => Find<TextBox>(w, name);
+            string Angles() => $"{Box("AngleStartBox").Text} | {Box("AngleEndBox").Text} | {Box("AngleStepBox").Text} {Find<TextBlock>(w, "AngleUnitLabel").Text} ({Find<TextBlock>(w, "AnglePoints").Text})";
+            h.Expect(Angles() == "0 |  |  ° ()", $"a new stack is at normal incidence: a start alone ({Angles()})");
+            TypeAndLeave(w, Box("AngleEndBox"), "80");
+            h.Expect(w.Workspace.Model.Angles == "0 to 80 step 1" && Angles() == "0 | 80 | 1 ° (81 angles)", $"an end gets a round step ({Angles()})");
+            TypeAndLeave(w, Box("AngleStepBox"), "10");
+            h.Expect(w.Workspace.Model.Angles == "0 to 80 step 10", $"and a typed step replaces it ({w.Workspace.Model.Angles})");
+
+            w.LoadSample(Sample("peshlov-2006 / twintex"), "peshlov-2006 / twintex");
+            Pump(w);
+            h.Expect(Angles() == "0 | 60 | 30 ° (3 angles)" && w.Workspace.Model.Angles == "0, 30, 60",
+                     $"the file's list 0, 30, 60 shows as a range and stays a list until edited ({Angles()})");
+            w.LoadSample(Sample("schubert-1996 / biaxial-film"), "schubert-1996 / biaxial-film");
+            Pump(w);
+            Shot(w, "stack-angles");
+            h.Expect(Angles().StartsWith("0 | 80 |  ° (5 listed values"), $"an uneven list shows its ends and says it is a list ({Angles()})");
         });
     }
 

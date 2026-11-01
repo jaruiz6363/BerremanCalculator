@@ -22,6 +22,7 @@ WindowTests.TheConoscopicMapShowsTheIsochromes(h, session);
 WindowTests.TheFieldProfileShowsTheFieldsThroughTheStack(h, session);
 WindowTests.UnitsConvertAndTheFileFollows(h, session);
 WindowTests.TheSpectralSweepIsStartEndAndStep(h, session);
+WindowTests.TheAnglesAreStartEndAndStep(h, session);
 WindowTests.MediaShowOrientationOnlyWhenAnisotropic(h, session);
 WindowTests.ClosingAChangedStackAsks(h, session);
 
