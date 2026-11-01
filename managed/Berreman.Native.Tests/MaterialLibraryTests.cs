@@ -140,3 +140,58 @@ internal static class MaterialLibraryTests
         finally { File.Delete(path); }
     }
 }
+
+/// <summary>Directions in crystal axes (Api/Lattice.cs).</summary>
+internal static class LatticeTests
+{
+    public static int Checks, Failures;
+
+    private static void Check(bool ok, string what)
+    {
+        ++Checks;
+        if (!ok) { ++Failures; Console.WriteLine($"  FAIL  {what}"); }
+    }
+
+    public static void Run()
+    {
+        /* The cell vectors have the lengths and angles they were given, for a triclinic cell. */
+        var t = new Lattice(5.1, 6.3, 7.7, 81, 97, 112);
+        var v = t.Vectors();
+        double Len(double[] x) => Math.Sqrt(x[0] * x[0] + x[1] * x[1] + x[2] * x[2]);
+        double Angle(double[] x, double[] y) => Math.Acos((x[0] * y[0] + x[1] * y[1] + x[2] * y[2]) / (Len(x) * Len(y))) * 180 / Math.PI;
+        Check(Math.Abs(Len(v[0]) - 5.1) < 1e-12 && Math.Abs(Len(v[1]) - 6.3) < 1e-12 && Math.Abs(Len(v[2]) - 7.7) < 1e-12, "the cell vectors have the lengths given");
+        Check(Math.Abs(Angle(v[1], v[2]) - 81) < 1e-10 && Math.Abs(Angle(v[0], v[2]) - 97) < 1e-10 && Math.Abs(Angle(v[0], v[1]) - 112) < 1e-10,
+              "and the angles α (b, c), β (a, c), γ (a, b)");
+        Check(v[0][1] == 0 && v[0][2] == 0 && v[1][2] == 0 && v[2][2] > 0, "a along x, b in the x–y plane, c towards +z");
+
+        /* [0 0 1] in a monoclinic cell is c, at β from a in the x–z plane. */
+        var spec = System.Text.Json.Nodes.JsonNode.Parse("""
+            { "lattice": { "a": 12.23, "b": 3.04, "c": 5.80, "beta": 103.7 },
+              "terms": [ { "eps": 1 }, { "lorentz": { "unit": "cm-1", "amplitude": 500, "center": 500, "gamma": 5 }, "axis_uvw": [0, 0, 1] } ] }
+            """);
+        var byUvw = MaterialParser.Parse(spec, "uvw").At(1e7 / 450, 0);
+        double b = 103.7 * Math.PI / 180;
+        var byAxis = MaterialParser.Parse(System.Text.Json.Nodes.JsonNode.Parse(
+            $$"""{ "terms": [ { "eps": 1 }, { "lorentz": { "unit": "cm-1", "amplitude": 500, "center": 500, "gamma": 5 }, "axis": [{{Math.Cos(b):R}}, 0, {{Math.Sin(b):R}}] } ] }"""), "axis").At(1e7 / 450, 0);
+        Check(Enumerable.Range(0, 36).All(k => (byUvw.M[k] - byAxis.M[k]).Magnitude < 1e-14), "[0 0 1] of a monoclinic cell is c = (cos β, 0, sin β)");
+
+        /* Schubert's frame (a along x, c* along y, b along −z) is this one turned by Euler [0, −90, 0]:
+           a direction at α from a in the a–c plane, (cos α, 0, sin α) here, becomes (cos α, sin α, 0). */
+        double al = 47.8 * Math.PI / 180;
+        var ours = MaterialParser.Parse(System.Text.Json.Nodes.JsonNode.Parse(
+            $$"""{ "terms": [ { "eps": 1 }, { "lorentz": { "unit": "cm-1", "amplitude": 266.2, "center": 743.48, "gamma": 11 }, "axis": [{{Math.Cos(al):R}}, 0, {{Math.Sin(al):R}}] } ] }"""), "o").At(1e7 / 700, 0);
+        var paper = MaterialParser.Parse(System.Text.Json.Nodes.JsonNode.Parse(
+            """{ "terms": [ { "eps": 1 }, { "lorentz": { "unit": "cm-1", "amplitude": 266.2, "center": 743.48, "gamma": 11 }, "axis_deg": 47.8 } ] }"""), "p").At(1e7 / 700, 0);
+        var turned = ours.Rotated(MaterialMatrix.EulerRotation(0, -90, 0));
+        Check(Enumerable.Range(0, 36).All(k => (turned.M[k] - paper.M[k]).Magnitude < 1e-14), "Schubert's Ga₂O₃ frame is this one with Euler [0, −90, 0]");
+
+        bool refused = false;
+        try { MaterialParser.Parse(System.Text.Json.Nodes.JsonNode.Parse("""{ "terms": [ { "eps": 1 }, { "axis_uvw": [1, 0, 0] } ] }"""), "x"); }
+        catch (StackFormatException e) { refused = e.Message.Contains("lattice"); }
+        Check(refused, "a direction in crystal axes without a lattice is refused");
+        refused = false;
+        try { MaterialParser.Parse(System.Text.Json.Nodes.JsonNode.Parse("""{ "lattice": { "a": 1, "b": 1, "c": 1, "alpha": 10, "beta": 10, "gamma": 170 }, "terms": [ { "eps": 1 } ] }"""), "x"); }
+        catch (StackFormatException e) { refused = e.Message.Contains("cell"); }
+        Check(refused, "angles that make no cell are refused");
+    }
+}

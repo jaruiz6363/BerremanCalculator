@@ -110,7 +110,7 @@ dispersing gyration or a chiral medium is written.
 
 **A term** has at most one law and at least one shape. A term with no law is a constant. A term
 may also have a `label`, which is shown and otherwise ignored. A material written as terms has
-nothing else beside them, except `source` and `notes`.
+nothing else beside them, except `lattice`, `source` and `notes`.
 
 | Shape key | The shape |
 |---|---|
@@ -118,8 +118,11 @@ nothing else beside them, except `source` and `notes`.
 | `matrix` | The whole 6×6, alone |
 | `axis` | [x, y, z], normalised: êêᵀ in the ε block |
 | `axis_deg` | α: ê = (cos α, sin α, 0); or [α, β], lifted by β towards z |
+| `axis_uvw` | [u, v, w]: the direction u a + v b + w c of the material's `lattice` |
 
 When no term gives μ, μ = 1.
+
+A material written as terms may give its crystal `lattice`, `{ "a", "b", "c", "alpha", "beta", "gamma" }`, with the angles in degrees (default 90). Its terms can then give directions in crystal axes with `axis_uvw`. The lattice is placed with a along x, b in the x–y plane and c towards +z ([material-model.md](material-model.md), "Crystal axes").
 
 | Law | Parameters | f |
 |---|---|---|

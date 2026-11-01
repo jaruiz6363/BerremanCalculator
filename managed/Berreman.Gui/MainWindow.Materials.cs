@@ -24,6 +24,7 @@ namespace Berreman.Gui;
 public partial class MainWindow
 {
     private JsonArray? _terms;                 // the selected material written as terms
+    private JsonObject? _lattice;              // its lattice, for directions in crystal axes
     private int _termIndex;
     private string? _shownMaterial;            // the material the views were last filled for
     private string? _shownSpec;                // and its definition then
@@ -140,6 +141,8 @@ public partial class MainWindow
         ShowMaterials();
     }
 
+    private JsonObject? _pendingLattice;       // a lattice typed with a term, written when it is applied
+
     private static int Move(JsonArray t, int at, int by)
     {
         int to = at + by;
@@ -185,6 +188,7 @@ public partial class MainWindow
             }
 
             /* Terms. */
+            _lattice = mat.Spec["lattice"] as JsonObject;
             try { _terms = (JsonArray)MaterialEditing.AsTerms(mat.Spec)["terms"]!; }
             catch (FormatException e) { _terms = null; TermsHint.Text = e.Message; }
             if (_terms is not null)
@@ -273,11 +277,14 @@ public partial class MainWindow
             var terms = (JsonArray)_terms.DeepClone();
             select = change(terms);
             var spec = new JsonObject { ["terms"] = terms };
+            var lattice = _pendingLattice ?? _lattice;
+            if (lattice is not null) spec["lattice"] = lattice.DeepClone();
             foreach (var k in new[] { "source", "notes" })
                 if (mat.Spec[k] is { } v) spec[k] = v.DeepClone();
             SetSpec(name, spec);
         }, done);
         _termIndex = select;
+        _pendingLattice = null;
         ShowMaterialViews();
     }
 
@@ -295,14 +302,20 @@ public partial class MainWindow
             TermLawFormula.Text = MaterialEditing.LawFormula(law);
             LawFields(law is null ? null : term[law] as JsonObject);
 
-            ShapeModeBox.SelectedIndex = term.ContainsKey("axis_deg") ? 0 : term.ContainsKey("axis") ? 1 : 2;
+            ShapeModeBox.SelectedIndex = term.ContainsKey("axis_deg") ? 0 : term.ContainsKey("axis") ? 1 : term.ContainsKey("axis_uvw") ? 3 : 2;
+            UvwUBox.Text = UvwVBox.Text = UvwWBox.Text = "0";
+            if (term["axis_uvw"] is JsonArray uvw) { UvwUBox.Text = Txt(uvw[0]); UvwVBox.Text = Txt(uvw[1]); UvwWBox.Text = Txt(uvw[2]); }
+            LatticeABox.Text = Txt(_lattice?["a"]); LatticeBBox.Text = Txt(_lattice?["b"]); LatticeCBox.Text = Txt(_lattice?["c"]);
+            LatticeAlphaBox.Text = _lattice?["alpha"] is { } al ? Txt(al) : "90";
+            LatticeBetaBox.Text = _lattice?["beta"] is { } be ? Txt(be) : "90";
+            LatticeGammaBox.Text = _lattice?["gamma"] is { } ga ? Txt(ga) : "90";
             AxisAngleBox.Text = AxisElevationBox.Text = "0";
             AxisXBox.Text = "1"; AxisYBox.Text = AxisZBox.Text = "0";
             if (term["axis_deg"] is JsonArray ad) { AxisAngleBox.Text = Txt(ad[0]); AxisElevationBox.Text = Txt(ad[1]); }
             else if (term["axis_deg"] is { } a) AxisAngleBox.Text = Txt(a);
             if (term["axis"] is JsonArray v) { AxisXBox.Text = Txt(v[0]); AxisYBox.Text = Txt(v[1]); AxisZBox.Text = Txt(v[2]); }
             string[] cells;
-            try { cells = MaterialEditing.ShapeCells(term); }
+            try { cells = MaterialEditing.ShapeCells(term, _lattice); }
             catch (StackFormatException) { cells = Enumerable.Repeat("", 36).ToArray(); }
             for (int k = 0; k < 36; ++k) _shapeCells[k].Text = cells[k] == "0" ? "" : cells[k];
             ShapePanels(fromDirection: false);
@@ -379,7 +392,8 @@ public partial class MainWindow
         int mode = Math.Max(0, ShapeModeBox.SelectedIndex);
         DirectionAnglesPanel.IsVisible = mode == 0;
         DirectionVectorPanel.IsVisible = mode == 1;
-        DirectionHint.IsVisible = mode < 2;
+        DirectionCrystalPanel.IsVisible = mode == 3;
+        DirectionHint.IsVisible = mode != 2;
         ShapeMatrixPanel.IsVisible = mode == 2;
         if (fromDirection && mode == 2)
         {
@@ -388,7 +402,7 @@ public partial class MainWindow
             {
                 var probe = new JsonObject();
                 foreach (var (k, v) in DirectionShape()) probe[k] = v!.DeepClone();
-                var cells = MaterialEditing.ShapeCells(probe);
+                var cells = MaterialEditing.ShapeCells(probe, _pendingLattice ?? _lattice);
                 for (int k = 0; k < 36; ++k) _shapeCells[k].Text = cells[k] == "0" ? "" : cells[k];
             }
             catch (Exception e) when (e is FormatException or StackFormatException) { }
@@ -399,6 +413,20 @@ public partial class MainWindow
     {
         double V(TextBox b, string what) => double.TryParse((b.Text ?? "").Trim(), NumberStyles.Float, Inv, out var v) && double.IsFinite(v)
             ? v : throw new FormatException($"{what}: '{b.Text}' is not a number");
+        if (ShapeModeBox.SelectedIndex == 3)
+        {
+            double u = V(UvwUBox, "u"), v = V(UvwVBox, "v"), w = V(UvwWBox, "w");
+            if (u == 0 && v == 0 && w == 0) throw new FormatException("[u v w] must not be zero");
+            /* The lattice typed beside it is the material's, written with the term. */
+            var lat = new JsonObject
+            {
+                ["a"] = V(LatticeABox, "a"), ["b"] = V(LatticeBBox, "b"), ["c"] = V(LatticeCBox, "c"),
+                ["alpha"] = V(LatticeAlphaBox, "α"), ["beta"] = V(LatticeBetaBox, "β"), ["gamma"] = V(LatticeGammaBox, "γ"),
+            };
+            Lattice.Parse(lat, "lattice");
+            _pendingLattice = lat;
+            return new JsonObject { ["axis_uvw"] = new JsonArray(u, v, w) };
+        }
         if (ShapeModeBox.SelectedIndex == 1)
         {
             double x = V(AxisXBox, "x"), y = V(AxisYBox, "y"), z = V(AxisZBox, "z");

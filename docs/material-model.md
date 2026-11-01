@@ -67,6 +67,23 @@ material.
 
 When no term gives μ, μ = 1. ε has no default: a material must give it.
 
+## Crystal axes
+
+A monoclinic or triclinic crystal's oscillators are often given as directions in its lattice. [u v w]
+is the direction u a + v b + w c. A material written as terms may give its `lattice` (a, b, c and
+the angles α, β, γ), and a term may then use `axis_uvw`. The lattice is placed in the material's
+x, y, z in the usual crystallographic way:
+
+    a = a (1, 0, 0)
+    b = b (cos γ, sin γ, 0)
+    c = c (cos β, (cos α − cos β cos γ)/sin γ, √(1 − cos²β − ((cos α − cos β cos γ)/sin γ)²))
+
+That is: a along x, b in the x–y plane, and c towards +z.
+
+Papers place the lattice in other ways, and the layer's Euler angles match them. Schubert et al.
+(2016) put β-Ga₂O₃'s a along x, c* along y and b along −z. That frame is this one turned by Euler
+[0, −90, 0], and the managed tests check the relation.
+
 ## Shorthand
 
 The short forms of the stack file are lists of terms:

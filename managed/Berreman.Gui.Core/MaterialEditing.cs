@@ -192,9 +192,10 @@ public static class MaterialEditing
     // ---- a term's shape --------------------------------------------------------------------------
 
     /// <summary>A term's shape as the 36 cells of its 6×6 matrix, whatever keys gave it.</summary>
-    public static string[] ShapeCells(JsonObject term)
+    public static string[] ShapeCells(JsonObject term, JsonNode? lattice = null)
     {
         var probe = new JsonObject { ["terms"] = new JsonArray(StripLaw(term)) };
+        if (lattice is not null) probe["lattice"] = lattice.DeepClone();
         /* Parse a law-free copy: the constant term's matrix is exactly the shape. A μ = 1 term is
            added when the term gives no μ; that one is left out by evaluating only the first term. */
         var m = (TermMaterial)MaterialParser.Parse(EnsureEps(probe), "term");
@@ -265,7 +266,8 @@ public static class MaterialEditing
             foreach (var k in new[] { "center", "plasma" })
                 if (p?[k] is JsonValue v) { sb.Append($" at {Num(v)}{unit}"); break; }
         }
-        if (term["axis_deg"] is { } a) sb.Append($", along {(a is JsonArray arr ? string.Join("°, ", arr.Select(x => Num(x!))) : Num(a))}°");
+        if (term["axis_uvw"] is JsonArray uvw) sb.Append($", along [{string.Join(" ", uvw.Select(Num))}]");
+        else if (term["axis_deg"] is { } a) sb.Append($", along {(a is JsonArray arr ? string.Join("°, ", arr.Select(x => Num(x!))) : Num(a))}°");
         else if (term["axis"] is JsonArray v3) sb.Append($", along ({string.Join(", ", v3.Select(x => Num(x!)))})");
         else
         {

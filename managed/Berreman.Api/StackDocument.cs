@@ -228,16 +228,17 @@ public static class MaterialParser
         /* The general form: a list of terms, each a law times a 6×6 shape. */
         if (o.ContainsKey("terms"))
         {
-            var others = o.Select(p => p.Key).Where(k => k != "terms" && k != "source" && k != "notes").ToList();
+            var others = o.Select(p => p.Key).Where(k => k != "terms" && k != "lattice" && k != "source" && k != "notes").ToList();
             if (others.Count > 0)
                 throw new StackFormatException($"{where}: a material given by \"terms\" takes nothing else beside them ({string.Join(", ", others)}); write a constant as a term with no law");
             if (o["terms"] is not JsonArray list || list.Count == 0)
                 throw new StackFormatException($"{where}.terms must be a non-empty array");
             var terms = new List<MaterialTerm>();
             bool hasMu = false, hasEps = false;
+            var lattice = o.ContainsKey("lattice") ? Lattice.Parse(o["lattice"], $"{where}.lattice") : null;
             for (int i = 0; i < list.Count; ++i)
             {
-                var (term, givesEps, givesMu) = ParseTerm(list[i], $"{where}.terms[{i + 1}]");
+                var (term, givesEps, givesMu) = ParseTerm(list[i], $"{where}.terms[{i + 1}]", lattice);
                 terms.Add(term);
                 hasEps |= givesEps; hasMu |= givesMu;
             }
@@ -369,7 +370,7 @@ public static class MaterialParser
         ["sellmeier", "cauchy", "lorentz", "drude", "phonon", "phonon_additive", "table", "glass", "conductivity", "polder"];
 
     /// <summary>The keys that give a term's shape (docs/stack-format.md, "General materials").</summary>
-    public static readonly string[] ShapeKeys = ["eps", "mu", "rho", "rho_prime", "matrix", "axis", "axis_deg"];
+    public static readonly string[] ShapeKeys = ["eps", "mu", "rho", "rho_prime", "matrix", "axis", "axis_deg", "axis_uvw"];
 
     /// <summary>One scalar dispersion law: a constant (n or eps), or one of DispersionKeys.</summary>
     private static Dispersion ParseDispersion(JsonNode? node, string where)
@@ -388,7 +389,7 @@ public static class MaterialParser
     /// One term of a general material: an optional law (none means the constant 1) and its shape.
     /// Also says whether the shape gives ε and μ, so the material can default an absent μ to 1.
     /// </summary>
-    private static (MaterialTerm Term, bool Eps, bool Mu) ParseTerm(JsonNode? node, string where)
+    private static (MaterialTerm Term, bool Eps, bool Mu) ParseTerm(JsonNode? node, string where, Lattice? lattice)
     {
         if (node is not JsonObject o) throw new StackFormatException($"{where} must be an object");
         var unknown = o.Select(p => p.Key).Where(k => !DispersionKeys.Contains(k) && !ShapeKeys.Contains(k) && k != "label").ToList();
@@ -400,8 +401,9 @@ public static class MaterialParser
 
         var shapes = ShapeKeys.Where(o.ContainsKey).ToList();
         if (shapes.Count == 0) throw new StackFormatException($"{where}: say where the term goes, with one of {string.Join(", ", ShapeKeys)}");
-        bool axis = o.ContainsKey("axis") || o.ContainsKey("axis_deg");
-        if (o.ContainsKey("axis") && o.ContainsKey("axis_deg")) throw new StackFormatException($"{where}: give axis or axis_deg, not both");
+        var axisKeys = new[] { "axis", "axis_deg", "axis_uvw" }.Where(o.ContainsKey).ToList();
+        bool axis = axisKeys.Count > 0;
+        if (axisKeys.Count > 1) throw new StackFormatException($"{where}: give one of {string.Join(", ", axisKeys)}, not several");
         if (axis && (o.ContainsKey("eps") || o.ContainsKey("matrix")))
             throw new StackFormatException($"{where}: an axis is a shape in the ε block; give it or eps, not both");
         if (o.ContainsKey("matrix") && shapes.Count > 1)
@@ -414,7 +416,10 @@ public static class MaterialParser
             Complex[,] eps;
             if (axis)
             {
-                var e = o.ContainsKey("axis") ? AxisVector(o["axis"], $"{where}.axis") : AxisFromDegrees(o["axis_deg"], $"{where}.axis_deg");
+                var e = o.ContainsKey("axis") ? AxisVector(o["axis"], $"{where}.axis")
+                      : o.ContainsKey("axis_uvw") ? (lattice ?? throw new StackFormatException($"{where}.axis_uvw: a direction in crystal axes needs the material's \"lattice\""))
+                                                    .Direction(AxisVector(o["axis_uvw"], $"{where}.axis_uvw", normalise: false), $"{where}.axis_uvw")
+                      : AxisFromDegrees(o["axis_deg"], $"{where}.axis_deg");
                 eps = new Complex[3, 3];
                 for (int i = 0; i < 3; ++i) for (int j = 0; j < 3; ++j) eps[i, j] = e[i] * e[j];
             }
@@ -429,14 +434,14 @@ public static class MaterialParser
         return (new MaterialTerm(law, shape), givesEps, givesMu);
     }
 
-    /// <summary>A unit direction from [x, y, z] (normalised here).</summary>
-    private static double[] AxisVector(JsonNode? n, string where)
+    /// <summary>A unit direction from [x, y, z] (normalised here unless asked not to).</summary>
+    private static double[] AxisVector(JsonNode? n, string where, bool normalise = true)
     {
         if (n is not JsonArray a || a.Count != 3) throw new StackFormatException($"{where} must be [x, y, z]");
         var v = new[] { StackDocument.Num(a[0], where + "[1]"), StackDocument.Num(a[1], where + "[2]"), StackDocument.Num(a[2], where + "[3]") };
         double len = Math.Sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
         if (!(len > 0)) throw new StackFormatException($"{where} must not be zero");
-        return [v[0] / len, v[1] / len, v[2] / len];
+        return normalise ? [v[0] / len, v[1] / len, v[2] / len] : v;
     }
 
     /// <summary>

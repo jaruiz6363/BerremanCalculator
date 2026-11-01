@@ -317,6 +317,19 @@ public static class WindowTests
             h.Expect(Term(1)["eps"] is JsonArray, $"a typed matrix is written as an ε block ({Find<SelectableTextBlock>(w, "StatusText").Text}; {Term(1).ToJsonString()})");
             h.Expect(Find<TextBlock>(w, "MaterialSummary").Text!.Contains("16 terms"), "the summary counts the terms");
 
+            /* A direction in crystal axes: [0 0 1] of the monoclinic cell, with its lattice. */
+            terms.SelectedIndex = 2;
+            Pump(w);
+            Find<ComboBox>(w, "ShapeModeBox").SelectedIndex = 3;
+            Pump(w);
+            foreach (var (box, text) in new[] { ("UvwUBox", "0"), ("UvwVBox", "0"), ("UvwWBox", "1"), ("LatticeABox", "12.23"), ("LatticeBBox", "3.04"),
+                                                ("LatticeCBox", "5.80"), ("LatticeAlphaBox", "90"), ("LatticeBetaBox", "103.7"), ("LatticeGammaBox", "90") })
+                Find<TextBox>(w, box).Text = text;
+            Click(w, Find<Button>(w, "ApplyTermButton"));
+            var ga = w.Workspace.Model.Material("Ga2O3")!.Spec;
+            h.Expect(Term(2)["axis_uvw"] is JsonArray && ga["lattice"]?["beta"]?.GetValue<double>() == 103.7,
+                     $"a direction in crystal axes is written with the material's lattice ({Find<SelectableTextBlock>(w, "StatusText").Text})");
+
             /* Add and delete. */
             int before = w.Workspace.Model.Material("Ga2O3")!.Spec["terms"]!.AsArray().Count;
             Click(w, Find<Button>(w, "AddTermButton"));

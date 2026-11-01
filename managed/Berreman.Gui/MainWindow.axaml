@@ -342,7 +342,28 @@
                             <ComboBoxItem Content="a direction, by angles"/>
                             <ComboBoxItem Content="a direction, by vector"/>
                             <ComboBoxItem Content="the 6×6 matrix"/>
+                            <ComboBoxItem Content="a direction in crystal axes [u v w]"/>
                           </ComboBox>
+                        </StackPanel>
+                        <StackPanel x:Name="DirectionCrystalPanel" Spacing="4">
+                          <StackPanel Orientation="Horizontal" Spacing="6">
+                            <TextBlock Text="[u v w]" VerticalAlignment="Center" Width="60"/>
+                            <TextBox x:Name="UvwUBox" Width="60"/>
+                            <TextBox x:Name="UvwVBox" Width="60"/>
+                            <TextBox x:Name="UvwWBox" Width="60"/>
+                            <TextBlock Classes="hint" VerticalAlignment="Center" Text="the direction u a + v b + w c"/>
+                          </StackPanel>
+                          <StackPanel Orientation="Horizontal" Spacing="4">
+                            <TextBlock Text="lattice" VerticalAlignment="Center" Width="60"/>
+                            <TextBlock Text="a" VerticalAlignment="Center"/><TextBox x:Name="LatticeABox" Width="64"/>
+                            <TextBlock Text="b" VerticalAlignment="Center"/><TextBox x:Name="LatticeBBox" Width="64"/>
+                            <TextBlock Text="c" VerticalAlignment="Center"/><TextBox x:Name="LatticeCBox" Width="64"/>
+                            <TextBlock Text="α" VerticalAlignment="Center"/><TextBox x:Name="LatticeAlphaBox" Width="56"/>
+                            <TextBlock Text="β" VerticalAlignment="Center"/><TextBox x:Name="LatticeBetaBox" Width="56"/>
+                            <TextBlock Text="γ" VerticalAlignment="Center"/><TextBox x:Name="LatticeGammaBox" Width="56"/>
+                          </StackPanel>
+                          <TextBlock Classes="hint" TextWrapping="Wrap"
+                                     Text="The lattice belongs to the material and is shared by its terms. It is placed with a along x, b in the x–y plane and c towards +z (docs/material-model.md, Crystal axes); a paper that places it otherwise is matched with the layer's Euler angles."/>
                         </StackPanel>
                         <StackPanel x:Name="DirectionAnglesPanel" Orientation="Horizontal" Spacing="6">
                           <TextBlock Text="angle from x towards y (°)" VerticalAlignment="Center"/>
