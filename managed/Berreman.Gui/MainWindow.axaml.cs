@@ -51,6 +51,7 @@ public partial class MainWindow : Window
         SaveItem.Click += async (_, _) => await Save(false);
         SaveAsItem.Click += async (_, _) => await Save(true);
         ExportItem.Click += async (_, _) => await Export();
+        ExportPlotItem.Click += async (_, _) => await ExportPlot();
         ExitItem.Click += (_, _) => Close();
         UndoItem.Click += (_, _) => _ws.Undo();
         RedoItem.Click += (_, _) => _ws.Redo();
@@ -532,7 +533,7 @@ public partial class MainWindow : Window
             SuggestedFileName = Path.GetFileNameWithoutExtension(_ws.Name) + ".csv",
         });
         if (file?.TryGetLocalPath() is not { } path) return;
-        await File.WriteAllTextAsync(path, ResultTable.Build(_result, jones: true, ellipsometry: true, absorption: true).ToCsv());
+        await File.WriteAllTextAsync(path, ResultTable.Build(_result, jones: true, ellipsometry: true, absorption: true, quantities: _moreQuantities).ToCsv());
         Status($"{_result.Points.Count} points written to {path}.");
     }
 

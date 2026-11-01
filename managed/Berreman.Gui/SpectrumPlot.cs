@@ -65,6 +65,76 @@ public sealed class SpectrumPlot : Control
     /// <summary>The panel's name in compact mode, "M12".</summary>
     public string Title { get; set; } = "";
 
+    // ---- zoom and cursor -------------------------------------------------------------------------
+    // Drag a rectangle to zoom into it; double-click to see everything again. Hovering shows the
+    // nearest point's value. The zoom stays when the curves change (an edit re-evaluates), so a
+    // feature being studied stays in view.
+
+    private Point? _dragFrom, _dragTo, _hover;
+
+    /// <summary>The x range shown, or null for all of it.</summary>
+    public (double Min, double Max)? XZoom
+    {
+        get => _model.XZoom;
+        set { _model.XZoom = value; InvalidateVisual(); }
+    }
+
+    /// <summary>The first y axis's range shown, or null to fit.</summary>
+    public (double Min, double Max)? YZoom
+    {
+        get => _model.YZoom;
+        set { _model.YZoom = value; InvalidateVisual(); }
+    }
+
+    public void ResetZoom() { _model.XZoom = null; _model.YZoom = null; InvalidateVisual(); }
+
+    private bool InPlot(Point p) =>
+        p.X >= _model.Left && p.X <= _model.Left + _model.PlotWidth && p.Y >= _model.Top && p.Y <= _model.Top + _model.PlotHeight;
+
+    protected override void OnPointerPressed(Avalonia.Input.PointerPressedEventArgs e)
+    {
+        base.OnPointerPressed(e);
+        var p = e.GetPosition(this);
+        if (e.ClickCount == 2) { ResetZoom(); e.Handled = true; return; }
+        if (Series is { Count: > 0 } && InPlot(p) && e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+        {
+            _dragFrom = _dragTo = p;
+            e.Pointer.Capture(this);
+            e.Handled = true;
+        }
+    }
+
+    protected override void OnPointerMoved(Avalonia.Input.PointerEventArgs e)
+    {
+        base.OnPointerMoved(e);
+        var p = e.GetPosition(this);
+        if (_dragFrom is not null) _dragTo = p;
+        _hover = InPlot(p) ? p : null;
+        InvalidateVisual();
+    }
+
+    protected override void OnPointerExited(Avalonia.Input.PointerEventArgs e)
+    {
+        base.OnPointerExited(e);
+        _hover = null;
+        InvalidateVisual();
+    }
+
+    protected override void OnPointerReleased(Avalonia.Input.PointerReleasedEventArgs e)
+    {
+        base.OnPointerReleased(e);
+        if (_dragFrom is { } a && _dragTo is { } b && Math.Abs(b.X - a.X) > 6 && Math.Abs(b.Y - a.Y) > 6)
+        {
+            double x0 = _model.FromPixelX(Math.Min(a.X, b.X)), x1 = _model.FromPixelX(Math.Max(a.X, b.X));
+            double y0 = _model.FromPixelY(Math.Max(a.Y, b.Y)), y1 = _model.FromPixelY(Math.Min(a.Y, b.Y));
+            _model.XZoom = (x0, x1);
+            _model.YZoom = (y0, y1);
+        }
+        _dragFrom = _dragTo = null;
+        e.Pointer.Capture(null);
+        InvalidateVisual();
+    }
+
     static SpectrumPlot()
     {
         AffectsRender<SpectrumPlot>(SeriesProperty, XTitleProperty, YTitleProperty);
@@ -126,6 +196,7 @@ public sealed class SpectrumPlot : Control
             Vertical(context, _model.Axes[a].Title ?? "", new Point(ax + _model.AxisGap - 12, (top + bottom) / 2), colour);
         }
 
+        var clip = context.PushClip(new Rect(left, top, right - left, bottom - top));   // curves stay inside the axes when zoomed
         foreach (var s in series)
         {
             var runs = _model.Segments(s).Where(r => r.Count >= 2).ToList();
@@ -144,6 +215,9 @@ public sealed class SpectrumPlot : Control
                 }
             context.DrawGeometry(null, pen, geometry);
         }
+
+        clip.Dispose();
+        DrawInteraction(context);
 
         if (Compact)
         {
@@ -174,6 +248,27 @@ public sealed class SpectrumPlot : Control
         // bare 0.004 on an axis is read as 0.004% as often as 0.4%.
         // A series that names its axis titles it; otherwise the control's own YTitle does.
         Vertical(context, _model.Axes[0].Title ?? YTitle, new Point(8, (top + bottom) / 2), 0xFF404040);
+    }
+
+    /// <summary>The zoom rectangle being dragged, and the hovered point's marker and value.</summary>
+    private void DrawInteraction(DrawingContext context)
+    {
+        if (_dragFrom is { } a && _dragTo is { } b)
+            context.DrawRectangle(new SolidColorBrush(Color.FromArgb(0x30, 0x1F, 0x77, 0xB4)), new Pen(new SolidColorBrush(Color.FromRgb(0x1F, 0x77, 0xB4)), 1),
+                                  new Rect(a, b).Normalize());
+        else if (_hover is { } h && _model.Nearest(h.X, h.Y) is { } n)
+        {
+            int axis = _model.AxisOf(n.Series);
+            var at = new Point(_model.ToPixelX(n.X), _model.ToPixelY(n.Y, axis));
+            context.DrawEllipse(null, new Pen(new SolidColorBrush(Color.FromUInt32(n.Series.Colour)), 1.5), at, 4, 4);
+            string label = $"{n.Series.Name}: {n.X:G6}, {n.Y:G5}";
+            var size = Formatted(label, 0).Width;
+            double tx = Math.Min(at.X + 8, _model.Left + _model.PlotWidth - size - 4), ty = Math.Max(at.Y - 20, _model.Top);
+            context.FillRectangle(new SolidColorBrush(Color.FromArgb(0xE6, 0xFF, 0xFF, 0xFF)), new Rect(tx - 3, ty - 1, size + 6, 16));
+            Text(context, label, new Point(tx, ty), n.Series.Colour);
+        }
+        if (_model.XZoom is not null && !Compact)
+            Text(context, "zoomed: double-click to see all", new Point(_model.Left + 6, _model.Top + 2), 0xFF808080);
     }
 
     /// <summary>The colour of the lines on an axis when they all share one, grey otherwise.</summary>

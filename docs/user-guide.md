@@ -148,8 +148,13 @@ version does not know are.
   matrix is shown as 16 panels, the way ellipsometry papers draw it. Each element is divided by
   M11, M11 itself is the unpolarised reflectance (or transmittance), and there is a curve for each
   value of the other swept variables.
-- **File > Export results as CSV…** writes every point, with the Jones coefficients, Ψ and Δ, and
-  the absorption in each layer.
+- **Zoom and read values.** Drag a rectangle on the plot to zoom into it, and double-click to see
+  everything again. The zoom stays while you edit, so a feature you are studying stays in view.
+  Hovering shows the nearest point's curve, x and y.
+- **File > Export results as CSV…** writes every point, with the Jones coefficients, Ψ and Δ, the
+  absorption in each layer, and the quantities chosen with More….
+- **File > Export the plot as PNG…** writes the plot as shown, curves or Mueller panels, at twice
+  the screen's resolution.
 
 ## The command line
 

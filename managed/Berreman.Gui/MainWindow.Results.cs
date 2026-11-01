@@ -6,6 +6,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Platform.Storage;
 using Berreman.Api;
 using Berreman.Gui.Core;
 
@@ -83,6 +84,36 @@ public partial class MainWindow
     }
 
     private void Redraw() => RedrawCore();
+
+    private async Task ExportPlot()
+    {
+        if (_result is null) { Status("Evaluate first (F5), then export.", error: true); return; }
+        var file = await StorageProvider.SaveFilePickerAsync(new Avalonia.Platform.Storage.FilePickerSaveOptions
+        {
+            Title = "Export the plot as PNG", DefaultExtension = "png",
+            FileTypeChoices = [new Avalonia.Platform.Storage.FilePickerFileType("PNG image") { Patterns = ["*.png"] }],
+            SuggestedFileName = Path.GetFileNameWithoutExtension(Workspace.Name) + ".png",
+        });
+        if (file?.TryGetLocalPath() is not { } path) return;
+        SavePlotPng(path);
+        Status($"The plot is written to {path}.");
+    }
+
+    /// <summary>
+    /// The plot as it is shown (the curves, or the Mueller panels), at twice the screen's
+    /// resolution so it prints sharply; the tests call it directly.
+    /// </summary>
+    public void SavePlotPng(string path)
+    {
+        Control target = MuellerPanel.IsVisible ? MuellerPanel : Plot;
+        var size = target.Bounds.Size;
+        if (size.Width < 1 || size.Height < 1) throw new InvalidOperationException("the plot has not been laid out");
+        const double scale = 2;
+        using var bitmap = new Avalonia.Media.Imaging.RenderTargetBitmap(
+            new PixelSize((int)(size.Width * scale), (int)(size.Height * scale)), new Vector(96 * scale, 96 * scale));
+        bitmap.Render(target);
+        bitmap.Save(path);
+    }
     private void RedrawCore()
     {
         bool mueller = ViewBox.SelectedIndex > 0;

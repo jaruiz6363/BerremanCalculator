@@ -19,10 +19,29 @@ internal static class GuiCoreTests
     public static void Run()
     {
         PlotModelDegenerateCases();
+        PlotModelZoom();
         AxisFollowsTheSweep();
         CurvesAreLabelledAndCounted();
         TooManyCurvesIsSaidNotDrawn();
         SamplesAreListed();
+    }
+
+    private static void PlotModelZoom()
+    {
+        var x = Enumerable.Range(0, 101).Select(i => 400.0 + 4 * i).ToArray();
+        var y = x.Select(v => Math.Sin(v / 50)).ToArray();
+        var m = new PlotModel { XZoom = (500, 600) };
+        m.Update([new PlotSeries("s", x, y, 0xFF000000)], 800, 400);
+        Check(m.XMin == 500 && m.XMax == 600, "an x zoom is shown exactly");
+        var inside = x.Zip(y).Where(t => t.First >= 500 && t.First <= 600).Select(t => t.Second).ToList();
+        Check(m.YMin <= inside.Min() && m.YMax >= inside.Max() && m.YMax - m.YMin < 2.0, "and y fits the points inside it, not all of them");
+        Check(Math.Abs(m.FromPixelX(m.ToPixelX(537.5)) - 537.5) < 1e-9 && Math.Abs(m.FromPixelY(m.ToPixelY(0.3)) - 0.3) < 1e-12, "pixels map back to data");
+        var near = m.Nearest(m.ToPixelX(548), m.ToPixelY(Math.Sin(548.0 / 50)) + 3);
+        Check(near is { X: 548 }, "the cursor finds the nearest point");
+        Check(m.Nearest(m.ToPixelX(548), m.ToPixelY(5)) is null, "and nothing when no point is near");
+        m.YZoom = (-0.25, 0.25);
+        m.Update(m.Series, 800, 400);
+        Check(m.YMin == -0.25 && m.YMax == 0.25, "a y zoom is shown exactly");
     }
 
     private static void PlotModelDegenerateCases()

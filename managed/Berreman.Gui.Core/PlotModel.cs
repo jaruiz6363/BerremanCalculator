@@ -61,6 +61,15 @@ public sealed class PlotModel
 
     public IReadOnlyList<PlotSeries> Series { get; private set; } = System.Array.Empty<PlotSeries>();
 
+    /// <summary>
+    /// A zoom: the x range shown, instead of the data's. The y axes then fit the points inside it,
+    /// unless <see cref="YZoom"/> fixes the first one. Null shows everything.
+    /// </summary>
+    public (double Min, double Max)? XZoom { get; set; }
+
+    /// <summary>The first y axis's range under a zoom, used exactly as given (not rounded to ticks).</summary>
+    public (double Min, double Max)? YZoom { get; set; }
+
     public double PlotWidth => Math.Max(1.0, Width - Left - Right - AxisGap * (Axes.Count - 1));
     public double PlotHeight => Math.Max(1.0, Height - Top - Bottom);
 
@@ -85,6 +94,7 @@ public sealed class PlotModel
                 // A NaN or an infinity in one point must not take the axis with it. They happen: a
                 // failed point is NaN, and so is the power of an evanescent incident wave.
                 if (!double.IsFinite(s.X[i]) || !double.IsFinite(s.Y[i])) continue;
+                if (XZoom is { } zx && (s.X[i] < zx.Min || s.X[i] > zx.Max)) continue;
                 xlo = Math.Min(xlo, s.X[i]); xhi = Math.Max(xhi, s.X[i]);
                 ylo[a] = Math.Min(ylo[a], s.Y[i]); yhi[a] = Math.Max(yhi[a], s.Y[i]);
             }
@@ -96,8 +106,9 @@ public sealed class PlotModel
         // so it draws as a line through the middle instead of dividing by nothing.
         if (xhi - xlo <= 0.0) { double pad = Math.Max(Math.Abs(xlo) * 0.05, 0.5); xlo -= pad; xhi += pad; }
 
+        if (XZoom is { } z && z.Max > z.Min) { xlo = z.Min; xhi = z.Max; }
         XMin = xlo; XMax = xhi;
-        Axes = titles.Select((t, a) => Range(t, ylo[a], yhi[a])).ToArray();
+        Axes = titles.Select((t, a) => a == 0 && YZoom is { } y && y.Max > y.Min ? new YAxis(t, y.Min, y.Max) : Range(t, ylo[a], yhi[a])).ToArray();
     }
 
     /// <summary>A y range with the flat case padded, rounded outward to a tick so the top line is
@@ -125,6 +136,32 @@ public sealed class PlotModel
     public double AxisPosition(int axis) => axis == 0 ? Left : Left + PlotWidth + AxisGap * (axis - 1);
 
     public double ToPixelX(double x) => Left + (x - XMin) / (XMax - XMin) * PlotWidth;
+
+    /// <summary>The inverses of <see cref="ToPixelX"/> and <see cref="ToPixelY"/>, for the mouse.</summary>
+    public double FromPixelX(double px) => XMin + (px - Left) / PlotWidth * (XMax - XMin);
+    public double FromPixelY(double py, int axis = 0) => Axes[axis].Max - (py - Top) / PlotHeight * (Axes[axis].Max - Axes[axis].Min);
+
+    /// <summary>
+    /// The data point nearest a pixel, within <paramref name="reach"/> pixels, for the cursor
+    /// readout: its series, x and y. Null when no point is that close.
+    /// </summary>
+    public (PlotSeries Series, double X, double Y)? Nearest(double px, double py, double reach = 24)
+    {
+        (PlotSeries, double, double)? best = null;
+        double bestD = reach * reach;
+        foreach (var s in Series)
+        {
+            int axis = AxisOf(s);
+            int n = Math.Min(s.X.Length, s.Y.Length);
+            for (int i = 0; i < n; ++i)
+            {
+                if (!double.IsFinite(s.X[i]) || !double.IsFinite(s.Y[i]) || s.X[i] < XMin || s.X[i] > XMax) continue;
+                double dx = ToPixelX(s.X[i]) - px, dy = ToPixelY(s.Y[i], axis) - py, d = dx * dx + dy * dy;
+                if (d < bestD) { bestD = d; best = (s, s.X[i], s.Y[i]); }
+            }
+        }
+        return best;
+    }
 
     /// <summary>Flipped: pixels grow downward and data grows upward.</summary>
     public double ToPixelY(double y, int axis = 0) =>

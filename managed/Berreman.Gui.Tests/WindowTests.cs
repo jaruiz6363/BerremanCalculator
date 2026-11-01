@@ -412,11 +412,38 @@ public static class WindowTests
             h.Expect(names.Any(n => n.StartsWith("Psi_01")) && names.Any(n => n.StartsWith("Mr13")),
                      $"quantities chosen with More… are plotted, Psi_ps as Psi_01 since the exit medium is anisotropic ({string.Join(", ", names.Take(20))})");
             w.MoreQuantities = [];
+            Pump(w);
+
+            /* Zoom: drag a rectangle over the plot, then double-click to see everything again. */
+            var plot = Find<SpectrumPlot>(w, "Plot");
+            Point At(double fx, double fy) => plot.TranslatePoint(new Point(plot.Bounds.Width * fx, plot.Bounds.Height * fy), w)!.Value;
+            w.MouseMove(At(0.3, 0.3));
+            w.MouseDown(At(0.3, 0.3), MouseButton.Left);
+            w.MouseMove(At(0.5, 0.6));
+            w.MouseUp(At(0.5, 0.6), MouseButton.Left);
+            Pump(w);
+            h.Expect(plot.XZoom is { } z && z.Min > 200 && z.Max < 1100 && z.Max > z.Min, $"dragging a rectangle zooms into it ({plot.XZoom})");
+            w.MouseDown(At(0.5, 0.5), MouseButton.Left, RawInputModifiers.None);
+            w.MouseUp(At(0.5, 0.5), MouseButton.Left);
+            w.MouseDown(At(0.5, 0.5), MouseButton.Left, RawInputModifiers.None);
+            w.MouseUp(At(0.5, 0.5), MouseButton.Left);
+            Pump(w);
+            h.Expect(plot.XZoom is null, "a double-click shows everything again");
+            var pngCurves = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"berreman-curves-{Guid.NewGuid():N}.png");
+            w.SavePlotPng(pngCurves);
+            h.Expect(new System.IO.FileInfo(pngCurves).Length > 10000, "the curves export as a PNG");
+            File.Delete(pngCurves);
+
             Find<ComboBox>(w, "ViewBox").SelectedIndex = 1;
             Pump(w, 200);
             var m13 = w.GetVisualDescendants().OfType<SpectrumPlot>().First(p => p.Name == "Mueller13");
             h.Expect(m13.IsEffectivelyVisible && m13.Series is { Count: 3 }, "the Mueller view has a panel per element, a curve per angle");
             Shot(w, "mueller-reflection");
+            var png = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"berreman-mueller-{Guid.NewGuid():N}.png");
+            w.SavePlotPng(png);
+            var head = File.ReadAllBytes(png);
+            h.Expect(head.Length > 10000 && head[1] == (byte)'P' && head[2] == (byte)'N' && head[3] == (byte)'G', $"the Mueller panels export as a PNG ({head.Length} bytes)");
+            File.Delete(png);
             Find<ComboBox>(w, "ViewBox").SelectedIndex = 0;
             Pump(w);
         });
