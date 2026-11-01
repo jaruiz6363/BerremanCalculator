@@ -54,7 +54,6 @@ public partial class MainWindow : Window
         ExportPlotItem.Click += async (_, _) => await ExportPlot();
         ImportTfdItem.Click += async (_, _) => await ImportTfd();
         ExportReportItem.Click += async (_, _) => await ExportReport();
-        ExportTfdItem.Click += async (_, _) => await ExportTfd();
         ExitItem.Click += (_, _) => Close();
         UndoItem.Click += (_, _) => _ws.Undo();
         RedoItem.Click += (_, _) => _ws.Redo();
@@ -469,21 +468,6 @@ public partial class MainWindow : Window
         if (file?.TryGetLocalPath() is not { } path) return;
         await File.WriteAllTextAsync(path, text);
         Status($"The report is written to {path}: the layers, and every material over the sweep's range.");
-    }
-
-    private async Task ExportTfd()
-    {
-        string text;
-        try { text = TfdFile.Write(_ws.Model); }
-        catch (StackFormatException e) { Status($"Not written: {e.Message}", error: true); return; }
-        var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
-        {
-            Title = "Export as a ThinFilmDesigner design", DefaultExtension = "tfd", FileTypeChoices = [TfdFiles],
-            SuggestedFileName = Path.GetFileNameWithoutExtension(_ws.Name) + ".tfd",
-        });
-        if (file?.TryGetLocalPath() is not { } path) return;
-        await File.WriteAllTextAsync(path, text);
-        Status($"Written to {path}; ThinFilmDesigner opens it with no merit function.");
     }
 
     /// <summary>A sample opened as a copy, with no file of its own: Save asks where.</summary>

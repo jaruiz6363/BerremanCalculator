@@ -68,7 +68,6 @@
         <MenuItem x:Name="SaveAsItem" Header="Save _as…" InputGesture="Ctrl+Shift+S"/>
         <Separator/>
         <MenuItem x:Name="ImportTfdItem" Header="_Import a ThinFilmDesigner design (.tfd)…"/>
-        <MenuItem x:Name="ExportTfdItem" Header="Export as a _ThinFilmDesigner design (.tfd)…"/>
         <Separator/>
         <MenuItem x:Name="ExportItem" Header="_Export results as CSV…"/>
         <MenuItem x:Name="ExportPlotItem" Header="Export the _plot as PNG…"/>

@@ -43,12 +43,6 @@ evaluates on demand. Every edit can be undone (**Ctrl+Z**) and redone (**Ctrl+Y*
   - **The check.** The tests evaluate three of ThinFilmDesigner's samples, read this way, and
     agree with ThinFilmDesigner's own engine to 10⁻¹². One of them is a 52-layer bandpass with
     Cauchy, Sellmeier and catalogue-glass materials.
-- **Export as a ThinFilmDesigner design (.tfd)…** writes the stack for optimisation there.
-  - **What it needs.** Every material isotropic and in a form ThinFilmDesigner holds, and no
-    twisted layer; anything else is refused, with the material or layer named.
-  - **ε tables.** A table given as ε′, ε″ is written as finely spaced n and k, because
-    ThinFilmDesigner interpolates n and k.
-  - **The result** has no merit function. Its wavelengths and angles are the stack's sweep.
 - **File > Export a design report…** writes the stack as numbers another program can take:
   - the layers in physical units, with each one's Euler angles and the tilt and azimuth of its z axis;
   - every material as a table over the sweep's range: n and k for an isotropic one, n and k along
@@ -254,6 +248,14 @@ berreman convert stack.json design.tfd            write an isotropic stack as a 
 berreman evaluate stack.json --csv out.csv        write the table to a file
 berreman status                                   whether the engine loads
 ```
+
+Writing a ThinFilmDesigner design is done only from the command line (`convert stack.json
+design.tfd`); the window imports designs but does not export them.
+- **What it needs.** Every material must be isotropic and in a form ThinFilmDesigner holds, with no
+  twisted layer. Anything else is refused, and the message names the material or layer.
+- **ε tables.** A table given as ε′, ε″ is written as finely spaced n and k, because
+  ThinFilmDesigner interpolates n and k.
+- **The result** has no merit function. Its wavelengths and angles are the stack's sweep.
 
 The exit code is 0 for success, 1 when some point failed (its status is in the table), and 2 for
 a file that cannot be read or used, with a message that says where in the file the problem is.
