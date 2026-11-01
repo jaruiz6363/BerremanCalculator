@@ -33,7 +33,8 @@ from.
 | `units.length` | `nm`, `um`, `mm`, `cm`, `m`; applies to every thickness |
 | `units.spectral` | wavelength `nm`, `um`, `mm`, `cm`, `m`; frequency `GHz`, `THz`; wavenumber `cm-1`; photon energy `eV` |
 
-QWOT and FWOT thicknesses (contract, Section 1a) are not in version 1.
+Thicknesses are physical. There is no QWOT or FWOT (contract, Section 1a): an anisotropic layer has no
+one index to count a quarter wave with.
 
 ## Materials
 

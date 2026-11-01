@@ -1,56 +1,307 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="using:Berreman.Gui"
+        xmlns:core="clr-namespace:Berreman.Gui.Core;assembly=Berreman.Gui.Core"
         x:Class="Berreman.Gui.MainWindow"
         Title="BerremanCalculator"
-        Width="1280" Height="800" MinWidth="720" MinHeight="480">
+        Width="1560" Height="900" MinWidth="980" MinHeight="560">
+
+  <Window.Styles>
+    <!-- A plain column header, as ThinFilmDesigner's: Fluent reserves 32 px for a sort arrow the
+         layer table never shows, since the row order is the stack order. -->
+    <Style Selector="DataGridColumnHeader">
+      <Setter Property="Padding" Value="6,0,6,0"/>
+      <Setter Property="MinHeight" Value="28"/>
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Grid Background="{TemplateBinding Background}" ColumnDefinitions="*,Auto">
+            <ContentPresenter Name="PART_ContentPresenter" Content="{TemplateBinding Content}"
+                              ContentTemplate="{TemplateBinding ContentTemplate}" Margin="{TemplateBinding Padding}"
+                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center"/>
+            <Rectangle Name="VerticalSeparator" Grid.Column="1" Width="1" VerticalAlignment="Stretch"
+                       Fill="{TemplateBinding SeparatorBrush}" IsVisible="{TemplateBinding AreSeparatorsVisible}"/>
+          </Grid>
+        </ControlTemplate>
+      </Setter>
+    </Style>
+    <Style Selector="TabItem">
+      <Setter Property="FontSize" Value="14"/>
+      <Setter Property="MinHeight" Value="32"/>
+      <Setter Property="Padding" Value="12,4"/>
+    </Style>
+    <Style Selector="TabItem:selected">
+      <Setter Property="FontWeight" Value="Bold"/>
+    </Style>
+    <!-- A table cell: a TextBox that reads as text in a grid, not as a form field. -->
+    <Style Selector="TextBox.cell">
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="Padding" Value="4,2"/>
+      <Setter Property="MinHeight" Value="0"/>
+      <Setter Property="TextAlignment" Value="Right"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+    <Style Selector="TextBlock.label">
+      <Setter Property="VerticalAlignment" Value="Center"/>
+      <Setter Property="Margin" Value="0,0,6,0"/>
+    </Style>
+    <Style Selector="TextBlock.hint">
+      <Setter Property="Foreground" Value="#666"/>
+      <Setter Property="FontSize" Value="11"/>
+      <Setter Property="TextWrapping" Value="Wrap"/>
+    </Style>
+    <Style Selector="TextBox.angle">
+      <Setter Property="Width" Value="64"/>
+      <Setter Property="TextAlignment" Value="Right"/>
+    </Style>
+  </Window.Styles>
 
   <DockPanel>
-    <!-- Toolbar -->
-    <Border DockPanel.Dock="Top" Padding="8,6" BorderBrush="#DDD" BorderThickness="0,0,0,1">
-      <StackPanel Orientation="Horizontal" Spacing="6">
-        <Button x:Name="OpenButton" Content="Open…" ToolTip.Tip="Open a stack file (Ctrl+O)" />
-        <Button x:Name="SaveButton" Content="Save" ToolTip.Tip="Save the stack file (Ctrl+S)" />
-        <Button x:Name="SaveAsButton" Content="Save as…" />
-        <ComboBox x:Name="SampleBox" MinWidth="320" PlaceholderText="Open a sample from the literature…" />
-        <Button x:Name="EvaluateButton" Content="Evaluate (F5)" FontWeight="SemiBold" />
-        <Button x:Name="ExportButton" Content="Export CSV…" ToolTip.Tip="Write every point, with the Jones coefficients, Ψ/Δ and per-layer absorption" />
-      </StackPanel>
-    </Border>
+    <Menu DockPanel.Dock="Top">
+      <MenuItem Header="_File">
+        <MenuItem x:Name="NewItem" Header="_New stack" InputGesture="Ctrl+N"/>
+        <MenuItem x:Name="OpenItem" Header="_Open…" InputGesture="Ctrl+O"/>
+        <MenuItem x:Name="SamplesItem" Header="Open _sample"/>
+        <Separator/>
+        <MenuItem x:Name="SaveItem" Header="_Save" InputGesture="Ctrl+S"/>
+        <MenuItem x:Name="SaveAsItem" Header="Save _as…" InputGesture="Ctrl+Shift+S"/>
+        <Separator/>
+        <MenuItem x:Name="ExportItem" Header="_Export results as CSV…"/>
+        <Separator/>
+        <MenuItem x:Name="ExitItem" Header="E_xit"/>
+      </MenuItem>
+      <MenuItem Header="_Edit">
+        <MenuItem x:Name="UndoItem" Header="_Undo" InputGesture="Ctrl+Z"/>
+        <MenuItem x:Name="RedoItem" Header="_Redo" InputGesture="Ctrl+Y"/>
+      </MenuItem>
+      <MenuItem Header="_Stack">
+        <MenuItem x:Name="InsertItem" Header="_Insert layer" InputGesture="Insert"/>
+        <MenuItem x:Name="DeleteItem" Header="_Delete layer"/>
+        <MenuItem x:Name="UpItem" Header="Move _up"/>
+        <MenuItem x:Name="DownItem" Header="Move do_wn"/>
+        <MenuItem x:Name="PropertiesItem" Header="Layer _properties…"/>
+        <Separator/>
+        <MenuItem x:Name="DesignStringItem" Header="Input design _string…"/>
+        <MenuItem x:Name="ReverseItem" Header="_Reverse layers"/>
+        <MenuItem x:Name="ReverseMediaItem" Header="Reverse layers and _media"/>
+        <MenuItem x:Name="DeleteAllItem" Header="Delete _all layers…"/>
+      </MenuItem>
+      <MenuItem Header="_Analysis">
+        <MenuItem x:Name="EvaluateItem" Header="_Evaluate" InputGesture="F5"/>
+        <MenuItem x:Name="AutoItem" Header="Evaluate after every _change" ToggleType="CheckBox" IsChecked="True"/>
+      </MenuItem>
+    </Menu>
 
-    <!-- Status -->
     <Border DockPanel.Dock="Bottom" Padding="8,4" BorderBrush="#DDD" BorderThickness="0,1,0,0">
-      <SelectableTextBlock x:Name="StatusText" TextWrapping="Wrap" Text="Ready." />
+      <Grid ColumnDefinitions="*,Auto">
+        <SelectableTextBlock x:Name="StatusText" TextWrapping="Wrap" Text="Ready."/>
+        <TextBlock Grid.Column="1" x:Name="SummaryText" Foreground="#555" Margin="12,0,0,0"/>
+      </Grid>
     </Border>
 
-    <Grid ColumnDefinitions="2*,Auto,3*">
-      <!-- The stack file -->
-      <DockPanel Grid.Column="0" Margin="8">
-        <StackPanel DockPanel.Dock="Top" Spacing="2" Margin="0,0,0,6">
-          <TextBlock x:Name="DocTitle" FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap" Text="No stack open" />
-          <SelectableTextBlock x:Name="DocSource" Foreground="#555" TextWrapping="Wrap" />
-        </StackPanel>
-        <TextBox x:Name="Editor" AcceptsReturn="True" AcceptsTab="False" TextWrapping="NoWrap"
-                 FontFamily="Cascadia Mono,Consolas,Menlo,DejaVu Sans Mono,monospace" FontSize="12"
-                 ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto"
-                 Watermark="A stack file (docs/stack-format.md). Open one, or pick a sample." />
-      </DockPanel>
+    <Grid ColumnDefinitions="11*,Auto,9*">
+      <TabControl x:Name="Tabs" Grid.Column="0" Margin="4,0,0,0">
 
-      <GridSplitter Grid.Column="1" Width="5" ResizeDirection="Columns" Background="#EEE" />
+        <!-- ===== Stack ========================================================================= -->
+        <TabItem Header="Stack">
+          <DockPanel>
+            <Expander DockPanel.Dock="Top" Header="Description" Margin="4,4,4,0" HorizontalAlignment="Stretch">
+              <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto" Margin="0,2">
+                <TextBlock Classes="label" Text="Title"/>
+                <TextBox Grid.Column="1" x:Name="TitleBox" Margin="0,2"/>
+                <TextBlock Grid.Row="1" Classes="label" Text="Source"/>
+                <TextBox Grid.Row="1" Grid.Column="1" x:Name="SourceBox" Margin="0,2" Watermark="the paper, figure or table this reproduces"/>
+                <TextBlock Grid.Row="2" Classes="label" Text="Notes" VerticalAlignment="Top" Margin="0,8,6,0"/>
+                <TextBox Grid.Row="2" Grid.Column="1" x:Name="NotesBox" Margin="0,2" AcceptsReturn="True" TextWrapping="Wrap"
+                         MinHeight="60" MaxHeight="160" Watermark="assumptions made where the source is incomplete"/>
+              </Grid>
+            </Expander>
+
+            <!-- Units. Changing one converts every number in it, so the stack stays physically the same. Thicknesses are always physical. -->
+            <WrapPanel DockPanel.Dock="Top" Margin="8,6,8,0">
+              <TextBlock Classes="label" Text="Lengths in"/>
+              <ComboBox x:Name="LengthUnitBox" Width="80" Margin="0,0,16,0"/>
+              <TextBlock Classes="label" Text="Spectral axis in"/>
+              <ComboBox x:Name="SpectralUnitBox" Width="90"/>
+            </WrapPanel>
+
+            <!-- Layer buttons -->
+            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="4" Margin="8,8,8,4">
+              <Button x:Name="InsertButton" Content="Insert" ToolTip.Tip="Insert a copy of the selected layer after it (Insert)"/>
+              <Button x:Name="DeleteButton" Content="Delete" ToolTip.Tip="Delete the selected layers"/>
+              <Button x:Name="UpButton" Content="Up" ToolTip.Tip="Move the selected layer towards the incident medium"/>
+              <Button x:Name="DownButton" Content="Down" ToolTip.Tip="Move the selected layer towards the exit medium"/>
+              <Button x:Name="PropertiesButton" Content="Properties…" ToolTip.Tip="Thickness, orientation and twist of the selected layer"/>
+              <Button x:Name="DesignStringButton" Content="Design string…" ToolTip.Tip="Build layers from text such as (HL)8 H"/>
+              <Border Width="1" Background="#D0D0D0" Margin="4,2"/>
+              <Button x:Name="UndoButton" Content="Undo" ToolTip.Tip="Ctrl+Z"/>
+              <Button x:Name="RedoButton" Content="Redo" ToolTip.Tip="Ctrl+Y"/>
+            </StackPanel>
+
+            <!-- Incident medium -->
+            <Border DockPanel.Dock="Top" Margin="8,2" Padding="6,4" Background="#F3F6FA" CornerRadius="3">
+              <WrapPanel>
+                <TextBlock Classes="label" Text="Incident medium" FontWeight="SemiBold" Width="120"/>
+                <ComboBox x:Name="IncidentBox" MinWidth="160" Margin="0,0,12,0"/>
+                <TextBlock Classes="label" Text="φ"/><TextBox x:Name="IncidentPhi" Classes="angle" Margin="0,0,6,0"/>
+                <TextBlock Classes="label" Text="θ"/><TextBox x:Name="IncidentTheta" Classes="angle" Margin="0,0,6,0"/>
+                <TextBlock Classes="label" Text="ψ"/><TextBox x:Name="IncidentPsi" Classes="angle" Margin="0,0,8,0"/>
+                <TextBlock x:Name="IncidentInfo" Classes="hint" VerticalAlignment="Center"/>
+              </WrapPanel>
+            </Border>
+
+            <!-- Sweep -->
+            <Border DockPanel.Dock="Bottom" Margin="8,4,8,8" Padding="6,4" BorderBrush="#DDD" BorderThickness="1" CornerRadius="3">
+              <StackPanel Spacing="4">
+                <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto,Auto">
+                  <TextBlock Classes="label" Text="Spectral" FontWeight="SemiBold" Width="120"/>
+                  <TextBox Grid.Column="1" x:Name="SpectralBox" Margin="0,2"/>
+                  <TextBlock Grid.Column="2" x:Name="SpectralUnitLabel" Classes="label" Margin="6,0,0,0" Width="40"/>
+                  <ComboBox Grid.Row="1" x:Name="AngleModeBox" Width="114" Margin="0,2,6,2"/>
+                  <TextBox Grid.Row="1" Grid.Column="1" x:Name="AnglesBox" Margin="0,2"/>
+                  <TextBlock Grid.Row="1" Grid.Column="2" x:Name="AngleUnitLabel" Classes="label" Margin="6,0,0,0"/>
+                  <TextBlock Grid.Row="2" Classes="label" Text="Azimuth (°)" FontWeight="SemiBold"/>
+                  <TextBox Grid.Row="2" Grid.Column="1" x:Name="AzimuthBox" Margin="0,2" Watermark="0"/>
+                </Grid>
+                <TextBlock Classes="hint" Text="Each is a value, a list (0, 30, 60) or a range (400 to 800 step 2, or 400 to 800 count 201). The azimuth turns the whole sample about the normal."/>
+              </StackPanel>
+            </Border>
+
+            <!-- Exit medium -->
+            <Border DockPanel.Dock="Bottom" Margin="8,2" Padding="6,4" Background="#F3F6FA" CornerRadius="3">
+              <WrapPanel>
+                <TextBlock Classes="label" Text="Exit medium" FontWeight="SemiBold" Width="120"/>
+                <ComboBox x:Name="ExitBox" MinWidth="160" Margin="0,0,12,0"/>
+                <TextBlock Classes="label" Text="φ"/><TextBox x:Name="ExitPhi" Classes="angle" Margin="0,0,6,0"/>
+                <TextBlock Classes="label" Text="θ"/><TextBox x:Name="ExitTheta" Classes="angle" Margin="0,0,6,0"/>
+                <TextBlock Classes="label" Text="ψ"/><TextBox x:Name="ExitPsi" Classes="angle" Margin="0,0,8,0"/>
+                <TextBlock x:Name="ExitInfo" Classes="hint" VerticalAlignment="Center"/>
+              </WrapPanel>
+            </Border>
+
+            <!-- THE LAYERS. Layer 1 faces the incident medium. Every column but # and the
+                 read-only ones edits the stack when the cell is left (or Enter is pressed); the
+                 orientation is the Euler angles φ, θ, ψ (contract, Section 1), and "Optic axis"
+                 says where the material's own z axis ends up. -->
+            <DataGrid x:Name="LayerGrid" Margin="8,2" x:DataType="core:LayerRow"
+                      AutoGenerateColumns="False" CanUserSortColumns="False" CanUserReorderColumns="False"
+                      GridLinesVisibility="All" HeadersVisibility="Column" SelectionMode="Extended" IsReadOnly="False">
+              <DataGrid.Columns>
+                <DataGridTextColumn Header="#" Binding="{Binding Number}" IsReadOnly="True" Width="44"/>
+                <DataGridTemplateColumn Header="Material" Width="140" IsReadOnly="True">
+                  <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate x:DataType="core:LayerRow">
+                      <ComboBox ItemsSource="{Binding MaterialOptions}" SelectedItem="{Binding Material}" HorizontalAlignment="Stretch" Margin="2,0"/>
+                    </DataTemplate>
+                  </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Thickness" Width="120" IsReadOnly="True">
+                  <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate x:DataType="core:LayerRow">
+                      <TextBox Classes="cell" Text="{Binding ThicknessText, UpdateSourceTrigger=LostFocus}"/>
+                    </DataTemplate>
+                  </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="φ (°)" Width="62" IsReadOnly="True">
+                  <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate x:DataType="core:LayerRow">
+                      <TextBox Classes="cell" Text="{Binding Phi, UpdateSourceTrigger=LostFocus}"/>
+                    </DataTemplate>
+                  </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="θ (°)" Width="62" IsReadOnly="True">
+                  <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate x:DataType="core:LayerRow">
+                      <TextBox Classes="cell" Text="{Binding Theta, UpdateSourceTrigger=LostFocus}"/>
+                    </DataTemplate>
+                  </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="ψ (°)" Width="62" IsReadOnly="True">
+                  <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate x:DataType="core:LayerRow">
+                      <TextBox Classes="cell" Text="{Binding Psi, UpdateSourceTrigger=LostFocus}"/>
+                    </DataTemplate>
+                  </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="Optic axis" Binding="{Binding AxisText}" IsReadOnly="True" Width="128"/>
+                <DataGridTextColumn Header="Twist" Binding="{Binding TwistText}" IsReadOnly="True" Width="100"/>
+                <DataGridTemplateColumn Header="" Width="40" IsReadOnly="True">
+                  <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate x:DataType="core:LayerRow">
+                      <Button Classes="layerProperties" Content="…" Padding="8,0" HorizontalAlignment="Center" ToolTip.Tip="Layer properties"/>
+                    </DataTemplate>
+                  </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="" IsReadOnly="True" Width="18"/>
+              </DataGrid.Columns>
+            </DataGrid>
+          </DockPanel>
+        </TabItem>
+
+        <!-- ===== Materials ===================================================================== -->
+        <TabItem Header="Materials">
+          <Grid ColumnDefinitions="260,*" Margin="4">
+            <DockPanel Margin="4">
+              <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="4" Margin="0,6,0,0">
+                <Button x:Name="NewMaterialButton" Content="New"/>
+                <Button x:Name="DuplicateMaterialButton" Content="Duplicate"/>
+                <Button x:Name="RemoveMaterialButton" Content="Remove"/>
+              </StackPanel>
+              <ListBox x:Name="MaterialList"/>
+            </DockPanel>
+            <DockPanel Grid.Column="1" Margin="8,4,4,4">
+              <StackPanel DockPanel.Dock="Top" Spacing="6">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <TextBlock Classes="label" Text="Name"/>
+                  <TextBox x:Name="MaterialNameBox" Width="220"/>
+                  <Button x:Name="RenameMaterialButton" Content="Rename"/>
+                </StackPanel>
+                <TextBlock x:Name="MaterialSummary" TextWrapping="Wrap"/>
+                <TextBlock x:Name="MaterialUses" Classes="hint"/>
+                <TextBlock Classes="hint" Text="The material as the stack file writes it: n, eps, no/ne, nx/ny/nz, a dispersion law (sellmeier, table, phonon) or a model (ferrite, conductor, resistive_sheet). docs/stack-format.md lists every form."/>
+              </StackPanel>
+              <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="6" Margin="0,6,0,0">
+                <Button x:Name="ApplyMaterialButton" Content="Apply" FontWeight="SemiBold"/>
+                <Button x:Name="RevertMaterialButton" Content="Revert"/>
+              </StackPanel>
+              <TextBox x:Name="MaterialSpecBox" AcceptsReturn="True" TextWrapping="NoWrap"
+                       FontFamily="Cascadia Mono,Consolas,Menlo,DejaVu Sans Mono,monospace" FontSize="12"/>
+            </DockPanel>
+          </Grid>
+        </TabItem>
+
+        <!-- ===== The file ======================================================================= -->
+        <TabItem Header="File">
+          <DockPanel Margin="4">
+            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="6" Margin="4">
+              <Button x:Name="ApplyTextButton" Content="Apply" FontWeight="SemiBold"/>
+              <Button x:Name="RevertTextButton" Content="Revert"/>
+              <TextBlock Classes="hint" VerticalAlignment="Center"
+                         Text="The stack exactly as it is saved (docs/stack-format.md). Edit it here and Apply, or edit the tables and watch it follow."/>
+            </StackPanel>
+            <TextBox x:Name="Editor" AcceptsReturn="True" TextWrapping="NoWrap"
+                     FontFamily="Cascadia Mono,Consolas,Menlo,DejaVu Sans Mono,monospace" FontSize="12"
+                     ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto"/>
+          </DockPanel>
+        </TabItem>
+      </TabControl>
+
+      <GridSplitter Grid.Column="1" Width="5" ResizeDirection="Columns" Background="#EEE"/>
 
       <!-- Results -->
       <DockPanel Grid.Column="2" Margin="8">
         <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,6">
-          <TextBlock Text="Show:" VerticalAlignment="Center" Margin="0,0,8,0" />
-          <CheckBox x:Name="ShowR" Content="R" IsChecked="True" Margin="0,0,8,0" />
-          <CheckBox x:Name="ShowT" Content="T" IsChecked="True" Margin="0,0,8,0" />
-          <CheckBox x:Name="ShowA" Content="A" Margin="0,0,20,0" />
-          <CheckBox x:Name="ShowP" Content="p (mode 0)" IsChecked="True" Margin="0,0,8,0" />
-          <CheckBox x:Name="ShowS" Content="s (mode 1)" IsChecked="True" Margin="0,0,8,0" />
-          <CheckBox x:Name="ShowMean" Content="mean (unpolarised)" Margin="0,0,20,0" />
-          <CheckBox x:Name="ShowEllipsometry" Content="Ψ, Δ" />
+          <Button x:Name="EvaluateButton" Content="Evaluate (F5)" FontWeight="SemiBold" Margin="0,0,12,0"/>
+          <TextBlock Text="Show:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+          <CheckBox x:Name="ShowR" Content="R" IsChecked="True" Margin="0,0,8,0"/>
+          <CheckBox x:Name="ShowT" Content="T" IsChecked="True" Margin="0,0,8,0"/>
+          <CheckBox x:Name="ShowA" Content="A" Margin="0,0,20,0"/>
+          <CheckBox x:Name="ShowP" Content="p (mode 0)" IsChecked="True" Margin="0,0,8,0"/>
+          <CheckBox x:Name="ShowS" Content="s (mode 1)" IsChecked="True" Margin="0,0,8,0"/>
+          <CheckBox x:Name="ShowMean" Content="mean" Margin="0,0,20,0"/>
+          <CheckBox x:Name="ShowEllipsometry" Content="Ψ, Δ"/>
         </WrapPanel>
-        <local:SpectrumPlot x:Name="Plot" />
+        <local:SpectrumPlot x:Name="Plot"/>
       </DockPanel>
     </Grid>
   </DockPanel>

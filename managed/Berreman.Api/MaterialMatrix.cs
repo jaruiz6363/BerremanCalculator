@@ -47,6 +47,28 @@ public sealed class MaterialMatrix
         return Mul(Mul(Rz(phiDeg * d), Rx(thetaDeg * d)), Rz(psiDeg * d));
     }
 
+    /// <summary>
+    /// Where the material's own z axis points after the rotation (the optic axis of a uniaxial
+    /// material): its tilt from the stack normal z and its azimuth from x towards y, in degrees.
+    /// R ẑ = (sin φ sin θ, −cos φ sin θ, cos θ), so the tilt is θ and the azimuth φ − 90°.
+    /// </summary>
+    public static (double TiltDeg, double AzimuthDeg) AxisDirection(double phiDeg, double thetaDeg, double psiDeg)
+    {
+        var r = EulerRotation(phiDeg, thetaDeg, psiDeg);
+        double tilt = Math.Acos(Math.Clamp(r[2, 2], -1, 1)) * 180 / Math.PI;
+        double az = Math.Abs(r[0, 2]) < 1e-12 && Math.Abs(r[1, 2]) < 1e-12 ? 0 : Math.Atan2(r[1, 2], r[0, 2]) * 180 / Math.PI;
+        return (tilt, az);
+    }
+
+    /// <summary>Euler angles that point the material's z axis at a tilt and azimuth (the inverse of
+    /// <see cref="AxisDirection"/>, with ψ = 0).</summary>
+    public static double[] EulerForAxis(double tiltDeg, double azimuthDeg)
+    {
+        double phi = azimuthDeg + 90;
+        phi -= 360 * Math.Floor((phi + 180) / 360);
+        return [phi, tiltDeg, 0];
+    }
+
     public static double[,] Mul(double[,] a, double[,] b)
     {
         var c = new double[3, 3];

@@ -48,19 +48,20 @@ the matrix, so his examples are checked against this one when used.
 ## 1a. Units shown and typed
 
 The program covers the ultraviolet to microwaves, so the units are wider than ThinFilmDesigner's.
-Each is a display setting saved with the stack. It changes how numbers are shown, never the stack.
+Each is saved with the stack. Changing one converts every number it applies to, so the stack stays
+physically the same.
 
 | Setting | Choices |
 |---|---|
 | Spectral axis | Wavelength (nm, µm, mm, cm, m), frequency (GHz, THz), wavenumber (cm⁻¹), photon energy (eV) |
 | Length (thicknesses) | nm, µm, mm, cm, m |
-| Layer thickness | Physical, QWOT (4nd/λ) or FWOT (nd/λ) at a reference, as ThinFilmDesigner; a layer may name its own unit |
-| Reference for QWOT and FWOT | In the spectral axis's unit |
+| Layer thickness | Physical, always |
 | Angles | Degrees |
 
-For a uniaxial layer, n in QWOT and FWOT is the ordinary index at the reference. **Open:** what n
-is for a biaxial or general layer: one principal index chosen by the user, or the index of the mode
-actually propagating.
+**There is no QWOT or FWOT** (decided 2026-10-31). An optical thickness counts quarter waves of one
+index, and an anisotropic layer has no one index: its two modes travel at different speeds, and
+which one counts would be a convention to explain rather than a convenience. Thicknesses are
+physical everywhere: in the file, the GUI, the CLI and the MCP server.
 
 **Material constants in the microwave form** are accepted as well as n and k: ε′ with the loss
 tangent tan δ = ε″/ε′, and μ′ with tan δ_μ, including tensors (for example a magnetised ferrite's

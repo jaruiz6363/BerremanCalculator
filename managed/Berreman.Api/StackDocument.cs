@@ -177,8 +177,10 @@ public sealed class StackDocument
     internal static double Num(JsonNode? n, string where)
     {
         if (n is null) throw new StackFormatException($"{where} is required");
-        try { return n.GetValue<double>(); }
-        catch (Exception) { throw new StackFormatException($"{where} must be a number"); }
+        // By its text: a node built in code (StackModel) may hold an int, which GetValue<double>
+        // refuses; one read from a file holds a JsonElement. The number is the same.
+        if (n.GetValueKind() != JsonValueKind.Number) throw new StackFormatException($"{where} must be a number");
+        return double.Parse(n.ToJsonString(), System.Globalization.CultureInfo.InvariantCulture);
     }
 
     private static double[] Euler(JsonObject n, string where)
@@ -189,7 +191,7 @@ public sealed class StackDocument
     }
 
     /// <summary>A number, an array of numbers, or {"from", "to", "step"} / {"from", "to", "count"}.</summary>
-    internal static double[] Values(JsonNode? n, string where)
+    public static double[] Values(JsonNode? n, string where)
     {
         switch (n)
         {

@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The window, tested with no display: Avalonia.Headless lays it out and dispatches real mouse
+       input to where each control actually is, so a button wired to the wrong handler, or laid out
+       behind another control, fails here. Separate from Berreman.Native.Tests so that suite keeps
+       referencing no UI at all. Same output shape: "N checks, M failures", exit code 0 on success. -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <RootNamespace>Berreman.Gui.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Headless" Version="11.2.3" />
+    <PackageReference Include="Avalonia.Skia" Version="11.2.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Berreman.Gui\Berreman.Gui.csproj" />
+  </ItemGroup>
+
+  <Import Project="..\NativeLibrary.targets" />
+
+</Project>

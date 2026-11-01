@@ -83,6 +83,7 @@ Berreman.Native.Tests.CholestericTests.Run();
 Berreman.Native.Tests.RadomeTests.Run();
 Berreman.Native.Tests.MoreClosedFormTests.Run();
 Berreman.Native.Tests.GuiCoreTests.Run();
+Berreman.Native.Tests.StackModelTests.Run();
 checks += Berreman.Native.Tests.ApiTests.Checks;
 failures += Berreman.Native.Tests.ApiTests.Failures;
 checks += Berreman.Native.Tests.ClosedFormTests.Checks;
@@ -97,6 +98,8 @@ checks += Berreman.Native.Tests.MoreClosedFormTests.Checks;
 failures += Berreman.Native.Tests.MoreClosedFormTests.Failures;
 checks += Berreman.Native.Tests.GuiCoreTests.Checks;
 failures += Berreman.Native.Tests.GuiCoreTests.Failures;
+checks += Berreman.Native.Tests.StackModelTests.Checks;
+failures += Berreman.Native.Tests.StackModelTests.Failures;
 
 Console.WriteLine($"{checks} checks, {failures} failures");
 return failures == 0 ? 0 : 1;

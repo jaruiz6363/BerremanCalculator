@@ -19,31 +19,84 @@ reproduced.
 
 ## The GUI
 
-- **Open…** (Ctrl+O) opens a stack file. **Save** (Ctrl+S) and **Save as…** write it.
-- **The sample list** opens a literature sample. Samples open read-only on disk: Save as… keeps a
-  copy to change.
-- **The left pane is the stack file itself**, editable as text. What the GUI evaluates is exactly
-  what the CLI and the MCP server would.
-- **Evaluate** (F5) runs the stack in the background.
-  - The status line reports the number of points and the time taken.
-  - Points that failed show as gaps in the plot, and the status line names the first failure.
-  - For a stack with twisted layers, it shows how much doubling the sublayers changes the result.
-- **The plot** puts on its x axis whatever the sweep varies:
-  - the spectral variable if there is more than one value;
-  - otherwise the angle (or ξ);
-  - otherwise the azimuth.
+The window shows the stack being edited on the left and its results on the right. Every change
+is evaluated as you make it (**Analysis > Evaluate after every change**, on by default); **F5**
+evaluates on demand. Every edit can be undone (**Ctrl+Z**) and redone (**Ctrl+Y**).
 
-  Every other combination of sweep values is its own curve, labelled by its values.
-- **Show** chooses the curves:
-  - R, T and A;
-  - the p and s waves (modes 0 and 1 with anisotropic outer media), and their mean, which is the
-    unpolarised value;
-  - Ψ and Δ, on their own axis in degrees.
-- **Export CSV…** writes every point, with the Jones coefficients, Ψ and Δ, and the absorption in
-  each layer.
+### Files
 
-Opening a stack file from Explorer or a file manager (`berreman-gui file.json`) evaluates it at
-once.
+- **File > New stack** (Ctrl+N) starts from air, one 100 nm layer of index 1.38, and glass.
+- **Open…** (Ctrl+O) opens a stack file. **Save** (Ctrl+S) and **Save as…** (Ctrl+Shift+S) write it.
+- **File > Open sample** opens a literature sample as a copy: Save as… keeps it.
+- Opening another stack, or closing the window, with unsaved changes asks whether to save them.
+- Opening a stack file from Explorer, Finder or a file manager (`berreman-gui file.json`)
+  evaluates it at once.
+
+### The Stack tab
+
+- **Description**: the title, the source it reproduces, and notes. All are saved in the file.
+- **Units**: lengths (nm, µm, mm, cm, m) and the spectral axis (wavelength, GHz, THz, cm⁻¹ or eV).
+  Changing a unit converts every number it applies to, so the stack stays physically the same.
+  Thicknesses are always physical: there is no QWOT or FWOT (contract, Section 1a).
+- **Incident medium** and **exit medium**: a material each, with its own Euler angles φ, θ, ψ, so an
+  anisotropic substrate or prism can be oriented. Beside each, the material in a few words.
+- **The layer table**. Layer 1 faces the incident medium. Its columns:
+
+  | Column | |
+  |---|---|
+  | Material | chosen from the stack's materials |
+  | Thickness | physical, in the length unit |
+  | φ, θ, ψ | the layer's orientation: R = Rz(φ) Rx(θ) Rz(ψ) turns the material from its own axes into the stack's (contract, Section 1) |
+  | Optic axis | where the material's own z axis ends up: its tilt from the normal and its azimuth from x. For a uniaxial material this is the optic axis |
+  | Twist | the pitch and handedness of a twisted (cholesteric) layer |
+  | … | the layer's properties |
+
+  A typed value is taken when the cell is left or Enter is pressed. A value that cannot be used
+  (a negative thickness, a word) is refused and the status line says why.
+- **Insert** copies the selected layer after it; **Delete** removes the selected layers; **Up** and
+  **Down** move one. **Stack > Reverse layers** reverses their order; **Reverse layers and media**
+  also swaps the outer media, so the light arrives from the other side.
+- **Properties…** (or the … button, or a double click) edits one layer:
+  - material and thickness;
+  - the Euler angles, or the direction of the optic axis (tilt and azimuth), which fills them in;
+  - a twist about z through the layer: pitch, handedness, starting angle, and how many uniform
+    sublayers it is evaluated as.
+- **Design string…** builds layers from text, in ThinFilmDesigner's notation: `(HL)8 H`,
+  `0.5L (HL)6 H 0.5L`. Each letter is given a material and a physical thickness, and a number
+  before a letter multiplies the thickness: with H = 60 nm, `0.5H` is 30 nm. The layers replace
+  the stack or are inserted after the selected layer, and the leftmost layer can face either
+  medium.
+- **The sweep**: the spectral values, the angles of incidence (or ξ = kx/k₀ directly, which an
+  anisotropic or lossy incident medium needs) and the azimuths. Each is a value (`633`), a list
+  (`0, 30, 60`) or a range (`400 to 800 step 2`, `400 to 800 count 201`).
+
+### The Materials tab
+
+The stack's materials, each with a summary (`n = 1.52`, `uniaxial, nₒ = 1.54, nₑ = 1.55`, …) and
+where it is used. **New**, **Duplicate**, **Rename** (which follows into every layer and medium) and
+**Remove** (refused while the material is used). The selected material is edited as the stack file
+writes it ([the forms](stack-format.md#materials)); **Apply** refuses one that would not evaluate,
+and says why.
+
+### The File tab
+
+The stack exactly as it is saved. Edits made in the tables show here at once; an edit made here
+is taken by **Apply**, as one undoable change. The file is written in a standard layout: comments
+in a hand-written file are not kept (the notes field is the place for them), and keys this
+version does not know are.
+
+### Results
+
+- The status line reports the number of points and the time taken. Points that failed show as
+  gaps in the plot, and the status line names the first failure. For a stack with twisted layers,
+  it shows how much doubling the sublayers changes the result.
+- **The plot** puts on its x axis whatever the sweep varies: the spectral variable if there is more
+  than one value; otherwise the angle (or ξ); otherwise the azimuth. Every other combination of
+  sweep values is its own curve, labelled by its values.
+- **Show** chooses the curves: R, T and A; the p and s waves (modes 0 and 1 with anisotropic outer
+  media) and their mean, which is the unpolarised value; Ψ and Δ, on their own axis in degrees.
+- **File > Export results as CSV…** writes every point, with the Jones coefficients, Ψ and Δ, and
+  the absorption in each layer.
 
 ## The command line
 

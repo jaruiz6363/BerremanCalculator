@@ -31,7 +31,9 @@ it evaluates as sublayers and checks by doubling them. Materials are constants, 
 phonon oscillators, tables) or models (ferrite, conductor, resistive sheet).
 - `berreman evaluate <file>` prints or writes a table.
 - The MCP tool `evaluate_stack` returns the same table.
-- The GUI edits a stack file, evaluates it, and plots R, T, A and Ψ/Δ.
+- The GUI edits a stack in tables: layers with their thickness, orientation (Euler angles or the
+  optic axis) and twist; the outer media, also orientable; the materials; the units and the sweep.
+  It evaluates as you edit, with undo and redo, and plots R, T, A and Ψ/Δ.
 
 Seventeen literature samples are reproduced: Mansuripur (1990), nine closed forms, three of Passler
 and Paarmann's (2017) infrared Otto-geometry examples, Ting's (2006) cholesteric, and three
@@ -96,9 +98,10 @@ samples/    the examples from the literature
 | `managed/Berreman.Api` | the API the three programs share |
 | `managed/Berreman.Cli` | `berreman`, the command line |
 | `managed/Berreman.Mcp` | `berreman-mcp`, the MCP server (stdio) |
-| `managed/Berreman.Gui.Core` | the testable half of the GUI: plot arithmetic, the choice of curves, the sample list |
+| `managed/Berreman.Gui.Core` | the testable half of the GUI: the stack being edited, undo, the layer table, plot arithmetic, the sample list |
 | `managed/Berreman.Gui` | `berreman-gui` (Avalonia) |
 | `managed/Berreman.Native.Tests` | the managed test suite |
+| `managed/Berreman.Gui.Tests` | the window, driven headless with real mouse input |
 
 ## Building
 
@@ -112,11 +115,12 @@ ctest --test-dir build -C Release
 
 dotnet build managed/BerremanCalculator.sln -c Release
 dotnet run --project managed/Berreman.Native.Tests -c Release
+dotnet run --project managed/Berreman.Gui.Tests -c Release
 ```
 
 The native tests include `constraints`, which fails the build if native code allocates, uses
 `float`, declares a fixed-size array, throws, or has an inline function without `BC_HD`. Only the
-GUI restores NuGet packages; everything else builds offline.
+GUI and its tests restore NuGet packages; everything else builds offline.
 
 ## Authors
 
