@@ -16,6 +16,7 @@ WindowTests.MaterialsAreAddedEditedAndProtected(h, session);
 WindowTests.MaterialsAreEditedAsFormsTermsAndResponse(h, session);
 WindowTests.MaterialsComeFromLibraries(h, session);
 WindowTests.TheSampleBrowserFindsAndOpens(h, session);
+WindowTests.AThinFilmDesignerDesignIsImported(h, session);
 WindowTests.ResultsShowAnyQuantityAndTheMuellerMatrix(h, session);
 WindowTests.TheConoscopicMapShowsTheIsochromes(h, session);
 WindowTests.TheFieldProfileShowsTheFieldsThroughTheStack(h, session);

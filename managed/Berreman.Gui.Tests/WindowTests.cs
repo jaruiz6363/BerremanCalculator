@@ -525,6 +525,24 @@ public static class WindowTests
         });
     }
 
+    public static void AThinFilmDesignerDesignIsImported(Harness h, HeadlessUnitTestSession session)
+    {
+        h.Section("File > Import a ThinFilmDesigner design reads a .tfd as a new stack");
+        /* The fixture, found from the build output up to the repository. */
+        var dir = new System.IO.DirectoryInfo(AppContext.BaseDirectory);
+        while (dir is not null && !System.IO.Directory.Exists(System.IO.Path.Combine(dir.FullName, "tests", "fixtures", "tfd"))) dir = dir.Parent;
+        h.Expect(dir is not null, "the .tfd fixtures are found");
+        if (dir is null) return;
+        var text = File.ReadAllText(System.IO.Path.Combine(dir.FullName, "tests", "fixtures", "tfd", "AR-visible.tfd"));
+        WithWindow(session, w =>
+        {
+            w.ImportTfd(text, "AR-visible");
+            Pump(w);
+            h.Expect(w.Workspace.Model.Layers.Count == 4 && w.Workspace.Name == "AR-visible.json" && Rows(w).Count == 4, "its four layers are the table's");
+            h.Expect(w.Workspace.Model.Notes.Contains("merit function"), "and its notes say what was not carried over");
+        });
+    }
+
     public static void MaterialsComeFromLibraries(Harness h, HeadlessUnitTestSession session)
     {
         h.Section("From library… adds database materials and catalogue glasses; Save keeps one in my materials");

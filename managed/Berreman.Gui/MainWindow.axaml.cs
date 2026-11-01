@@ -52,6 +52,8 @@ public partial class MainWindow : Window
         SaveAsItem.Click += async (_, _) => await Save(true);
         ExportItem.Click += async (_, _) => await Export();
         ExportPlotItem.Click += async (_, _) => await ExportPlot();
+        ImportTfdItem.Click += async (_, _) => await ImportTfd();
+        ExportTfdItem.Click += async (_, _) => await ExportTfd();
         ExitItem.Click += (_, _) => Close();
         UndoItem.Click += (_, _) => _ws.Undo();
         RedoItem.Click += (_, _) => _ws.Redo();
@@ -430,6 +432,39 @@ public partial class MainWindow : Window
         if (!await ConfirmDiscard()) return;
         try { LoadSample(await File.ReadAllTextAsync(s.Path), s.Name); }
         catch (Exception e) when (e is StackFormatException or IOException) { Status($"Could not open the sample: {e.Message}", error: true); }
+    }
+
+    private static readonly FilePickerFileType TfdFiles = new("ThinFilmDesigner designs") { Patterns = ["*.tfd"] };
+
+    private async Task ImportTfd()
+    {
+        if (!await ConfirmDiscard()) return;
+        var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions { Title = "Import a ThinFilmDesigner design", FileTypeFilter = [TfdFiles] });
+        if (files.Count == 0 || files[0].TryGetLocalPath() is not { } path) return;
+        Try(() => ImportTfd(File.ReadAllText(path), Path.GetFileNameWithoutExtension(path)));
+    }
+
+    /// <summary>A .tfd read as a new, unsaved stack (Save as… keeps it); the tests call it directly.</summary>
+    public void ImportTfd(string text, string name)
+    {
+        var model = TfdFile.Read(text);
+        _ws.Load(model.ToJson(), null, name + ".json");
+        Status($"'{name}' read from ThinFilmDesigner: {model.Layers.Count} layers. The merit function is not carried over; Save as… keeps the stack.");
+    }
+
+    private async Task ExportTfd()
+    {
+        string text;
+        try { text = TfdFile.Write(_ws.Model); }
+        catch (StackFormatException e) { Status($"Not written: {e.Message}", error: true); return; }
+        var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Export as a ThinFilmDesigner design", DefaultExtension = "tfd", FileTypeChoices = [TfdFiles],
+            SuggestedFileName = Path.GetFileNameWithoutExtension(_ws.Name) + ".tfd",
+        });
+        if (file?.TryGetLocalPath() is not { } path) return;
+        await File.WriteAllTextAsync(path, text);
+        Status($"Written to {path}; ThinFilmDesigner opens it with no merit function.");
     }
 
     /// <summary>A sample opened as a copy, with no file of its own: Save asks where.</summary>

@@ -16,6 +16,7 @@ try
         [] or ["help"] or ["--help"] or ["-h"] => Help(),
         ["status"] => Status(),
         ["quantities"] => ListQuantities(),
+        ["convert", var from, var to] => Convert(from, to),
         ["evaluate", var path, .. var rest] => Evaluate(path, rest),
         [var command, ..] => NotYet(command),
     };
@@ -40,11 +41,28 @@ static int Help()
               --quantities <a,b,...>  add these quantities by name (berreman quantities lists them)
               --csv <file>     write the table to a CSV file instead of the console
           quantities                        every quantity --quantities can name, with what it is
+          convert <in> <out>                a ThinFilmDesigner design (.tfd) to a stack file (.json),
+                                            or an isotropic stack to a .tfd (docs/user-guide.md)
           status                            whether the native engine loads, and its ABI version
           help                              this text
 
         Stack files are described in docs/stack-format.md.
         """);
+    return 0;
+}
+
+static int Convert(string from, string to)
+{
+    bool tfdIn = from.EndsWith(".tfd", StringComparison.OrdinalIgnoreCase), tfdOut = to.EndsWith(".tfd", StringComparison.OrdinalIgnoreCase);
+    if (tfdIn == tfdOut)
+    {
+        Console.Error.WriteLine("berreman: convert reads a .tfd and writes a .json, or reads a .json and writes a .tfd");
+        return 2;
+    }
+    var text = File.ReadAllText(from);
+    var output = tfdIn ? TfdFile.Read(text).ToJson() : TfdFile.Write(StackModel.FromJson(text));
+    File.WriteAllText(to, output, new UTF8Encoding(false));
+    Console.WriteLine($"{from} written as {to}");
     return 0;
 }
 

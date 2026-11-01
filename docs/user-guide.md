@@ -30,6 +30,22 @@ evaluates on demand. Every edit can be undone (**Ctrl+Z**) and redone (**Ctrl+Y*
 - **File > Browse samples…** lists the literature samples. Search their titles, sources and notes,
   read each one's source, contents and notes, and open one as a copy (Save as… keeps it). **File >
   Open sample** opens one directly by name.
+- **File > Import a ThinFilmDesigner design (.tfd)…** reads a design as a new stack. ThinFilmDesigner
+  designs and optimises isotropic coatings, and this program evaluates any stack, so a coating can
+  come in here to be made anisotropic, oriented and analysed.
+  - **What comes across.** The layers (physical thicknesses), the materials (constant, Sellmeier,
+    Cauchy, tables, catalogue glasses named as such), and the wavelengths and angles as the sweep.
+  - **What does not.** The merit function, the optimisation settings and a back surface; the notes
+    say so.
+  - **The check.** The tests evaluate three of ThinFilmDesigner's samples, read this way, and
+    agree with ThinFilmDesigner's own engine to 10⁻¹². One of them is a 52-layer bandpass with
+    Cauchy, Sellmeier and catalogue-glass materials.
+- **Export as a ThinFilmDesigner design (.tfd)…** writes the stack for optimisation there.
+  - **What it needs.** Every material isotropic and in a form ThinFilmDesigner holds, and no
+    twisted layer; anything else is refused, with the material or layer named.
+  - **ε tables.** A table given as ε′, ε″ is written as finely spaced n and k, because
+    ThinFilmDesigner interpolates n and k.
+  - **The result** has no merit function. Its wavelengths and angles are the stack's sweep.
 - Opening another stack, or closing the window, with unsaved changes asks whether to save them.
 - Opening a stack file from Explorer, Finder or a file manager (`berreman-gui file.json`)
   evaluates it at once.
@@ -198,6 +214,8 @@ berreman evaluate stack.json --absorption         add the absorption in each lay
 berreman evaluate stack.json --mueller            add the Mueller matrix in reflection (each / M11)
 berreman evaluate stack.json --quantities Mr34,Psi_ps   add quantities by name
 berreman quantities                               list every quantity, with what it is
+berreman convert design.tfd stack.json            read a ThinFilmDesigner design as a stack file
+berreman convert stack.json design.tfd            write an isotropic stack as a ThinFilmDesigner design
 berreman evaluate stack.json --csv out.csv        write the table to a file
 berreman status                                   whether the engine loads
 ```

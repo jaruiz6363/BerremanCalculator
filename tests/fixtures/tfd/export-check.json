@@ -1,0 +1,10 @@
+{ "format": "berreman-stack", "version": 1, "title": "export check", "units": { "length": "um", "spectral": "um" },
+  "materials": { "air": { "n": 1 },
+    "SiO2": { "sellmeier": { "unit": "um", "terms": [ { "b": 0.6961663, "c2": 0.0046791 }, { "b": 0.4079426, "c2": 0.0135121 }, { "b": 0.8974794, "c2": 97.934 } ] } },
+    "TiO2": { "cauchy": { "unit": "nm", "a": 2.2, "b": 30000, "c": 3000000000 } },
+    "Cr": { "table": { "unit": "nm", "columns": ["x", "eps_re", "eps_im"], "data": [[400, -5, 15], [700, -8, 20]] } },
+    "BK7": { "glass": { "catalog": "SCHOTT", "name": "N-BK7" } } },
+  "incident": { "material": "air" },
+  "layers": [ { "material": "TiO2", "thickness": 0.06 }, { "material": "SiO2", "thickness": 0.09 }, { "material": "Cr", "thickness": 0.008 }, { "material": "TiO2", "thickness": 0.05 } ],
+  "exit": { "material": "BK7" },
+  "sweep": { "spectral": { "from": 0.45, "to": 0.65, "count": 5 }, "angle_deg": [0, 40] } }
