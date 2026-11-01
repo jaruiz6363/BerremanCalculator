@@ -57,6 +57,27 @@ same physical film. On a flat surface x_s is simply the global X.
    OpticStudio (`did_polar = 2`). The full matrix is the reason the field is set directly. The s and
    p coefficients OpticStudio also accepts are diagonal and could not represent this film.
 
+### What OpticStudio does with the returned field
+
+OpticStudio hands the DLL the **incident** field. After the DLL returns, OpticStudio still crosses
+the surface as an uncoated interface, using whatever field the DLL set:
+- it takes the field's components along the incident p and s;
+- it multiplies them by its own Fresnel t_p and t_s;
+- it puts them along the refracted p and s.
+
+So the DLL returns the film's result divided by the bare interface's. That is, along the incident
+p and s,
+
+    [Ep′; Es′] = diag(1/t₀ₚ, 1/t₀ₛ) · t · [Ep; Es]
+
+where t₀ is the engine's transmission with no film. These are the same Fresnel coefficients
+OpticStudio uses. OpticStudio's own step multiplies by t₀ again, which leaves t · [Ep; Es] along
+the refracted p and s. Any overall scale OpticStudio puts on its fields is kept. With no film, the
+DLL hands back the field unchanged.
+
+**Leave the surface's coating column blank.** OpticStudio would apply a coating in its own step
+in place of the bare interface, and the film would then be counted together with that coating.
+
 Not handled: a mirror surface (the ray is reflected, and its polarization left to OpticStudio), and
 absorbing media either side (OpticStudio passes real indices).
 
@@ -97,10 +118,15 @@ incidence by the sample azimuth, so the two share only the engine.
 - **A cholesteric.** Both handednesses, in and out of its band.
 - **Geometry.** The intercept and normal on a sphere.
 
-The agreement is 10⁻¹² or better.
+The agreement is 10⁻¹² or better. The suite applies OpticStudio's step after the DLL, as described
+above, and compares the field OpticStudio would carry on with.
 
-**Still to be checked against OpticStudio itself:** how OpticStudio normalises the field it is
-given. The DLL returns the transmitted field amplitude, E-field per unit incident E-field.
-OpticStudio may expect the field scaled so that |E|² is the transmitted power, which differs by
-√(n₂ cos θ₂ / n₁ cos θ₁). The check is an uncoated surface, where the DLL's field must reproduce
-OpticStudio's own Fresnel result.
+**Against OpticStudio itself** (2022 R2.02, standalone, polarization ray trace through a flat
+air–N-BK7 surface at 0° and 20° field):
+- With no film, the field at the image matches OpticStudio's Standard surface to every digit
+  printed: 7 decimals, for s, p and an elliptical input.
+- For a 2.3 µm O-plate, the field is predicted from the engine's t and OpticStudio's own
+  bare-surface run. This means film first, then OpticStudio's own p and s factors for the rest of
+  the path. The prediction matches OpticStudio to 7 decimals, s–p coupling included.
+- A right-handed cholesteric in its band (pitch 0.38 µm, 3.8 µm thick, at 0.6 µm, normal
+  incidence) transmits 0.90 of one circular polarization and 0.048 of the other.

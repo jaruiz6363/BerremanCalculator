@@ -161,7 +161,7 @@ double Local(V3 v, const Frames& f, int c) { return c == 0 ? Dot(v, f.x) : c == 
 /* The 2×2 transmission Jones matrix of the film between media n1 and n2, for the ray at
  * xi = n1 sin(incidence), in the engine's order t_pp, t_ps, t_sp, t_ss (first subscript incident).
  * Returns false if the engine refuses the point. */
-bool Transmission(const FIXED_DATA5* FD, double n1, double n2, double xi, const Frames& f, bc_complex* t)
+bool Transmission(const FIXED_DATA5* FD, double n1, double n2, double xi, const Frames& f, bool film, bc_complex* t)
 {
     const int model = (int)FD->param[kModel];
     const double d = FD->param[kThickness], no = FD->param[kNo], ne = FD->param[kNe];
@@ -173,7 +173,7 @@ bool Transmission(const FIXED_DATA5* FD, double n1, double n2, double xi, const 
         if (n <= 0) n = (int)std::ceil(64.0 * d / pitch);
         layers = n < 1 ? 1 : n;
     }
-    if (!(d > 0.0)) layers = 0;
+    if (!(d > 0.0) || !film) layers = 0;
 
     Work& w = g_work;
     w.M.resize((size_t)(layers + 2) * 36);
@@ -247,21 +247,35 @@ double RayFrame(V3 d, Frames* f)
     return s;
 }
 
-/* Applies the film to the ray's field: E_in = Ep p_in + Es s + (a part along k, which a
- * transverse wave does not have), E_out = Ep' p_out + Es' s with [Ep'; Es'] = t applied to
- * [Ep; Es]. p = s × k for every wave, the BerremanCalculator convention (docs/contract.md). */
-void ApplyFilm(FIXED_DATA5* FD, const bc_complex* t, const Frames& f, V3 din, V3 dout)
+C Div(C a, C b) { const double d = b.re * b.re + b.im * b.im; return {(a.re * b.re + a.im * b.im) / d, (a.im * b.re - a.re * b.im) / d}; }
+
+/* Replaces OpticStudio's bare interface by the film.
+ *
+ * WHAT OPTICSTUDIO DOES WITH THE FIELD (found by comparison with OpticStudio 2022 R2; README.md).
+ * It hands the DLL the incident field, along the incident ray's p and s. After the DLL returns,
+ * it still applies its own uncoated interface to whatever field the DLL set: it takes the field's
+ * components along the incident p and s, multiplies them by its Fresnel t_p and t_s, and puts
+ * them along the refracted ray's p and s, in its own normalisation.
+ * So the DLL returns, along the incident p and s, the film's transmitted amplitudes divided by the
+ * bare interface's, t0 (the engine's with no film, the same Fresnel coefficients):
+ *     [Ep'; Es'] = diag(1/t0_pp, 1/t0_ss)  t  [Ep; Es].
+ * OpticStudio's own step then multiplies by t0 again and leaves t [Ep; Es] along the refracted p
+ * and s, so with no film the result is OpticStudio's own exactly. p = s × k for every wave, the
+ * BerremanCalculator convention (docs/contract.md). */
+void ApplyFilm(FIXED_DATA5* FD, const bc_complex* t, const bc_complex* t0, const Frames& f, V3 din)
 {
-    const V3 s = f.y, pin = Cross(s, din), pout = Cross(s, dout);
+    const V3 s = f.y, pin = Cross(s, din);
     const C ex{FD->Exr, FD->Exi}, ey{FD->Eyr, FD->Eyi}, ez{FD->Ezr, FD->Ezi};
     auto Project = [&](V3 u) { return Add(Add(Scale(u.x, ex), Scale(u.y, ey)), Scale(u.z, ez)); };
     const C Ep = Project(pin), Es = Project(s);
     const C tpp{t[0].re, t[0].im}, tps{t[1].re, t[1].im}, tsp{t[2].re, t[2].im}, tss{t[3].re, t[3].im};
-    const C Ep2 = Add(Mul(tpp, Ep), Mul(tsp, Es));   /* p out: from p in (t_pp) and s in (t_sp) */
-    const C Es2 = Add(Mul(tps, Ep), Mul(tss, Es));   /* s out: from p in (t_ps) and s in (t_ss) */
-    const C ox = Add(Scale(pout.x, Ep2), Scale(s.x, Es2));
-    const C oy = Add(Scale(pout.y, Ep2), Scale(s.y, Es2));
-    const C oz = Add(Scale(pout.z, Ep2), Scale(s.z, Es2));
+    /* p out: from p in (t_pp) and s in (t_sp); s out: from p in (t_ps) and s in (t_ss); each over
+       the bare interface's coefficient, which OpticStudio applies afterwards. */
+    const C Ep2 = Div(Add(Mul(tpp, Ep), Mul(tsp, Es)), C{t0[0].re, t0[0].im});
+    const C Es2 = Div(Add(Mul(tps, Ep), Mul(tss, Es)), C{t0[3].re, t0[3].im});
+    const C ox = Add(Scale(pin.x, Ep2), Scale(s.x, Es2));
+    const C oy = Add(Scale(pin.y, Ep2), Scale(s.y, Es2));
+    const C oz = Add(Scale(pin.z, Ep2), Scale(s.z, Es2));
     FD->Exr = ox.re; FD->Exi = ox.im; FD->Eyr = oy.re; FD->Eyi = oy.im; FD->Ezr = oz.re; FD->Ezi = oz.im;
     FD->did_polar = 2;
 }
@@ -347,9 +361,10 @@ extern "C" UDS_EXPORT int UserDefinedSurface5(USER_DATA* UD, FIXED_DATA5* FD)
             Frames f;
             SurfaceAxes(normal, &f);
             const double sinI = RayFrame(din, &f);
-            bc_complex jt[4];
-            if (!Transmission(FD, n1, n2, n1 * sinI, f, jt)) return -1;
-            ApplyFilm(FD, jt, f, din, dout);
+            bc_complex jt[4], j0[4];
+            if (!Transmission(FD, n1, n2, n1 * sinI, f, true, jt)) return -1;
+            if (!Transmission(FD, n1, n2, n1 * sinI, f, false, j0)) return -1;
+            ApplyFilm(FD, jt, j0, f, din);
         }
         return 0;
     }

@@ -1,6 +1,14 @@
 // UdsTests.cs — the OpticStudio user-defined surface example (examples/zemax-uds/us_berreman.cpp),
 // called as OpticStudio calls it, against the BerremanCalculator API.
 //
+// OPTICSTUDIO'S SIDE IS EMULATED. OpticStudio passes the incident field and, after the DLL
+// returns, still applies its own uncoated interface to the field the DLL set: components along
+// the incident p and s, times its Fresnel t_p and t_s, put along the refracted p and s. (Measured
+// on OpticStudio 2022 R2: with no film the DLL reproduces OpticStudio's Standard surface, and an
+// O-plate's output, s-p coupling included, is predicted from the engine's t to 7 digits;
+// examples/zemax-uds/README.md.) Trace does that step after the DLL, so the field it returns is
+// the one OpticStudio carries on with.
+//
 // THE REFERENCE IS INDEPENDENT OF THE DLL'S OWN FRAME CODE. The DLL builds each ray's local frame,
 // writes the film's tensor in it and applies the Jones matrix to the ray's field. The reference is
 // a stack file evaluated by the C# API: the film oriented by Euler angles, a cholesteric by the
@@ -58,8 +66,9 @@ internal static unsafe class UdsTests
     private sealed record Film(int Model, double Thickness, double No, double Ne, double A, double B, double C = 0, int Sublayers = 0);
 
     /// <summary>One ray through the DLL: direction d at the vertex, incoming field E; returns the
-    /// outgoing field and direction.</summary>
-    private static (Complex[] E, double[] Dir, int Status) Trace(Film f, double n1, double n2, double um, double[] d, Complex[] e, double cv = 0, double x = 0, double y = 0)
+    /// outgoing field after OpticStudio's own interface step (<see cref="BareInterface"/>), and
+    /// the direction. Raw is the field as the DLL set it.</summary>
+    private static (Complex[] E, double[] Dir, int Status, Complex[] Raw) Trace(Film f, double n1, double n2, double um, double[] d, Complex[] e, double cv = 0, double x = 0, double y = 0)
     {
         var fd = (FixedData5*)NativeMemory.AllocZeroed((nuint)sizeof(FixedData5));
         try
@@ -71,10 +80,30 @@ internal static unsafe class UdsTests
             var ud = new UserData { x = x, y = y, z = 0, l = d[0], m = d[1], n = d[2] };
             int status = UserDefinedSurface5(ref ud, fd);
             var outE = new[] { new Complex(fd->Exr, fd->Exi), new Complex(fd->Eyr, fd->Eyi), new Complex(fd->Ezr, fd->Ezi) };
-            return (outE, [ud.l, ud.m, ud.n, ud.x, ud.y, ud.z, ud.ln, ud.mn, ud.nn, fd->did_polar], status);
+            double[] dout = [ud.l, ud.m, ud.n], normal = [ud.ln, ud.mn, ud.nn];
+            return (BareInterface(outE, d, dout, normal, n1, n2), [ud.l, ud.m, ud.n, ud.x, ud.y, ud.z, ud.ln, ud.mn, ud.nn, fd->did_polar], status, outE);
         }
         finally { NativeMemory.Free(fd); }
     }
+
+    /// <summary>OpticStudio's step after the DLL, as measured: the field's components along the
+    /// incident p and s, times the uncoated Fresnel t_p and t_s, along the refracted p and s. Its own
+    /// frame, from the ray and the normal: at normal incidence any s will do, t_p = t_s.</summary>
+    private static Complex[] BareInterface(Complex[] e, double[] d, double[] d2, double[] normal, double n1, double n2)
+    {
+        double c1 = Math.Abs(Dot(d, normal)), c2 = Math.Abs(Dot(d2, normal));
+        var s = Cross(d, normal);
+        if (Math.Sqrt(Dot(s, s)) < 1e-12) s = Cross(d, Math.Abs(d[0]) < 0.9 ? [1, 0, 0] : [0, 1, 0]);
+        double ns = Math.Sqrt(Dot(s, s));
+        s = [s[0] / ns, s[1] / ns, s[2] / ns];
+        double[] pin = Cross(s, d), pout = Cross(s, d2);
+        Complex ep = e[0] * pin[0] + e[1] * pin[1] + e[2] * pin[2], es = e[0] * s[0] + e[1] * s[1] + e[2] * s[2];
+        ep *= 2 * n1 * c1 / (n2 * c1 + n1 * c2);
+        es *= 2 * n1 * c1 / (n1 * c1 + n2 * c2);
+        return [ep * pout[0] + es * s[0], ep * pout[1] + es * s[1], ep * pout[2] + es * s[2]];
+    }
+
+    private static double Dot(double[] a, double[] b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 
     private static double[] Cross(double[] a, double[] b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
 
@@ -124,9 +153,11 @@ internal static unsafe class UdsTests
             var (d, s, p, d2) = Ray(40, 25, +1);
             double c1 = Math.Cos(40 * Math.PI / 180), c2 = d2[2];
             Complex tp = 2 * n1 * c1 / (n2 * c1 + n1 * c2), ts = 2 * n1 * c1 / (n1 * c1 + n2 * c2);
-            var (e, dir, st) = Trace(new Film(0, 0, 1.5, 1.6, 0, 0), n1, n2, um, d, Field(p, s, 0.6, new Complex(0, 0.8)));
+            var input = Field(p, s, 0.6, new Complex(0, 0.8));
+            var (e, dir, st, raw) = Trace(new Film(0, 0, 1.5, 1.6, 0, 0), n1, n2, um, d, input);
             var want = Expected([tp, 0, 0, ts], s, d2, 0.6, new Complex(0, 0.8));
             Check(st == 0 && dir[9] == 2, "the DLL traces the ray and sets the field (did_polar = 2)");
+            Check(Diff(raw, input) < 1e-14, $"no film: the DLL hands the field back unchanged, for OpticStudio's own interface ({Diff(raw, input):G3})");
             Check(Math.Abs(dir[0] - d2[0]) + Math.Abs(dir[1] - d2[1]) + Math.Abs(dir[2] - d2[2]) < 1e-14, "the ray refracts by Snell's law");
             Check(Diff(e, want) < 1e-13, $"no film: the field is the Fresnel transmission ({Diff(e, want):G3})");
         }
@@ -141,7 +172,7 @@ internal static unsafe class UdsTests
             var (d, s, p, d2) = Ray(theta, beta, +1);
             foreach (var (a, b) in new[] { (new Complex(1, 0), Complex.Zero), (Complex.Zero, new Complex(1, 0)), (new Complex(0.6, 0.1), new Complex(-0.3, 0.7)) })
             {
-                var (e, _, _) = Trace(new Film(0, 2.3, 1.52, 1.63, 35, 50), n1, n2, um, d, Field(p, s, a, b));
+                var (e, _, _, _) = Trace(new Film(0, 2.3, 1.52, 1.63, 35, 50), n1, n2, um, d, Field(p, s, a, b));
                 worst = Math.Max(worst, Diff(e, Expected(t, s, d2, a, b)));
             }
 
@@ -156,7 +187,7 @@ internal static unsafe class UdsTests
             double ax = axis[0] * xb[0] + axis[1] * xb[1], ay = axis[0] * yb[0] + axis[1] * yb[1], az = -axis[2];
             var eb = MaterialMatrix.EulerForAxis(Math.Acos(az) * 180 / Math.PI, Math.Atan2(ay, ax) * 180 / Math.PI);
             var tb = Jones($$"""{ "material": "film", "thickness": 2.3, "euler_deg": [{{eb[0]:R}}, {{eb[1]:R}}, {{eb[2]:R}}] }""", n1, n2, um, theta, 0);
-            var (eback, _, _) = Trace(new Film(0, 2.3, 1.52, 1.63, 35, 50), n1, n2, um, db, Field(pb, sb, 0.6, new Complex(0.2, 0.75)));
+            var (eback, _, _, _) = Trace(new Film(0, 2.3, 1.52, 1.63, 35, 50), n1, n2, um, db, Field(pb, sb, 0.6, new Complex(0.2, 0.75)));
             worstBack = Math.Max(worstBack, Diff(eback, Expected(tb, sb, d2b, 0.6, new Complex(0.2, 0.75))));
         }
         Check(worst < 1e-12, $"an O-plate: the DLL's field is the API's, every plane of incidence and polarisation ({worst:G3})");
@@ -173,14 +204,14 @@ internal static unsafe class UdsTests
                 var (d, s, p, d2) = Ray(theta, beta, +1);
                 foreach (var (a, b) in new[] { (new Complex(1 / Math.Sqrt(2), 0), new Complex(0, 1 / Math.Sqrt(2))), (new Complex(1 / Math.Sqrt(2), 0), new Complex(0, -1 / Math.Sqrt(2))) })
                 {
-                    var (e, _, _) = Trace(new Film(1, 3.8, 1.5, 1.7, 0.38, hand, 20, 640), n1, n2, lambda, d, Field(p, s, a, b));
+                    var (e, _, _, _) = Trace(new Film(1, 3.8, 1.5, 1.7, 0.38, hand, 20, 640), n1, n2, lambda, d, Field(p, s, a, b));
                     worstC = Math.Max(worstC, Diff(e, Expected(t, s, d2, a, b)));
                 }
                 if (lambda == 0.60 && theta == 0)
                 {
                     /* At normal incidence in the band one circular polarisation is reflected and the other not. */
-                    var (e1, _, _) = Trace(new Film(1, 3.8, 1.5, 1.7, 0.38, hand, 20, 640), n1, n2, lambda, d, Field(p, s, 1 / Math.Sqrt(2), new Complex(0, 1 / Math.Sqrt(2))));
-                    var (e2, _, _) = Trace(new Film(1, 3.8, 1.5, 1.7, 0.38, hand, 20, 640), n1, n2, lambda, d, Field(p, s, 1 / Math.Sqrt(2), new Complex(0, -1 / Math.Sqrt(2))));
+                    var (e1, _, _, _) = Trace(new Film(1, 3.8, 1.5, 1.7, 0.38, hand, 20, 640), n1, n2, lambda, d, Field(p, s, 1 / Math.Sqrt(2), new Complex(0, 1 / Math.Sqrt(2))));
+                    var (e2, _, _, _) = Trace(new Film(1, 3.8, 1.5, 1.7, 0.38, hand, 20, 640), n1, n2, lambda, d, Field(p, s, 1 / Math.Sqrt(2), new Complex(0, -1 / Math.Sqrt(2))));
                     double i1 = e1.Sum(c => c.Magnitude * c.Magnitude), i2 = e2.Sum(c => c.Magnitude * c.Magnitude);
                     contrast = Math.Max(contrast, Math.Max(i1, i2) / Math.Min(i1, i2));
                 }
@@ -192,7 +223,7 @@ internal static unsafe class UdsTests
         {
             double cv = 0.05, x0 = 3, y0 = -2;
             var d = new[] { 0.1, 0.05, Math.Sqrt(1 - 0.0125) };
-            var (_, r, st) = Trace(new Film(0, 0, 1.5, 1.6, 0, 0), n1, n2, um, d, [1, 0, 0], cv, x0, y0);
+            var (_, r, st, _) = Trace(new Film(0, 0, 1.5, 1.6, 0, 0), n1, n2, um, d, [1, 0, 0], cv, x0, y0);
             double hx = r[3], hy = r[4], hz = r[5];
             double onSphere = Math.Abs(hx * hx + hy * hy + (hz - 20) * (hz - 20) - 400);
             var radial = new[] { hx / 20, hy / 20, (hz - 20) / 20 };
