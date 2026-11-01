@@ -20,10 +20,21 @@ internal static class GuiCoreTests
     {
         PlotModelDegenerateCases();
         PlotModelZoom();
+        SamplesAreDescribedAndFound();
         AxisFollowsTheSweep();
         CurvesAreLabelledAndCounted();
         TooManyCurvesIsSaidNotDrawn();
         SamplesAreListed();
+    }
+
+    private static void SamplesAreDescribedAndFound()
+    {
+        var all = SampleCatalog.List(SampleCatalog.DefaultRoot).Select(SampleCatalog.Describe).ToList();
+        Check(all.Count >= 18 && all.All(i => i.Title.Length > 0 && i.Source.Length > 0), $"every sample has a title and a source ({all.Count})");
+        Check(SampleCatalog.Search(all, "passler").Count == 3, "a search finds the three Passler samples, in any case");
+        Check(SampleCatalog.Search(all, "Ga2O3 monoclinic").Select(i => i.Entry.Name).SequenceEqual(["schubert-2016 / ga2o3-010"]), "every word must match");
+        Check(SampleCatalog.Search(all, "").Count == all.Count, "an empty search lists them all");
+        Check(all.First(i => i.Entry.Name.StartsWith("ting")).Contents.Contains("layer"), "the contents name the layers");
     }
 
     private static void PlotModelZoom()

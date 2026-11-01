@@ -61,6 +61,7 @@
       <MenuItem Header="_File">
         <MenuItem x:Name="NewItem" Header="_New stack" InputGesture="Ctrl+N"/>
         <MenuItem x:Name="OpenItem" Header="_Open…" InputGesture="Ctrl+O"/>
+        <MenuItem x:Name="BrowseSamplesItem" Header="_Browse samples…"/>
         <MenuItem x:Name="SamplesItem" Header="Open _sample"/>
         <Separator/>
         <MenuItem x:Name="SaveItem" Header="_Save" InputGesture="Ctrl+S"/>

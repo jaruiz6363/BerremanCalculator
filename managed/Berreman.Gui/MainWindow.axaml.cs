@@ -90,6 +90,8 @@ public partial class MainWindow : Window
             return item;
         }).ToList();
         SamplesItem.IsEnabled = samples.Count > 0;
+        BrowseSamplesItem.IsEnabled = samples.Count > 0;
+        BrowseSamplesItem.Click += async (_, _) => await BrowseSamples();
 
         // ---- results ---------------------------------------------------------------------------
         foreach (var box in new[] { ShowR, ShowT, ShowA, ShowP, ShowS, ShowMean, ShowEllipsometry })
@@ -408,6 +410,19 @@ public partial class MainWindow : Window
         { Status($"Could not open {path}: {e.Message}", error: true); return; }
         Status($"Opened {path}.");
         if (evaluate) await Evaluate();
+    }
+
+    /// <summary>File > Browse samples; the chosen one opens as a copy.</summary>
+    public async Task BrowseSamples()
+    {
+        var infos = new List<SampleInfo>();
+        foreach (var s in SampleCatalog.List(SampleCatalog.DefaultRoot))
+        {
+            try { infos.Add(SampleCatalog.Describe(s)); }
+            catch (Exception e) when (e is StackFormatException or IOException) { }
+        }
+        var chosen = await new SampleBrowser(infos).ShowDialog<SampleInfo?>(this);
+        if (chosen is not null) await OpenSample(chosen.Entry);
     }
 
     private async Task OpenSample(SampleEntry s)

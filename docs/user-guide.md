@@ -27,7 +27,9 @@ evaluates on demand. Every edit can be undone (**Ctrl+Z**) and redone (**Ctrl+Y*
 
 - **File > New stack** (Ctrl+N) starts from air, one 100 nm layer of index 1.38, and glass.
 - **Open…** (Ctrl+O) opens a stack file. **Save** (Ctrl+S) and **Save as…** (Ctrl+Shift+S) write it.
-- **File > Open sample** opens a literature sample as a copy: Save as… keeps it.
+- **File > Browse samples…** lists the literature samples. Search their titles, sources and notes,
+  read each one's source, contents and notes, and open one as a copy (Save as… keeps it). **File >
+  Open sample** opens one directly by name.
 - Opening another stack, or closing the window, with unsaved changes asks whether to save them.
 - Opening a stack file from Explorer, Finder or a file manager (`berreman-gui file.json`)
   evaluates it at once.

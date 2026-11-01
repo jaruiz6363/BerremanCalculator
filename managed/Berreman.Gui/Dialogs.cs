@@ -378,3 +378,64 @@ public sealed class LibraryDialog : Window
             Entry.Source.Length == 0 ? Entry.Name : $"{Entry.Name}   —   {(Entry.Source.Length > 90 ? Entry.Source[..90] + "…" : Entry.Source)}";
     }
 }
+
+/// <summary>
+/// File > Browse samples: every literature sample with its title, source and notes, searchable.
+/// Returns the sample chosen; the window opens it as a copy.
+/// </summary>
+public sealed class SampleBrowser : Window
+{
+    public SampleBrowser(IReadOnlyList<SampleInfo> samples)
+    {
+        Title = "Samples from the literature";
+        Width = 900;
+        Height = 620;
+        WindowStartupLocation = WindowStartupLocation.CenterOwner;
+        var search = new TextBox { Name = "SampleSearchBox", Watermark = "search titles, sources and notes (e.g. Passler, cholesteric, ferrite)" };
+        var list = new ListBox { Name = "SampleList", Width = 330 };
+        var title = new TextBlock { Name = "SampleTitle", FontWeight = FontWeight.SemiBold, TextWrapping = TextWrapping.Wrap, FontSize = 15 };
+        var source = new SelectableTextBlock { Name = "SampleSource", TextWrapping = TextWrapping.Wrap };
+        var contents = new TextBlock { TextWrapping = TextWrapping.Wrap, Foreground = new SolidColorBrush(Color.Parse("#444")) };
+        var notes = new SelectableTextBlock { Name = "SampleNotes", TextWrapping = TextWrapping.Wrap };
+        void Filter()
+        {
+            list.ItemsSource = SampleCatalog.Search(samples, search.Text ?? "").Select(s => new Item(s)).ToList();
+            if (list.ItemCount > 0) list.SelectedIndex = 0;
+        }
+        list.SelectionChanged += (_, _) =>
+        {
+            var s = (list.SelectedItem as Item)?.Info;
+            title.Text = s?.Title ?? "";
+            source.Text = s is null ? "" : "Source: " + s.Source;
+            contents.Text = s?.Contents ?? "";
+            notes.Text = s?.Notes ?? "";
+        };
+        list.DoubleTapped += (_, _) => { if (list.SelectedItem is Item it) Close(it.Info); };
+        search.TextChanged += (_, _) => Filter();
+        Filter();
+
+        var detail = new ScrollViewer
+        {
+            Margin = new Thickness(12, 0, 0, 0),
+            Content = new StackPanel { Spacing = 8, Children = { title, source, contents, new TextBlock { Text = "Notes", FontWeight = FontWeight.SemiBold }, notes } },
+        };
+        var body = new DockPanel();
+        DockPanel.SetDock(list, Avalonia.Controls.Dock.Left);
+        body.Children.Add(list);
+        body.Children.Add(detail);
+
+        var top = new StackPanel { Spacing = 6, Children = { search, Dialogs.Hint("samples/README.md says how closely each one is reproduced. A sample opens as a copy; Save as… keeps your changes.") } };
+        DockPanel.SetDock(top, Avalonia.Controls.Dock.Top);
+        var buttons = Dialogs.Buttons(this, () => { if (list.SelectedItem is Item it) { Close(it.Info); return true; } return false; });
+        ((Button)buttons.Children[0]).Content = "Open";
+        DockPanel.SetDock(buttons, Avalonia.Controls.Dock.Bottom);
+        buttons.Margin = new Thickness(0, 8, 0, 0);
+        top.Margin = new Thickness(0, 0, 0, 8);
+        Content = new DockPanel { Margin = new Thickness(16), Children = { top, buttons, body } };
+    }
+
+    private sealed record Item(SampleInfo Info)
+    {
+        public override string ToString() => Info.Entry.Name;
+    }
+}

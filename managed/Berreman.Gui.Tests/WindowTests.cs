@@ -507,6 +507,24 @@ public static class WindowTests
         });
     }
 
+    public static void TheSampleBrowserFindsAndOpens(Harness h, HeadlessUnitTestSession session)
+    {
+        h.Section("File > Browse samples searches the samples and opens one");
+        WithWindow(session, w =>
+        {
+            _ = w.BrowseSamples();
+            var d = Dialog<SampleBrowser>(w);
+            h.Expect(d is not null, "the browser opens");
+            if (d is null) return;
+            Find<TextBox>(d, "SampleSearchBox").Text = "cholesteric";
+            Pump(w);
+            var list = Find<ListBox>(d, "SampleList");
+            h.Expect(list.ItemCount == 1 && Find<SelectableTextBlock>(d, "SampleSource").Text!.Contains("Ting"), $"a search finds the cholesteric and shows its source ({list.ItemCount})");
+            Click(d, Find<Button>(d, "OkButton"));
+            h.Expect(PumpUntil(w, () => w.Workspace.Name.StartsWith("ting-2006"), 5), $"Open opens it as a copy ({w.Workspace.Name})");
+        });
+    }
+
     public static void MaterialsComeFromLibraries(Harness h, HeadlessUnitTestSession session)
     {
         h.Section("From library… adds database materials and catalogue glasses; Save keeps one in my materials");
