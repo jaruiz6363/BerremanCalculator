@@ -89,6 +89,7 @@
       </MenuItem>
       <MenuItem Header="_Analysis">
         <MenuItem x:Name="EvaluateItem" Header="_Evaluate" InputGesture="F5"/>
+        <MenuItem x:Name="ConoscopeItem" Header="_Conoscopic map…"/>
         <MenuItem x:Name="AutoItem" Header="Evaluate after every _change" ToggleType="CheckBox" IsChecked="True"/>
       </MenuItem>
     </Menu>

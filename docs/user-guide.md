@@ -156,6 +156,22 @@ version does not know are.
 - **File > Export the plot as PNG…** writes the plot as shown, curves or Mueller panels, at twice
   the screen's resolution.
 
+### Conoscopic maps
+
+**Analysis > Conoscopic map…** shows one quantity over every direction of incidence at one spectral
+value:
+- **The picture.** The radius is the angle of incidence, and the polar angle is the sample's
+  azimuth (the program turns the sample about the normal, and the plane of incidence stays x–z).
+- **Settings.** The spectral value, the largest angle, and how many angles and azimuths to compute.
+  Compute evaluates them all. The quantity can then be changed without evaluating again.
+- **Polarisers.** Besides every derived quantity, the map offers the transmittance between crossed
+  or parallel polarisers. They are fixed to the sample, the polariser at a chosen angle from the
+  sample's x. This needs isotropic incident and exit media. A uniaxial plate cut normal to its axis
+  then shows the classic Maltese cross and rings. The tests check that the rings fall where the
+  closed-form phase difference is a multiple of 2π.
+- **Reading and saving.** Hovering reads a value, and the map saves as PNG or CSV (angle, azimuth,
+  value).
+
 ## The command line
 
 ```

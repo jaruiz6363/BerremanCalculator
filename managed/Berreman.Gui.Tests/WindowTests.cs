@@ -449,6 +449,37 @@ public static class WindowTests
         });
     }
 
+    public static void TheConoscopicMapShowsTheIsochromes(Harness h, HeadlessUnitTestSession session)
+    {
+        h.Section("Analysis > Conoscopic map computes and draws a map, and saves it");
+        WithWindow(session, w =>
+        {
+            w.LoadSample("""
+                { "format": "berreman-stack", "version": 1, "units": { "length": "um", "spectral": "nm" },
+                  "materials": { "oil": { "n": 1.55 }, "crystal": { "no": 1.5, "ne": 1.6 } },
+                  "incident": { "material": "oil" }, "layers": [ { "material": "crystal", "thickness": 60 } ],
+                  "exit": { "material": "oil" }, "sweep": { "spectral": 600, "angle_deg": 0 } }
+                """, "plate");
+            Pump(w);
+            var c = w.OpenConoscope();
+            Pump(w, 200);
+            Find<ComboBox>(c, "ConoscopeQuantityBox").SelectedIndex = 0;
+            Click(c, Find<Button>(c, "ComputeMapButton"));
+            h.Expect(PumpUntil(w, () => !c.IsComputing && c.View.Map is not null, 30), $"the map is computed ({Find<TextBlock>(c, "ConoscopeStatus").Text})");
+            if (c.View.Map is not { } map) return;
+            h.Expect(map.AnglesDeg.Length == 31 && map.AzimuthsDeg.Length == 72, "on 31 angles and 72 azimuths");
+            h.Expect(map.Values[0, 0] < 1e-6 && map.Max > 0.5, $"crossed polarisers: dark on the optic axis, bright rings off it (max {map.Max:G3})");
+            if (Environment.GetEnvironmentVariable("BC_SHOT_DIR") is { Length: > 0 } dir) { Pump(w, 200); c.CaptureRenderedFrame()?.Save(System.IO.Path.Combine(dir, "conoscope.png")); }
+            var png = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"berreman-map-{Guid.NewGuid():N}.png");
+            var csv = System.IO.Path.ChangeExtension(png, ".csv");
+            c.SaveTo(png, png: true);
+            c.SaveTo(csv, png: false);
+            h.Expect(new System.IO.FileInfo(png).Length > 10000 && File.ReadAllLines(csv).Length == 1 + 31 * 72, "the map saves as PNG and as CSV");
+            File.Delete(png); File.Delete(csv);
+            c.Close();
+        });
+    }
+
     public static void MaterialsComeFromLibraries(Harness h, HeadlessUnitTestSession session)
     {
         h.Section("From library… adds database materials and catalogue glasses; Save keeps one in my materials");

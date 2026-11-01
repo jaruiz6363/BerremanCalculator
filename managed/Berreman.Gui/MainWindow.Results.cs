@@ -34,6 +34,7 @@ public partial class MainWindow
             MuellerGrid.Children.Add(_muellerPlots[k]);
         }
         ViewBox.SelectionChanged += (_, _) => Redraw();
+        ConoscopeItem.Click += (_, _) => OpenConoscope();
         XAxisBox.SelectionChanged += (_, _) => { if (!_settingAxes) Redraw(); };
         MoreQuantitiesButton.Click += async (_, _) =>
         {
@@ -84,6 +85,14 @@ public partial class MainWindow
     }
 
     private void Redraw() => RedrawCore();
+
+    /// <summary>Analysis > Conoscopic map: a window of its own, on a copy of the stack as it is now.</summary>
+    public ConoscopeWindow OpenConoscope()
+    {
+        var w = new ConoscopeWindow(_ws.Model);
+        w.Show(this);
+        return w;
+    }
 
     private async Task ExportPlot()
     {

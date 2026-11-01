@@ -104,6 +104,7 @@ Berreman.Native.Tests.MaterialLibraryTests.Run();
 Berreman.Native.Tests.LatticeTests.Run();
 Berreman.Native.Tests.TaucLorentzTests.Run();
 Berreman.Native.Tests.QuantitiesTests.Run();
+Berreman.Native.Tests.ConoscopeTests.Run();
 checks += Berreman.Native.Tests.ApiTests.Checks;
 failures += Berreman.Native.Tests.ApiTests.Failures;
 checks += Berreman.Native.Tests.ClosedFormTests.Checks;
@@ -132,6 +133,8 @@ checks += Berreman.Native.Tests.TaucLorentzTests.Checks;
 failures += Berreman.Native.Tests.TaucLorentzTests.Failures;
 checks += Berreman.Native.Tests.QuantitiesTests.Checks;
 failures += Berreman.Native.Tests.QuantitiesTests.Failures;
+checks += Berreman.Native.Tests.ConoscopeTests.Checks;
+failures += Berreman.Native.Tests.ConoscopeTests.Failures;
 
 Console.WriteLine($"{checks} checks, {failures} failures");
 return failures == 0 ? 0 : 1;
