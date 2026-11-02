@@ -181,17 +181,20 @@ public partial class MainWindow : Window
             if (_selectedMaterial is not { } name) return;
             Try(() => _ws.Edit(m => m.RemoveMaterial(name)), $"'{name}' removed.");
         };
-        RenameMaterialButton.Click += (_, _) =>
+        Field(MaterialNameBox, "name", () =>
         {
-            if (_selectedMaterial is not { } name) return;
+            if (_selectedMaterial is not { } name) return true;
             var to = (MaterialNameBox.Text ?? "").Trim();
-            Try(() => _ws.Edit(m => m.RenameMaterial(name, to)), $"'{name}' renamed '{to}', everywhere it is used.");
-            if (_ws.Model.Material(to) is not null) { _selectedMaterial = to; ShowMaterials(); }
-        };
-        ApplyMaterialButton.Click += (_, _) =>
+            if (to == name) return true;
+            if (!Try(() => _ws.Edit(m => m.RenameMaterial(name, to)), $"'{name}' renamed '{to}', everywhere it is used.")) return false;
+            _selectedMaterial = to;
+            ShowMaterials();
+            return true;
+        });
+        Field(MaterialSpecBox, "spec", () =>
         {
-            if (_selectedMaterial is not { } name) return;
-            Try(() =>
+            if (_selectedMaterial is not { } name) return true;
+            return Try(() =>
             {
                 JsonObject spec;
                 try { spec = JsonNode.Parse(MaterialSpecBox.Text ?? "", documentOptions: new() { CommentHandling = System.Text.Json.JsonCommentHandling.Skip, AllowTrailingCommas = true }) as JsonObject ?? throw new StackFormatException("a material is a JSON object { … }"); }
@@ -199,13 +202,20 @@ public partial class MainWindow : Window
                 MaterialParser.Parse(spec, $"materials.{name}");   // refuse what would not evaluate
                 _ws.Edit(m => m.Material(name)!.Spec = spec);
             }, $"'{name}' updated.");
-        };
+        }, enterCommits: false);
         InitMaterialEditor();
         InitResults();
 
         // ---- the file tab ----------------------------------------------------------------------
-        ApplyTextButton.Click += (_, _) => Try(() => _ws.EditText(Editor.Text ?? ""), "The file text is applied.");
-        Tabs.SelectionChanged += (_, e) => { if (e.Source == Tabs) Editor.Text = _ws.Text; };
+        var commitEditor = Field(Editor, "file", () => Try(() => _ws.EditText(Editor.Text ?? ""), "The file text is applied."),
+                                 enterCommits: false, perMaterial: false);
+        Tabs.SelectionChanged += (_, e) =>
+        {
+            if (e.Source != Tabs) return;
+            /* Leaving the tab takes what was typed there; text that was refused stays to be fixed. */
+            commitEditor();
+            if (!Editor.Classes.Contains("invalid")) Editor.Text = _ws.Text;
+        };
 
         // ---- keys ------------------------------------------------------------------------------
         KeyDown += async (_, e) =>
@@ -301,7 +311,7 @@ public partial class MainWindow : Window
             RedoItem.IsEnabled = RedoButton.IsEnabled = _ws.CanRedo;
             SummaryText.Text = $"{m.Layers.Count} layer{(m.Layers.Count == 1 ? "" : "s")}, {_ws.TotalThickness.ToString("0.###", Inv)} {(m.LengthUnit == "um" ? "µm" : m.LengthUnit)} in all";
 
-            if (!Editor.IsFocused) Editor.Text = _ws.Text;
+            if (!Editor.IsFocused) { Editor.Text = _ws.Text; Editor.Classes.Remove("invalid"); }
             ShowMaterials();
         }
         finally { _refreshing = false; }
@@ -337,7 +347,9 @@ public partial class MainWindow : Window
         var uses = mat is null ? [] : _ws.Model.Uses(mat.Name);
         MaterialUses.Text = mat is null ? "" : uses.Count == 0 ? "Not used in the stack." : $"Used by the {string.Join(", ", uses.Take(8))}{(uses.Count > 8 ? $" and {uses.Count - 8} more" : "")}.";
         MaterialSpecBox.Text = mat is null ? "" : JsonText.Write(mat.Spec).TrimEnd();
-        foreach (var c in new Control[] { RenameMaterialButton, ApplyMaterialButton, DuplicateMaterialButton, RemoveMaterialButton, MaterialSpecBox, MaterialNameBox })
+        Accepted("name");
+        Accepted("spec");
+        foreach (var c in new Control[] { DuplicateMaterialButton, RemoveMaterialButton, MaterialSpecBox, MaterialNameBox })
             c.IsEnabled = mat is not null;
         ShowMaterialViews();
     }
@@ -361,15 +373,57 @@ public partial class MainWindow : Window
             box.KeyDown += (_, e) => { if (e.Key == Key.Enter) { e.Handled = true; Done(); } };
     }
 
-    private void Try(Action edit, string? done = null)
+    private readonly Dictionary<string, HashSet<TextBox>> _refused = [];
+
+    /// <summary>
+    /// A box on the Materials or File tab that takes effect when it is left, or when Enter is
+    /// pressed in it. apply says whether it was taken; what is refused stays in the box, outlined
+    /// in red, with the reason in the status line. The boxes of one group are applied together,
+    /// so one accepted clears them all. Returns the commit, for a caller that must take what was
+    /// typed before it moves on.
+    /// </summary>
+    private Action Field(TextBox box, string group, Func<bool> apply, bool enterCommits = true, bool perMaterial = true)
+    {
+        string? before = null, material = null;
+        box.GotFocus += (_, _) => { before = box.Text; material = _selectedMaterial; };
+        void Done()
+        {
+            /* Nothing while the views are being refilled, nothing unchanged, and nothing typed for
+               a material that is no longer the selected one. */
+            if (_showingMaterial || before is null || box.Text == before) return;
+            if (perMaterial && material != _selectedMaterial) { before = null; return; }
+            before = box.Text;
+            if (apply()) Accepted(group);
+            else
+            {
+                box.Classes.Add("invalid");
+                (_refused.TryGetValue(group, out var set) ? set : _refused[group] = []).Add(box);
+            }
+        }
+        box.LostFocus += (_, _) => Done();
+        if (enterCommits)
+            box.KeyDown += (_, e) => { if (e.Key == Key.Enter) { e.Handled = true; Done(); } };
+        return Done;
+    }
+
+    /// <summary>The group's boxes hold what the stack holds: none of them is outlined in red.</summary>
+    private void Accepted(string group)
+    {
+        if (!_refused.Remove(group, out var set)) return;
+        foreach (var b in set) b.Classes.Remove("invalid");
+    }
+
+    private bool Try(Action edit, string? done = null)
     {
         try
         {
             edit();
             if (done is not null) Status(done);
+            return true;
         }
         catch (StackFormatException e) { Status(e.Message, error: true); }
         catch (FormatException e) { Status(e.Message, error: true); }
+        return false;
     }
 
     private int SelectedRow => LayerGrid.SelectedIndex;
@@ -509,6 +563,7 @@ public partial class MainWindow : Window
 
     private async Task<bool> Save(bool asNew)
     {
+        FocusManager?.ClearFocus();   // a box still being typed in takes its value first
         var path = _ws.Path;
         if (path is null || asNew)
         {
@@ -551,6 +606,7 @@ public partial class MainWindow : Window
 
     private async Task Evaluate(bool auto = false)
     {
+        if (!auto) FocusManager?.ClearFocus();   // a box still being typed in takes its value first
         if (_busy) { _again = true; return; }
         StackDocument doc;
         try { doc = _ws.Document(); }

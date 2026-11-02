@@ -27,6 +27,12 @@ is evaluated as you make it (**Analysis > Evaluate after every change**, on by d
 evaluates on demand. Every edit, on any tab, can be undone with Edit > Undo (**Ctrl+Z**) and
 redone (**Ctrl+Y**); there is one Undo for the whole window.
 
+There is no Apply button. A value takes effect when you press Enter or leave its box, and a
+choice from a list when you make it; a box of several lines (a table, the file text) takes effect
+when you leave it. Text that does not make sense is not taken: the box keeps it, outlined in red,
+and the status line says why, so it can be corrected. Save and Evaluate take a box that is still
+being typed in first.
+
 ### Files
 
 - **File > New stack** (Ctrl+N) starts from air, one 100 nm layer of index 1.38, and glass.
@@ -165,7 +171,7 @@ The list shows the stack's materials, each with a summary (`n = 1.52`,
 `uniaxial, nₒ = 1.54, nₑ = 1.55`, `16 terms; …`). Beside it the tab shows where the selected
 material is used.
 - **New** and **Duplicate** add a material.
-- **Rename** follows the material into every layer and medium.
+- **Name.** A new name, typed over the old one, follows the material into every layer and medium.
 - **Remove** is refused while the material is used.
 - **From library…** adds materials from a library ([materials](../materials/README.md)). Choose a
   library, search it, and select one or several entries. Below the list, the dialog shows each
@@ -178,17 +184,18 @@ material is used.
   A crystal listed as (o) and (e) is also offered as one uniaxial material.
 - **Save to my materials** keeps the selected material, in any form, for use in other stacks.
 
-The selected material has two pages. Every change on them is one undoable edit: **Apply** puts
-what you typed into the stack, and Edit > Undo (Ctrl+Z) takes it back. A material that would not
-evaluate is refused, with the reason in the status line.
+The selected material has two pages. Every change on them is one undoable edit, taken when you
+leave the box or make the choice. A material that would not evaluate is refused, with the reason
+in the status line.
 
 - **Material.** The material as an index per direction:
   - **Directions:** the same in every direction (isotropic); ordinary and extraordinary
     (uniaxial, with the optic axis along the material's z); or different along x, y and z
     (biaxial). A layer's Euler angles turn the material.
   - **Defined by,** for each direction: a constant n and k, a catalogue glass, a Sellmeier or
-    Cauchy formula, a table of measured values, a Tauc–Lorentz law, or phonons. A line under the
-    choice gives the formula, and its parameters are typed into fields. A list, such as Sellmeier
+    Cauchy formula, a table of measured values, a Tauc–Lorentz law, or phonons. A new formula
+    starts from typical values; a line under the choice gives the formula, and its parameters are
+    typed into fields. A list, such as Sellmeier
     terms or the rows of a table, is typed as lines of numbers.
   - **The plot** shows n and k over the stack's spectral range (k only where it is not zero), and
     under it whether the material is passive and reciprocal.
@@ -205,7 +212,6 @@ evaluate is refused, with the reason in the status line.
     - **Laws.** Choose a law, then type its parameters into its fields.
     - **Shape.** A direction (by angles or by a vector), or the 6×6 matrix cell by cell. Type a
       complex cell as `2`, `-0.08`, `0.1i` or `2+0.1i`.
-    - **Apply term** puts the term in the material.
     - **A material in a short form** (a Sellmeier glass, a uniaxial crystal, a ferrite) is shown
       as the terms it stands for. Any change made here writes it as terms, with the same numbers.
   - **Response.** The material across a range, which defaults to the stack's spectral range:
@@ -225,7 +231,7 @@ layer count, so it does not replace an error message.
 ### The File tab
 
 The stack exactly as it is saved. Edits made in the tables show here at once; an edit made here
-is taken by **Apply**, as one undoable change.
+is taken when you leave the text, as one undoable change.
 The file is written in a standard layout: comments in a hand-written file are not kept (the notes
 field is the place for them), and keys this version does not know are.
 

@@ -111,7 +111,17 @@ public static class WindowTests
            a moment while the grid is still settling. */
         PumpUntil(window, () => { if (!box.IsFocused) box.Focus(); return box.IsFocused; }, 5);
         box.Text = text;
-        Find<Button>(window, "EvaluateButton").Focus();
+        /* Evaluate is disabled while an evaluation runs, and then cannot take the focus. */
+        PumpUntil(window, () => { Find<Button>(window, "EvaluateButton").Focus(); return !box.IsFocused; }, 5);
+        Pump(window);
+    }
+
+    /// <summary>A value typed into a box and Enter pressed, as a person ends a single value.</summary>
+    private static void TypeAndEnter(MainWindow window, TextBox box, string text)
+    {
+        PumpUntil(window, () => { if (!box.IsFocused) box.Focus(); return box.IsFocused; }, 5);
+        box.Text = text;
+        window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null);
         Pump(window);
     }
 
@@ -290,27 +300,41 @@ public static class WindowTests
                      && Find<ComboBox>(w, "PlainChoice0").SelectedIndex == 0 && Find<ComboBox>(w, "PlainAxesBox").SelectedIndex == 0,
                      $"a constant material opens on the Material page: the same in every direction, constant, n = 1 (tab {Find<TabControl>(w, "MaterialTabs").SelectedIndex}, n {Find<TextBox>(w, "PlainN0").Text})");
             h.Expect(Find<SpectrumPlot>(w, "PlainPlot").Series is { Count: 1 } one && one[0].Name == "n", "and its plot is one curve, n");
-            Find<TextBox>(w, "PlainN0").Text = "1.0003";
-            Click(w, Find<Button>(w, "ApplyPlainButton"));
-            h.Expect(w.Workspace.Model.Material("air")!.Spec["n"]!.GetValue<double>() == 1.0003, "Apply writes n");
+            TypeAndEnter(w, Find<TextBox>(w, "PlainN0"), "1.0003");
+            h.Expect(w.Workspace.Model.Material("air")!.Spec["n"]!.GetValue<double>() == 1.0003, "Enter in n writes it, with no Apply");
             EditUndo(w);
             h.Expect(w.Workspace.Model.Material("air")!.Spec["n"]!.GetValue<double>() == 1 && Find<TextBox>(w, "PlainN0").Text == "1",
                      "Edit > Undo takes it back, and the box follows");
+            TypeAndLeave(w, Find<TextBox>(w, "PlainN0"), "1.5x");
+            h.Expect(w.Workspace.Model.Material("air")!.Spec["n"]!.GetValue<double>() == 1 && Find<TextBox>(w, "PlainN0").Text == "1.5x"
+                     && Find<TextBox>(w, "PlainN0").Classes.Contains("invalid") && Find<SelectableTextBlock>(w, "StatusText").Text!.Contains("1.5x"),
+                     $"text that is not a number is refused when the box is left: it stays, outlined in red, and the status says why ({Find<SelectableTextBlock>(w, "StatusText").Text})");
+            Shot(w, "materials-refused");
+            TypeAndLeave(w, Find<TextBox>(w, "PlainN0"), "1.0003");
+            h.Expect(w.Workspace.Model.Material("air")!.Spec["n"]!.GetValue<double>() == 1.0003 && !Find<TextBox>(w, "PlainN0").Classes.Contains("invalid"),
+                     "corrected, it is taken when the box is left, and the red goes");
+            EditUndo(w);
 
             /* Uniaxial, with a formula for the extraordinary index. */
             Find<ComboBox>(w, "PlainAxesBox").SelectedIndex = 1;
             Pump(w);
             h.Expect(Find<TextBox>(w, "PlainN0").Text == "1" && Find<TextBox>(w, "PlainN1").Text == "1", "uniaxial starts from the isotropic value on both axes");
+            h.Expect(w.Workspace.Model.Material("air")!.Spec.ContainsKey("no") && Find<ComboBox>(w, "PlainAxesBox").SelectedIndex == 1,
+                     $"and the choice takes effect at once, written as no and ne ({w.Workspace.Model.Material("air")!.Spec.ToJsonString()})");
             Find<ComboBox>(w, "PlainChoice1").SelectedIndex = Array.FindIndex(MaterialEditing.PlainChoices, c => c.Law == "cauchy");
             Pump(w);
-            Find<TextBox>(w, "Plain1_a").Text = "1.2";
-            Click(w, Find<Button>(w, "ApplyPlainButton"));
+            h.Expect(w.Workspace.Model.Material("air")!.Spec["uniaxial"]?["extraordinary"]?["cauchy"] is JsonObject, "so does a formula, with its default values");
+            TypeAndLeave(w, Find<TextBox>(w, "Plain1_a"), "1.2");
             var air = w.Workspace.Model.Material("air")!.Spec;
             h.Expect(air["uniaxial"]?["ordinary"]?["n"]?.GetValue<double>() == 1 && air["uniaxial"]?["extraordinary"]?["cauchy"]?["a"]?.GetValue<double>() == 1.2,
-                     $"Apply writes an ordinary constant and an extraordinary Cauchy law ({air.ToJsonString()})");
+                     $"leaving a parameter writes it: an ordinary constant and an extraordinary Cauchy law ({air.ToJsonString()})");
             h.Expect(Find<SpectrumPlot>(w, "PlainPlot").Series?.Select(s => s.Name).SequenceEqual(["n ordinary", "n extraordinary"]) == true, "the plot shows both indices");
             Shot(w, "materials-plain");
             EditUndo(w);
+            EditUndo(w);
+            EditUndo(w);
+            h.Expect(w.Workspace.Model.Material("air")!.Spec["n"]?.GetValue<double>() == 1 && Find<ComboBox>(w, "PlainAxesBox").SelectedIndex == 0,
+                     $"three Undos give back air, and the page follows ({w.Workspace.Model.Material("air")!.Spec.ToJsonString()})");
 
             /* Ga2O3 is a list of terms: the page says so, and Advanced edits it. */
             list.SelectedIndex = w.Workspace.Model.Materials.FindIndex(m => m.Name == "Ga2O3");
@@ -327,11 +351,10 @@ public static class WindowTests
                      "Bu-1 shows its law and its direction");
             var center = Find<TextBox>(w, "Law_center");
             h.Expect(center.Text == "743.48", $"its centre is a field ({center.Text})");
-            center.Text = "750";
-            Click(w, Find<Button>(w, "ApplyTermButton"));
+            TypeAndEnter(w, center, "750");
             JsonNode Term(int i) => w.Workspace.Model.Material("Ga2O3")!.Spec["terms"]![i]!;
             h.Expect(Term(1)["lorentz"]!["center"]!.GetValue<double>() == 750 && Term(1)["axis_deg"]!.GetValue<double>() == 47.8,
-                     "Apply term changes the centre and keeps the direction");
+                     "Enter in the centre changes it and keeps the direction");
             w.Workspace.Undo();
             Pump(w);
             h.Expect(Term(1)["lorentz"]!["center"]!.GetValue<double>() == 743.48, "Undo takes it back");
@@ -345,9 +368,8 @@ public static class WindowTests
             h.Expect(Math.Abs(MaterialEditing.ParseComplex(Find<TextBox>(w, "Shape00").Text ?? "").Real - c * c) < 1e-15
                      && string.IsNullOrEmpty(Find<TextBox>(w, "Shape33").Text), "the direction becomes ê êᵀ in the 6×6 cells");
             Shot(w, "materials-matrix");
-            Find<TextBox>(w, "Shape01").Text = "0.1i";
-            Find<TextBox>(w, "Shape10").Text = "-0.1i";
-            Click(w, Find<Button>(w, "ApplyTermButton"));
+            TypeAndLeave(w, Find<TextBox>(w, "Shape01"), "0.1i");
+            TypeAndLeave(w, Find<TextBox>(w, "Shape10"), "-0.1i");
             h.Expect(Term(1)["eps"] is JsonArray, $"a typed matrix is written as an ε block ({Find<SelectableTextBlock>(w, "StatusText").Text}; {Term(1).ToJsonString()})");
             h.Expect(Find<TextBlock>(w, "MaterialSummary").Text!.Contains("16 terms"), "the summary counts the terms");
 
@@ -358,8 +380,7 @@ public static class WindowTests
             Pump(w);
             foreach (var (box, text) in new[] { ("UvwUBox", "0"), ("UvwVBox", "0"), ("UvwWBox", "1"), ("LatticeABox", "12.23"), ("LatticeBBox", "3.04"),
                                                 ("LatticeCBox", "5.80"), ("LatticeAlphaBox", "90"), ("LatticeBetaBox", "103.7"), ("LatticeGammaBox", "90") })
-                Find<TextBox>(w, box).Text = text;
-            Click(w, Find<Button>(w, "ApplyTermButton"));
+                TypeAndLeave(w, Find<TextBox>(w, box), text);
             var ga = w.Workspace.Model.Material("Ga2O3")!.Spec;
             h.Expect(Term(2)["axis_uvw"] is JsonArray && ga["lattice"]?["beta"]?.GetValue<double>() == 103.7,
                      $"a direction in crystal axes is written with the material's lattice ({Find<SelectableTextBlock>(w, "StatusText").Text})");
@@ -371,7 +392,7 @@ public static class WindowTests
             Click(w, Find<Button>(w, "DeleteTermButton"));
             h.Expect(w.Workspace.Model.Material("Ga2O3")!.Spec["terms"]!.AsArray().Count == before, "Delete removes it");
 
-            /* A short-form material is shown as terms and written as terms on Apply. */
+            /* A short-form material is shown as terms, and a change there writes it as terms. */
             w.Workspace.Edit(m => m.Materials.Add(new NamedMaterial("SiO2", new JsonObject
             {
                 ["sellmeier"] = JsonNode.Parse("""{ "unit": "um", "terms": [ { "b": 0.6961663, "c2": 0.0046791 } ] }"""),
@@ -618,18 +639,16 @@ public static class WindowTests
             Click(w, Find<Button>(w, "NewMaterialButton"));
             h.Expect(w.Workspace.Model.Material("material") is not null, "New adds a material");
             ShowMaterialTab(w, "Text");
-            Find<TextBox>(w, "MaterialSpecBox").Text = """{ "no": 1.54, "ne": 1.55 }""";
-            Click(w, Find<Button>(w, "ApplyMaterialButton"));
-            h.Expect(w.Workspace.Summary("material").StartsWith("uniaxial"), $"Apply makes it uniaxial ({w.Workspace.Summary("material")})");
-            Find<TextBox>(w, "MaterialNameBox").Text = "quartz";
-            Click(w, Find<Button>(w, "RenameMaterialButton"));
-            h.Expect(w.Workspace.Model.Material("quartz") is not null, "Rename renames it");
+            TypeAndLeave(w, Find<TextBox>(w, "MaterialSpecBox"), """{ "no": 1.54, "ne": 1.55 }""");
+            h.Expect(w.Workspace.Summary("material").StartsWith("uniaxial"), $"leaving the text makes it uniaxial ({w.Workspace.Summary("material")})");
+            TypeAndEnter(w, Find<TextBox>(w, "MaterialNameBox"), "quartz");
+            h.Expect(w.Workspace.Model.Material("quartz") is not null, "Enter in the name renames it");
             Settle(w);
             ShowMaterialTab(w, "Text");
-            Find<TextBox>(w, "MaterialSpecBox").Text = """{ "n": 1.5, "eps": 2 }""";
-            Click(w, Find<Button>(w, "ApplyMaterialButton"));
-            h.Expect(w.Workspace.Summary("quartz").StartsWith("uniaxial") && Find<SelectableTextBlock>(w, "StatusText").Text!.Contains("only one"),
-                     "a material the parser refuses is not applied, and the status says why");
+            TypeAndLeave(w, Find<TextBox>(w, "MaterialSpecBox"), """{ "n": 1.5, "eps": 2 }""");
+            h.Expect(w.Workspace.Summary("quartz").StartsWith("uniaxial") && Find<SelectableTextBlock>(w, "StatusText").Text!.Contains("only one")
+                     && Find<TextBox>(w, "MaterialSpecBox").Classes.Contains("invalid") && Find<TextBox>(w, "MaterialSpecBox").Text!.Contains("eps"),
+                     "a material the parser refuses is not applied: the text stays, outlined in red, and the status says why");
             var list = Find<ListBox>(w, "MaterialList");
             list.SelectedIndex = w.Workspace.Model.Materials.FindIndex(m => m.Name == "low");
             Settle(w);
@@ -654,9 +673,8 @@ public static class WindowTests
             ShowTab(w, "File");
             var editor = Find<TextBox>(w, "Editor");
             h.Expect(editor.Text!.Contains("\"spectral\": \"um\""), "the File tab shows the stack file");
-            editor.Text = editor.Text.Replace("\"title\": \"New stack\"", "\"title\": \"Edited as text\"");
-            Click(w, Find<Button>(w, "ApplyTextButton"));
-            h.Expect(w.Workspace.Model.Title == "Edited as text", "and Apply takes an edit made there");
+            TypeAndLeave(w, editor, editor.Text.Replace("\"title\": \"New stack\"", "\"title\": \"Edited as text\""));
+            h.Expect(w.Workspace.Model.Title == "Edited as text", "and an edit made there is taken when the text is left");
         });
     }
 

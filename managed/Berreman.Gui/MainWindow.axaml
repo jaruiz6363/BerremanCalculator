@@ -41,6 +41,11 @@
       <Setter Property="TextAlignment" Value="Right"/>
       <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
+    <!-- A box whose text was refused: the text stays, outlined in red, until it is corrected. -->
+    <Style Selector="TextBox.invalid /template/ Border#PART_BorderElement">
+      <Setter Property="BorderBrush" Value="Firebrick"/>
+      <Setter Property="BorderThickness" Value="2"/>
+    </Style>
     <Style Selector="TextBlock.label">
       <Setter Property="VerticalAlignment" Value="Center"/>
       <Setter Property="Margin" Value="0,0,6,0"/>
@@ -306,7 +311,6 @@
                 <StackPanel Orientation="Horizontal" Spacing="6">
                   <TextBlock Classes="label" Text="Name"/>
                   <TextBox x:Name="MaterialNameBox" Width="220"/>
-                  <Button x:Name="RenameMaterialButton" Content="Rename"/>
                 </StackPanel>
                 <TextBlock x:Name="MaterialSummary" TextWrapping="Wrap"/>
                 <TextBlock x:Name="MaterialUses" Classes="hint"/>
@@ -327,9 +331,6 @@
                           </ComboBox>
                         </StackPanel>
                         <StackPanel x:Name="PlainValuesPanel" Spacing="12"/>
-                        <StackPanel Orientation="Horizontal" Spacing="6">
-                          <Button x:Name="ApplyPlainButton" Content="Apply" FontWeight="SemiBold"/>
-                        </StackPanel>
                       </StackPanel>
                     </ScrollViewer>
                     <StackPanel DockPanel.Dock="Top" x:Name="NotPlainPanel" Spacing="6">
@@ -348,7 +349,7 @@
 
                     <!-- The general form: laws times 6x6 shapes -->
                     <TabItem Header="Terms">
-                      <Grid RowDefinitions="Auto,*,Auto" Margin="4">
+                      <Grid RowDefinitions="Auto,*" Margin="4">
                         <DockPanel>
                           <TextBlock DockPanel.Dock="Top" x:Name="TermsHint" Classes="hint" TextWrapping="Wrap" Margin="0,0,0,4"/>
                           <WrapPanel DockPanel.Dock="Bottom" Margin="0,4,0,0">
@@ -424,9 +425,6 @@
                             </StackPanel>
                           </StackPanel>
                         </ScrollViewer>
-                        <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="6" Margin="0,6,0,0">
-                          <Button x:Name="ApplyTermButton" Content="Apply term" FontWeight="SemiBold"/>
-                        </StackPanel>
                       </Grid>
                     </TabItem>
 
@@ -467,10 +465,7 @@
                     <TabItem Header="Text">
                       <DockPanel Margin="4">
                         <TextBlock DockPanel.Dock="Top" Classes="hint" TextWrapping="Wrap" Margin="0,0,0,4"
-                                   Text="The material as the stack file writes it: n, eps, no/ne, nx/ny/nz, a dispersion law, terms, or a model. docs/stack-format.md lists every form."/>
-                        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="6" Margin="0,6,0,0">
-                          <Button x:Name="ApplyMaterialButton" Content="Apply" FontWeight="SemiBold"/>
-                        </StackPanel>
+                                   Text="The material as the stack file writes it: n, eps, no/ne, nx/ny/nz, a dispersion law, terms, or a model. docs/stack-format.md lists every form. An edit takes effect when you leave the text."/>
                         <TextBox x:Name="MaterialSpecBox" AcceptsReturn="True" TextWrapping="NoWrap"
                                  FontFamily="Cascadia Mono,Consolas,Menlo,DejaVu Sans Mono,monospace" FontSize="12"/>
                       </DockPanel>
@@ -486,9 +481,8 @@
         <TabItem Header="File">
           <DockPanel Margin="4">
             <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="6" Margin="4">
-              <Button x:Name="ApplyTextButton" Content="Apply" FontWeight="SemiBold"/>
               <TextBlock Classes="hint" VerticalAlignment="Center"
-                         Text="The stack exactly as it is saved (docs/stack-format.md). Edit it here and Apply, or edit the tables and watch it follow."/>
+                         Text="The stack exactly as it is saved (docs/stack-format.md). An edit made here takes effect when you leave the text; edits made in the tables show here at once."/>
             </StackPanel>
             <TextBox x:Name="Editor" AcceptsReturn="True" TextWrapping="NoWrap"
                      FontFamily="Cascadia Mono,Consolas,Menlo,DejaVu Sans Mono,monospace" FontSize="12"

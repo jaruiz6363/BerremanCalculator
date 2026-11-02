@@ -9,8 +9,10 @@
 //             Response  n and k, any element of M, the directions of the principal axes, and
 //                       whether it is passive and reciprocal;
 //             Text      the material as the file writes it.
-// Every change goes through the workspace like any other edit, so it is checked, can be undone
-// with Edit > Undo, and redraws everything.
+// A box takes effect when it is left or Enter is pressed in it, and a choice when it is made;
+// there is no Apply. Every change goes through the workspace like any other edit, so it is
+// checked (what is refused stays in its box, outlined in red), can be undone with Edit > Undo,
+// and redraws everything.
 
 using System.Globalization;
 using System.Numerics;
@@ -32,6 +34,8 @@ public partial class MainWindow
     private string? _shownMaterial;            // the material the views were last filled for
     private string? _shownSpec;                // and its definition then
     private bool _showingMaterial;             // true while the views are being filled, not edited
+    private bool _keepPlainEditors;            // an edit made on the material page: its boxes stay
+    private bool _keepTermEditor;              // an edit made in the term editor: its boxes stay
     private readonly TextBox[] _shapeCells = new TextBox[36];
     private readonly List<(LawField Field, TextBox Box)> _lawBoxes = [];
 
@@ -50,8 +54,7 @@ public partial class MainWindow
         };
 
         // ---- the material page ---------------------------------------------------------------
-        PlainAxesBox.SelectionChanged += (_, _) => { if (!_showingMaterial) ChangePlainAxes(); };
-        ApplyPlainButton.Click += (_, _) => ApplyPlain();
+        PlainAxesBox.SelectionChanged += (_, _) => { if (!_showingMaterial) { ChangePlainAxes(); ApplyPlain(); } };
         MakeSimpleButton.Click += (_, _) => MakeSimple();
         PlainPlot.EmptyText = "No material, or it cannot be evaluated in the stack's range.";
         PlainPlot.YTitle = "n";
@@ -64,9 +67,18 @@ public partial class MainWindow
             var law = TermLawBox.SelectedIndex == 0 ? null : MaterialEditing.LawChoices[TermLawBox.SelectedIndex];
             LawFields(law is null ? null : MaterialEditing.DefaultLaw(law));
             TermLawFormula.Text = MaterialEditing.LawFormula(law);
+            ApplyTerm();
         };
-        ShapeModeBox.SelectionChanged += (_, _) => { if (!_showingMaterial) ShapePanels(fromDirection: true); };
+        ShapeModeBox.SelectionChanged += (_, _) =>
+        {
+            if (_showingMaterial) return;
+            ShapePanels(fromDirection: true);
+            ApplyTerm();
+        };
         BuildShapeGrid();
+        foreach (var box in new[] { TermLabelBox, UvwUBox, UvwVBox, UvwWBox, LatticeABox, LatticeBBox, LatticeCBox, LatticeAlphaBox,
+                                    LatticeBetaBox, LatticeGammaBox, AxisAngleBox, AxisElevationBox, AxisXBox, AxisYBox, AxisZBox }.Concat(_shapeCells))
+            Field(box, "term", ApplyTerm);
         TermList.SelectionChanged += (_, _) =>
         {
             if (_showingMaterial || TermList.SelectedIndex < 0) return;
@@ -78,7 +90,7 @@ public partial class MainWindow
             int at = Math.Min(_termIndex + 1, t.Count);
             t.Insert(at, new JsonObject { ["label"] = "new term", ["lorentz"] = MaterialEditing.DefaultLaw("lorentz"), ["axis_deg"] = 0 });
             return at;
-        }, "A Lorentz oscillator along x is added; give its parameters and Apply term.");
+        }, "A Lorentz oscillator along x is added; give its parameters.");
         DuplicateTermButton.Click += (_, _) => EditTerms(t =>
         {
             t.Insert(_termIndex + 1, t[_termIndex]!.DeepClone());
@@ -92,11 +104,6 @@ public partial class MainWindow
         }, "The term is deleted.");
         TermUpButton.Click += (_, _) => EditTerms(t => Move(t, _termIndex, -1), null);
         TermDownButton.Click += (_, _) => EditTerms(t => Move(t, _termIndex, +1), null);
-        ApplyTermButton.Click += (_, _) => EditTerms(t =>
-        {
-            t[_termIndex] = BuildTerm();
-            return _termIndex;
-        }, "The term is applied.");
 
         // ---- response ----------------------------------------------------------------------------
         ResponseQuantityBox.SelectedIndex = 0;
@@ -179,10 +186,11 @@ public partial class MainWindow
             PlainScroll.IsVisible = PlainPanel.IsVisible = plain is not null;
             NotPlainPanel.IsVisible = plain is null;
             if (plain is null) NotPlainText.Text = "This material is more than one index per direction. " + MaterialEditing.WhyNotPlain(mat.Spec);
-            else
+            else if (!(_keepPlainEditors && PlainEditorsShow(plain)))
             {
                 PlainAxesBox.SelectedIndex = (int)plain.Axes;
                 PlainValues(plain);
+                Accepted("plain");
             }
 
             /* Terms. */
@@ -192,7 +200,7 @@ public partial class MainWindow
             if (_terms is not null)
                 TermsHint.Text = mat.Spec.ContainsKey("terms")
                     ? $"{_terms.Count} terms, added together: M = Σ f(λ) × shape."
-                    : "This material is written in a short form, shown here as the terms it stands for. Applying a change here writes it as terms, with the same numbers.";
+                    : "This material is written in a short form, shown here as the terms it stands for. A change made here writes it as terms, with the same numbers.";
             TermList.ItemsSource = _terms?.Select(t => MaterialEditing.Describe(t!.AsObject())).ToList();
             if (changed) _termIndex = 0;
             if (_terms is not null) _termIndex = Math.Clamp(_termIndex, 0, _terms.Count - 1);
@@ -208,7 +216,7 @@ public partial class MainWindow
             }
         }
         finally { _showingMaterial = false; }
-        ShowTerm();
+        if (!_keepTermEditor) ShowTerm();
         PlotPlain();
         if (ShowingResponse) PlotResponse();
     }
@@ -256,6 +264,7 @@ public partial class MainWindow
                 var law = MaterialEditing.PlainChoices[choice.SelectedIndex].Law;
                 formula.Text = MaterialEditing.PlainFormula(law);
                 _plainEditors[at] = PlainFields(fields, choice, at, law is null ? ConstantNow(at) : new MaterialEditing.PlainValue(law, MaterialEditing.DefaultLaw(law)));
+                ApplyPlain();
             };
         }
     }
@@ -267,10 +276,13 @@ public partial class MainWindow
         {
             var boxes = new List<(LawField, TextBox)>();
             LawFields(panel, boxes, v.Parameters, $"Plain{i}_");
+            foreach (var (_, box) in boxes) Field(box, "plain", ApplyPlain, enterCommits: !box.AcceptsReturn);
             return new PlainEditor(choice, null, null, boxes);
         }
         var n = new TextBox { Name = $"PlainN{i}", Width = 110, Text = v.N.ToString("R", Inv) };
         var k = new TextBox { Name = $"PlainK{i}", Width = 110, Text = v.K.ToString("R", Inv) };
+        Field(n, "plain", ApplyPlain);
+        Field(k, "plain", ApplyPlain);
         panel.Children.Add(new StackPanel
         {
             Orientation = Orientation.Horizontal, Spacing = 6,
@@ -323,8 +335,7 @@ public partial class MainWindow
 
     /// <summary>
     /// A new choice of directions: the values typed so far are kept where they mean the same
-    /// thing (the isotropic value becomes every axis; ordinary becomes x and y), and nothing is
-    /// applied until Apply.
+    /// thing (the isotropic value becomes every axis; ordinary becomes x and y).
     /// </summary>
     private void ChangePlainAxes()
     {
@@ -339,15 +350,26 @@ public partial class MainWindow
         finally { _showingMaterial = false; }
     }
 
-    private void ApplyPlain()
+    /// <summary>The material page's boxes and choices, put in the stack; false if they are refused.</summary>
+    private bool ApplyPlain()
     {
-        if (_selectedMaterial is not { } name || _ws.Model.Material(name) is not { } mat) return;
-        Try(() =>
+        if (_selectedMaterial is not { } name || _ws.Model.Material(name) is not { } mat) return true;
+        _keepPlainEditors = true;
+        try
         {
-            var axes = (MaterialEditing.PlainAxes)Math.Max(0, PlainAxesBox.SelectedIndex);
-            SetSpec(name, MaterialEditing.FromPlain(new MaterialEditing.PlainForm(axes, PlainValuesTyped()), mat.Spec));
-        }, $"'{name}' updated.");
+            return Try(() =>
+            {
+                var axes = (MaterialEditing.PlainAxes)Math.Max(0, PlainAxesBox.SelectedIndex);
+                SetSpec(name, MaterialEditing.FromPlain(new MaterialEditing.PlainForm(axes, PlainValuesTyped()), mat.Spec));
+            }, $"'{name}' updated.");
+        }
+        finally { _keepPlainEditors = false; }
     }
+
+    /// <summary>Whether the editors already show this form: the same directions, and the same choice for each.</summary>
+    private bool PlainEditorsShow(MaterialEditing.PlainForm f) =>
+        PlainAxesBox.SelectedIndex == (int)f.Axes && _plainEditors.Count == f.Values.Length
+        && _plainEditors.Select((e, i) => e.Choice.SelectedIndex >= 0 && MaterialEditing.PlainChoices[e.Choice.SelectedIndex].Law == f.Values[i].Law).All(same => same);
 
     /// <summary>n and k over the stack's spectral range, with the passivity check under them.</summary>
     private void PlotPlain()
@@ -403,12 +425,28 @@ public partial class MainWindow
 
     // ---- terms ---------------------------------------------------------------------------------
 
-    /// <summary>One change to the term list, written back as the material's terms.</summary>
-    private void EditTerms(Func<JsonArray, int> change, string? done)
+    /// <summary>The term editor's boxes and choices, put in the material; false if they are refused.</summary>
+    private bool ApplyTerm()
     {
-        if (_selectedMaterial is not { } name || _ws.Model.Material(name) is not { } mat || _terms is null) return;
+        if (_terms is null) return true;
+        _keepTermEditor = true;
+        try
+        {
+            return EditTerms(t =>
+            {
+                t[_termIndex] = BuildTerm();
+                return _termIndex;
+            }, _selectedMaterial is { } name ? $"'{name}' updated." : null);
+        }
+        finally { _keepTermEditor = false; }
+    }
+
+    /// <summary>One change to the term list, written back as the material's terms; false if it is refused.</summary>
+    private bool EditTerms(Func<JsonArray, int> change, string? done)
+    {
+        if (_selectedMaterial is not { } name || _ws.Model.Material(name) is not { } mat || _terms is null) return true;
         int select = _termIndex;
-        Try(() =>
+        bool taken = Try(() =>
         {
             var terms = (JsonArray)_terms.DeepClone();
             select = change(terms);
@@ -422,6 +460,7 @@ public partial class MainWindow
         _termIndex = select;
         _pendingLattice = null;
         ShowMaterialViews();
+        return taken;
     }
 
     private void ShowTerm()
@@ -431,6 +470,7 @@ public partial class MainWindow
         {
             var term = _terms is not null && _termIndex >= 0 && _termIndex < _terms.Count ? _terms[_termIndex]!.AsObject() : null;
             TermEditor.IsEnabled = term is not null;
+            Accepted("term");
             if (term is null) { LawFields(null); return; }
             TermLabelBox.Text = term["label"]?.GetValue<string>() ?? "";
             var law = MaterialParser.DispersionKeys.FirstOrDefault(term.ContainsKey);
@@ -462,7 +502,11 @@ public partial class MainWindow
     private static string Txt(JsonNode? n) => MaterialEditing.AsNumber(n) is { } d ? d.ToString("R", CultureInfo.InvariantCulture) : n?.ToJsonString() ?? "";
 
     /// <summary>One field per parameter of the law: a box for a number or word, a block of lines for a list.</summary>
-    private void LawFields(JsonObject? law) => LawFields(LawFieldsPanel, _lawBoxes, law, "Law_");
+    private void LawFields(JsonObject? law)
+    {
+        LawFields(LawFieldsPanel, _lawBoxes, law, "Law_");
+        foreach (var (_, box) in _lawBoxes) Field(box, "term", ApplyTerm, enterCommits: !box.AcceptsReturn);
+    }
 
     private static void LawFields(Panel panel, List<(LawField Field, TextBox Box)> boxes, JsonObject? law, string prefix)
     {
