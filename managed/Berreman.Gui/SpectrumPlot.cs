@@ -176,7 +176,8 @@ public sealed class SpectrumPlot : Control
             Text(context, t.Label, new Point(20, t.Position - 8), 0xFF404040);
         }
 
-        foreach (var t in _model.XTicks())
+        /* About a tick per 45 px, so the labels of a narrow plot (a Mueller panel) do not run together. */
+        foreach (var t in _model.XTicks(Math.Clamp((int)(_model.PlotWidth / 45), 3, 6)))
         {
             context.DrawLine(gridPen, new Point(t.Position, top), new Point(t.Position, bottom));
             Text(context, t.Label, new Point(t.Position - 16, bottom + 6), 0xFF404040);

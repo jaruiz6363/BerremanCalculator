@@ -324,6 +324,12 @@ internal static class StackModelTests
         var (tilt, az) = MaterialMatrix.AxisDirection(e[0], e[1], e[2]);
         Check(Math.Abs(tilt - 30) < 1e-12 && Math.Abs(az - 45) < 1e-12, "EulerForAxis and AxisDirection are inverses");
 
+        /* Euler (90, 90, 0) puts the axis along x: cos 90° is 6e-17, which must not make the azimuth
+           -0.000… and the table read "az -0°". */
+        var (tx, ax) = MaterialMatrix.AxisDirection(90, 90, 0);
+        string shown = ax.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+        Check(Math.Abs(tx - 90) < 1e-12 && shown == "0", $"an axis along x has azimuth 0, not -0 ({shown})");
+
         /* The rotated uniaxial tensor has its extraordinary eigenvector along that direction. */
         var m = MaterialMatrix.FromBlocks(MaterialMatrix.Diagonal(2.25, 2.25, 3.0), MaterialMatrix.Scalar(1)).Rotated(MaterialMatrix.EulerRotation(e[0], e[1], e[2]));
         double t = 30 * Math.PI / 180, a = 45 * Math.PI / 180;

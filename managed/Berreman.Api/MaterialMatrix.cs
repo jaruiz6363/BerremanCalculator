@@ -59,7 +59,10 @@ public sealed class MaterialMatrix
     {
         var r = EulerRotation(phiDeg, thetaDeg, psiDeg);
         double tilt = Math.Acos(Math.Clamp(r[2, 2], -1, 1)) * 180 / Math.PI;
-        double az = Math.Abs(r[0, 2]) < 1e-12 && Math.Abs(r[1, 2]) < 1e-12 ? 0 : Math.Atan2(r[1, 2], r[0, 2]) * 180 / Math.PI;
+        /* A component that is zero but for rounding (cos 90° is 6e-17) is taken as zero, so the
+           azimuth is not -0.000…, which reads as "-0°". */
+        double x = Math.Abs(r[0, 2]) < 1e-12 ? 0 : r[0, 2], y = Math.Abs(r[1, 2]) < 1e-12 ? 0 : r[1, 2];
+        double az = x == 0 && y == 0 ? 0 : Math.Atan2(y, x) * 180 / Math.PI;
         return (tilt, az);
     }
 

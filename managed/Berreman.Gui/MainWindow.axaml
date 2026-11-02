@@ -269,7 +269,7 @@
                   </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
                 <DataGridTextColumn Header="Optic axis" Binding="{Binding AxisText}" IsReadOnly="True" Width="126"/>
-                <DataGridTextColumn Header="Twist" Binding="{Binding TwistText}" IsReadOnly="True" Width="100"/>
+                <DataGridTextColumn Header="Twist" Binding="{Binding TwistText}" IsReadOnly="True" Width="116"/>
                 <DataGridTemplateColumn Header="" Width="36" IsReadOnly="True">
                   <DataGridTemplateColumn.CellTemplate>
                     <DataTemplate x:DataType="core:LayerRow">
@@ -510,7 +510,7 @@
           <TextBlock Text="x:" VerticalAlignment="Center" Margin="0,0,4,0"/>
           <ComboBox x:Name="XAxisBox" Width="210" Margin="0,0,12,0"/>
           <TextBlock Text="view:" VerticalAlignment="Center" Margin="0,0,4,0"/>
-          <ComboBox x:Name="ViewBox" Width="190" SelectedIndex="0">
+          <ComboBox x:Name="ViewBox" Width="250" SelectedIndex="0">
             <ComboBoxItem Content="curves"/>
             <ComboBoxItem Content="Mueller matrix, reflection"/>
             <ComboBoxItem Content="Mueller matrix, transmission"/>

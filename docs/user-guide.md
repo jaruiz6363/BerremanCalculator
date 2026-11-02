@@ -188,6 +188,112 @@ follow. In a crystal of higher symmetry the axes are fixed by the symmetry.
 Each axis is followed from point to point, so an azimuth can run past ±180°. An axis is a line, so
 −260° and 100° are the same direction. Under the plot, M at one wavenumber is printed in full.
 
+### A twisted layer: a cholesteric
+
+The sample *ting-2006 / cholesteric-fig2* is a cholesteric liquid crystal (Ting et al., *Opt.
+Express* 14, 5594 (2006)): a uniaxial layer, nₒ = 1.494 and nₑ = 1.616, whose optic axis lies in the
+plane of the layer and turns about the normal, one full turn per 338 nm, through 12 turns (4056 nm).
+The outer media have the mean index, 1.555, so that only the helix reflects.
+
+Here only R is ticked, and **mean**, the unpolarised reflectance (the mean of the two incident
+waves):
+
+![Ting's cholesteric: unpolarised R against wavelength, a band from about 505 to 546 nm.](images/cholesteric-band.png)
+
+The band lies between nₒP = 505.0 nm and nₑP = 546.2 nm. Its top is about 0.5 (0.495), because a
+cholesteric reflects only the circular polarization of its own handedness and passes the other.
+The *Twist* column says "338 nm right", and **Properties…** shows the twist:
+
+![The layer's properties: the optic axis along x (θ = 90°, φ = 90°), and the twist.](images/cholesteric-twist.png)
+
+- **Pitch** is one full turn, and **handedness** its sense.
+- **Starting angle** is added to φ at the layer's incident side.
+- **Evaluated as** says how finely the helix is cut: each sublayer is uniform, at the angle of its
+  midpoint. Here 128 per pitch. The status line reports how much doubling them changes R, T and A,
+  so you can tell whether the cut is fine enough.
+
+### The Mueller matrix
+
+**view: Mueller matrix, reflection** (or transmission) shows all sixteen elements at once, each
+divided by M11. M11 itself is the unpolarised reflectance. Here is Ga₂O₃ again, at 50°, 60° and 70°:
+
+![Ga₂O₃: the reflection Mueller matrix against wavenumber, one panel per element, one curve per angle.](images/mueller-matrix.png)
+
+An isotropic sample has only the two diagonal blocks (M12, M21, M22 and M33, M34, M43, M44). Everything in the
+off-diagonal blocks (M13, M14, M23, M24, M31, M32, M41, M42) is polarization conversion by the
+crystal. That is what generalized ellipsometry measures, and it is why Schubert's paper plots
+these elements. A single element can also be plotted with the others under **More…**.
+
+### Conoscopic maps
+
+**Analysis › Conoscopic map…** evaluates one wavelength over every direction of incidence and draws
+a quantity as a map. The radius is the angle of incidence, and the polar angle the sample's azimuth.
+Here a uniaxial plate cut across its optic axis (nₒ = 1.5, nₑ = 1.6, 60 µm, in oil of index 1.55) is
+seen between crossed polarizers at 600 nm, the classic conoscopic figure:
+
+![A uniaxial plate between crossed polarizers: dark rings and a dark cross.](images/conoscope.png)
+
+- **The dark cross** lies along the polarizer and the analyser. A wave polarized along either sees
+  no change of polarization, so the analyser stops it.
+- **The rings** are where the retardance between the ordinary and extraordinary waves is a whole
+  number of waves. It grows with the angle of incidence, so the rings crowd outwards.
+- **The centre** is dark: along the optic axis there is no birefringence.
+
+Choose the wavelength, the largest angle, the number of angles and azimuths, and **Compute**. The
+**show** list then changes the quantity without computing again: crossed or parallel polarizers
+(their angle under **polariser at**), or any quantity of **More…**. Hover over the map to read a
+value. **Save PNG…** and **Save CSV…** keep the map.
+
+### Field profile
+
+**Analysis › Field profile…** computes the fields against depth through the stack at one wavelength,
+angle and azimuth: |E|², its x, y and z parts, |H|², or Re E. Here is the quadrilayer at 830 nm and
+normal incidence. Depth runs from the first interface, and the dashed lines are the interfaces:
+
+![The quadrilayer: |E|² against depth, for the incident p wave.](images/field-profile.png)
+
+- **In front** (negative depth), the incident and reflected waves make a standing wave.
+- **In the stack,** |E|² is largest in the first SiOx layer, about 1.45. In the 20 nm MO layer
+  (from 143 to 163 nm) it is about a third of the incident wave's.
+- **In the aluminium** (from 306 nm), it falls to nothing within a few tens of nanometres.
+
+The fields are per unit incident amplitude, so |E|² = 1 is the incident wave's intensity. The same
+window shows the **index profile**, n and k along x, y and z through the stack, which is a quick
+check of what the light meets:
+
+![The quadrilayer's index profile: SiOx, the MO layer, SiOx, aluminium (k = 8.3), glass.](images/index-profile.png)
+
+### The stack as a file
+
+The **File** tab shows the stack exactly as it is saved (a JSON document, [the format](stack-format.md)).
+Edit it there if you prefer text: the change takes effect when you leave the text, and one Undo
+takes it back. An edit made in the tables shows here at once.
+
+![The File tab: the quadrilayer's stack file.](images/file-tab.png)
+
+**File › Save** (Ctrl+S) and **Save as…** write it as a `.berr` file, and **Open…** reads one back.
+**File › Export** writes the results as CSV, the plot as PNG, or a design report: the layers in
+physical units, and every material as a table over the sweep.
+
+### Importing a coating
+
+**File › Import a coating from OpticStudio or Optiland…** reads an OpticStudio coating file (such as
+COATING.DAT), an Optiland coating file, or an Optiland lens file, and lists its coatings:
+
+![An OpticStudio coating file with two coatings. Its thicknesses are in waves, counted at 550 nm.](images/coating-import.png)
+
+OpticStudio gives thicknesses in waves (optical thickness) or in micrometres. For waves, the dialog
+asks at which wavelength to count them, offering the sweep's first. **Import** replaces the
+stack's layers with the coating's, in physical thicknesses. The coating's materials are added under
+their names, and the sweep is kept:
+
+![The QWHQ coating imported: Al₂O₃, ZrO₂ and MgF₂, a quarter, a half and a quarter wave at 550 nm.](images/coating-imported.png)
+
+A quarter wave of Al₂O₃ (n = 1.666 at 550 nm) is 0.25 × 550 / 1.666 = 82.52 nm, as in the table.
+Once imported, a coating is a stack like any other: its layers can be made anisotropic, oriented
+and analysed. **File › Import a ThinFilmDesigner design (.tfd)…** does the same for a design from
+ThinFilmDesigner.
+
 ### Pictures
 
 The pictures in this guide are taken from the program itself, headless, by

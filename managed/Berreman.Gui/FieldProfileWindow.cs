@@ -21,7 +21,7 @@ public sealed class FieldProfileWindow : Window
     private readonly StackModel _model;
     private FieldProfileResult? _profile;
     private readonly SpectrumPlot _plot = new() { Name = "ProfilePlot", EmptyText = "Choose the point and Compute." };
-    private readonly ComboBox _quantity = new() { Name = "ProfileQuantityBox", Width = 230 };
+    private readonly ComboBox _quantity = new() { Name = "ProfileQuantityBox", Width = 290 };
     private readonly ComboBox _wave = new() { Name = "ProfileWaveBox", Width = 270 };
     private readonly TextBox _spectral, _incidence, _azimuth, _samples, _before, _after;
     private readonly TextBlock _status = new() { Name = "ProfileStatus", TextWrapping = TextWrapping.Wrap };

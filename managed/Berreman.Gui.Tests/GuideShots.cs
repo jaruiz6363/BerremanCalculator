@@ -30,6 +30,11 @@ public static partial class WindowTests
         GuideFirstEvaluation(session);
         GuideOrientation(session);
         GuideMaterials(session);
+        GuideCholesteric(session);
+        GuideMueller(session);
+        GuideConoscope(session);
+        GuideFieldProfile(session);
+        GuideFiles(session);
         foreach (var f in GuideFailures) Console.WriteLine($"  FAIL  {f}");
         Console.WriteLine($"{Directory.GetFiles(_guideDir, "*.png").Length} pictures, {GuideFailures.Count} failures");
         return GuideFailures.Count == 0 && !Failed ? 0 : 1;
@@ -233,6 +238,125 @@ public static partial class WindowTests
             });
         }
         finally { File.Delete(userFile); }
+    }
+
+    /* 4. A cholesteric: Ting's band, unpolarised, and the twist in the layer's properties. */
+    private static void GuideCholesteric(HeadlessUnitTestSession session)
+    {
+        WithWindow(session, w =>
+        {
+            w.LoadSample(Sample("ting-2006 / cholesteric-fig2"), "ting-2006 / cholesteric-fig2");
+            Pump(w);
+            Evaluate(w, "cholesteric");
+            Tick(w, "ShowT", false);
+            Tick(w, "ShowP", false);
+            Tick(w, "ShowS", false);
+            Tick(w, "ShowMean", true);
+            Pump(w);
+            Need(Find<SpectrumPlot>(w, "Plot").Series!.Any(s => s.Name.StartsWith("R mean")), $"the unpolarised R is plotted ({string.Join(", ", Find<SpectrumPlot>(w, "Plot").Series!.Select(s => s.Name))})");
+            Save(w, "cholesteric-band");
+            Find<DataGrid>(w, "LayerGrid").SelectedIndex = 0;
+            Click(w, Find<Button>(w, "PropertiesButton"));
+            var p = Dialog<LayerPropertiesDialog>(w);
+            Need(p is not null && Find<CheckBox>(p, "TwistedBox").IsChecked == true, "the layer's properties show its twist");
+            if (p is null) return;
+            Save(p, "cholesteric-twist");
+            p.Close();
+        });
+    }
+
+    /* 5. The Mueller matrix of Ga2O3 in reflection, every element against wavenumber. */
+    private static void GuideMueller(HeadlessUnitTestSession session)
+    {
+        WithWindow(session, w =>
+        {
+            w.LoadSample(Sample("schubert-2016 / ga2o3-010"), "schubert-2016 / ga2o3-010");
+            Pump(w);
+            Evaluate(w, "Mueller");
+            Find<ComboBox>(w, "ViewBox").SelectedIndex = 1;
+            Pump(w, 300);
+            Save(w, "mueller-matrix");
+        });
+    }
+
+    /* 6. A conoscopic map: a uniaxial plate cut across its axis, between crossed polarisers. */
+    private static void GuideConoscope(HeadlessUnitTestSession session)
+    {
+        WithWindow(session, w =>
+        {
+            w.LoadSample("""
+                { "format": "berreman-stack", "version": 1, "title": "Uniaxial plate cut across its optic axis",
+                  "units": { "length": "um", "spectral": "nm" },
+                  "materials": { "oil": { "n": 1.55 }, "crystal": { "no": 1.5, "ne": 1.6 } },
+                  "incident": { "material": "oil" }, "layers": [ { "material": "crystal", "thickness": 60 } ],
+                  "exit": { "material": "oil" }, "sweep": { "spectral": 600, "angle_deg": 0 } }
+                """, "plate");
+            Pump(w);
+            var c = w.OpenConoscope();
+            Pump(w, 200);
+            Find<ComboBox>(c, "ConoscopeQuantityBox").SelectedIndex = 0;
+            Click(c, Find<Button>(c, "ComputeMapButton"));
+            Need(PumpUntil(w, () => !c.IsComputing && c.View.Map is not null, 60), "the map is computed");
+            Save(c, "conoscope");
+            c.Close();
+        });
+    }
+
+    /* 7. The field profile of the quadrilayer, and its index profile. */
+    private static void GuideFieldProfile(HeadlessUnitTestSession session)
+    {
+        WithWindow(session, w =>
+        {
+            w.LoadSample(Sample("mansuripur-1990 / quadrilayer"), "mansuripur-1990 / quadrilayer");
+            Pump(w);
+            var f = w.OpenFieldProfile();
+            Pump(w, 200);
+            Click(f, Find<Button>(f, "ComputeProfileButton"));
+            Need(PumpUntil(w, () => f.Profile is not null && f.Plot.Series is { Count: > 0 }, 30), "the profile is computed");
+            Save(f, "field-profile");
+            Find<ComboBox>(f, "ProfileQuantityBox").SelectedIndex = 4;
+            Pump(w, 200);
+            Save(f, "index-profile");
+            f.Close();
+        });
+    }
+
+    /* 8. The File tab, and a coating imported from an OpticStudio coating file. */
+    private static void GuideFiles(HeadlessUnitTestSession session)
+    {
+        WithWindow(session, w =>
+        {
+            w.LoadSample(Sample("mansuripur-1990 / quadrilayer"), "mansuripur-1990 / quadrilayer");
+            Pump(w);
+            Evaluate(w, "file tab");
+            XAxis(w, "angle");
+            ShowTab(w, "File");
+            Save(w, "file-tab");
+        });
+        WithWindow(session, w =>
+        {
+            PumpUntil(w, () => !w.IsEvaluating && Find<SpectrumPlot>(w, "Plot").Series is { Count: > 0 });
+            var e = new System.Text.UnicodeEncoding(false, true);
+            byte[] dat = [.. e.GetPreamble(), .. e.GetBytes(string.Join("\r\n",
+                "MATE MGF2", ".400 1.38 0", ".800 1.38 0", "", "MATE ZRO2", ".400 2.10 0", ".800 2.05 0", "", "MATE AL2O3", ".400 1.67 0", ".800 1.66 0", "",
+                "COAT QWHQ", "AL2O3 .25", "ZRO2 .5", "MGF2 .25", "", "COAT QUARTER", "MGF2 .25", ""))];
+            var d = new CoatingImportDialog(dat, "COATING.DAT", 550, (0.4, 0.8));
+            var shown = d.ShowDialog<CoatingChoice?>(w);
+            Pump(d);
+            var list = Find<ListBox>(d, "CoatingList");
+            Need(list.ItemCount == 2, $"the file's two coatings are listed ({list.ItemCount})");
+            list.SelectedIndex = 0;
+            Pump(d);
+            Save(d, "coating-import");
+            Click(d, Find<Button>(d, "OkButton"));
+            Pump(w);
+            if (shown.Result is not { } coating) { Need(false, "the coating is imported"); return; }
+            w.ApplyCoating(coating);
+            Pump(w);
+            Evaluate(w, "imported coating");
+            Tick(w, "ShowT", false);
+            Save(w, "coating-imported");
+        });
     }
 
     private static IEnumerable<T> GetVisualDescendantsOf<T>(this Avalonia.Visual window) where T : Control =>
