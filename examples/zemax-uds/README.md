@@ -23,6 +23,7 @@ Parameter 0 chooses the film. Thicknesses and pitches are in micrometres, whatev
 | 5 | optic-axis azimuth (°) | handedness: +1 right, −1 left |
 | 6 | | starting azimuth of the director (°) |
 | 7 | | sublayers (0: 64 per pitch) |
+| 8 | | layer order: 0 first layer on the front face (−z), 1 on the back face (+z) |
 
 - **O-plate.** One uniaxial layer, with its optic axis tilted from the normal and turned in the
   plane of the film.
@@ -30,6 +31,7 @@ Parameter 0 chooses the film. Thicknesses and pitches are in micrometres, whatev
   the normal through the thickness. It is evaluated as uniform sublayers, each at its midpoint
   angle, as the BerremanCalculator program does. For a reflection band at λ₀ at normal incidence,
   choose the pitch so that λ₀ = P (nₒ + nₑ)/2. The band's width is about P (nₑ − nₒ).
+  The starting azimuth is on the face the layer order names (see [Layer order](#layer-order)).
 
 The surface itself is a standard conic: OpticStudio's curvature and conic columns.
 
@@ -43,6 +45,23 @@ The film's axes are fixed to the **surface**, not to the ray:
 
 Azimuths are measured in the tangent plane, from x_s towards y_s. A ray from either side sees the
 same physical film. On a flat surface x_s is simply the global X.
+
+### Layer order
+
+A film's layers run from one face to the other, so it matters which face holds the first layer.
+**You choose it with the layer-order parameter**; the DLL never infers it from the media either
+side:
+- **0** (the default): the first layer is on the **front** face, the one towards −z;
+- **1**: the first layer is on the **back** face, the one towards +z.
+
+This is not OpticStudio's rule for its own coatings, which decides the order from the media on
+either side. Here the order is a property of the film, so it is the same for a ray from either
+side and for a surface with glass on both sides. For a film on the back of a lens, where light
+goes from glass to air, choose 1 to put the first layer against the air.
+
+For a cholesteric, the first layer is where the starting azimuth applies. Its handedness is the
+film's own: a right-handed helix is right-handed whichever face it starts from. An O-plate is one
+uniform layer, so its order does not matter and it has no such parameter.
 
 ## What the DLL does for each real ray
 
@@ -189,7 +208,11 @@ incidence by the sample azimuth, so the two share only the engine.
 - **No film.** The field is the closed-form Fresnel transmission.
 - **An O-plate.** Several planes of incidence, both incident polarizations, and the ray from behind.
 - **A cholesteric.** Both handednesses, in and out of its band.
+- **Layer order.** A cholesteric with its first layer on the back face is the same film as one
+  started on the front face at the azimuth the helix has there, with the same hand. Both hands
+  are checked, with rays going each way.
 - **Geometry.** The intercept and normal on a sphere.
+- **The Visual Studio project.** It compiles the same files as CMake.
 
 The agreement is 10⁻¹² or better. The suite applies OpticStudio's step after the DLL, as described
 above, and compares the field OpticStudio would carry on with.

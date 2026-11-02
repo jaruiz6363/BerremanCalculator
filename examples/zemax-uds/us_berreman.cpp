@@ -27,6 +27,11 @@
  * pointing towards +z at the vertex, and y_s = z_s × x_s. Azimuths are measured in the tangent plane
  * from x_s towards y_s. A ray in either direction then sees the same physical film.
  *
+ * LAYER ORDER (parameter 8). Which face of the film its first layer is on: 0 the front face,
+ * towards -z (the default), 1 the back face, towards +z. It is set by the user, never inferred from
+ * the media either side. A cholesteric's starting azimuth is on that face; its handedness is the
+ * film's own and does not change. An O-plate is one uniform layer, and has no order.
+ *
  * UNITS. Film thickness and pitch in micrometres, whatever the lens units; angles in degrees.
  *
  * NOT HANDLED: a mirror surface (the ray is reflected, and its polarization is left to
@@ -72,7 +77,7 @@ C Scale(double s, C a) { return {s * a.re, s * a.im}; }
 /* ---- the parameters ------------------------------------------------------------------------- */
 
 enum { kModel = 0, kThickness = 1, kNo = 2, kNe = 3, kTilt = 4, kAzimuth = 5,
-       kPitch = 4, kHand = 5, kStart = 6, kSublayers = 7 };
+       kPitch = 4, kHand = 5, kStart = 6, kSublayers = 7, kOrder = 8 };
 
 /* ---- geometry: the conic, its normal, Snell's law -------------------------------------------- */
 
@@ -190,9 +195,11 @@ bool Transmission(const FIXED_DATA5* FD, double n1, double n2, double xi, const 
         {
             const double h = d / layers;
             const double along = (i + 0.5) * h;                 /* midpoint, along the ray */
-            const double depth = forward ? along : d - along;   /* from the film's +zs-entry face */
+            const double depth = forward ? along : d - along;   /* from the front face, along +zs */
+            /* The starting azimuth is on the first layer's face; the twist keeps the film's own hand. */
+            const double first = FD->param[kOrder] == 1.0 ? d : 0.0;
             const double hand = FD->param[kHand] < 0.0 ? -1.0 : 1.0;
-            const double phi = FD->param[kStart] * kDeg + hand * 2.0 * kPi * depth / FD->param[kPitch];
+            const double phi = FD->param[kStart] * kDeg + hand * 2.0 * kPi * (depth - first) / FD->param[kPitch];
             axis = std::cos(phi) * f.xs + std::sin(phi) * f.ys;
             w.thickness[(size_t)i] = h;
         }
@@ -304,9 +311,10 @@ extern "C" UDS_EXPORT int UserDefinedSurface5(USER_DATA* UD, FIXED_DATA5* FD)
     {
         const int model = (int)FD->param[kModel];
         const char* oplate[] = {"Model 0=O 1=Chol", "Film um", "n ordinary", "n extraord", "Axis tilt", "Axis azim"};
-        const char* chol[] = {"Model 0=O 1=Chol", "Film um", "n ordinary", "n extraord", "Pitch um", "Hand +1/-1", "Start azim", "Sublayers"};
+        const char* chol[] = {"Model 0=O 1=Chol", "Film um", "n ordinary", "n extraord", "Pitch um", "Hand +1/-1", "Start azim", "Sublayers",
+                              "1st layer 0=-z 1=+z"};
         UD->string[0] = '\0';
-        if (model == 1 && FD->numb >= 0 && FD->numb < 8) Name(UD, chol[FD->numb]);
+        if (model == 1 && FD->numb >= 0 && FD->numb < 9) Name(UD, chol[FD->numb]);
         else if (model != 1 && FD->numb >= 0 && FD->numb < 6) Name(UD, oplate[FD->numb]);
         return 0;
     }

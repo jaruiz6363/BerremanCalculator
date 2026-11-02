@@ -19,7 +19,9 @@
 //   3. The same O-plate, the ray going the other way (-z): the film is fixed to the surface.
 //   4. A cholesteric, right- and left-handed, inside and outside its reflection band.
 //   5. Geometry: the intercept and normal on a sphere.
-//   6. The Visual Studio project (us_berreman.vcxproj) compiles the same files as CMake.
+//   6. The layer order (parameter 8): a cholesteric's first layer on the back face is the same
+//      film as one whose starting azimuth is carried to the front face, keeping its hand.
+//   7. The Visual Studio project (us_berreman.vcxproj) compiles the same files as CMake.
 
 using System.Numerics;
 using System.Runtime.InteropServices;
@@ -65,7 +67,7 @@ internal static unsafe class UdsTests
     [DllImport("US_BERREMAN")]
     private static extern int UserDefinedSurface5(ref UserData ud, FixedData5* fd);
 
-    private sealed record Film(int Model, double Thickness, double No, double Ne, double A, double B, double C = 0, int Sublayers = 0);
+    private sealed record Film(int Model, double Thickness, double No, double Ne, double A, double B, double C = 0, int Sublayers = 0, int Order = 0);
 
     /// <summary>One ray through the DLL: direction d at the vertex, incoming field E; returns the
     /// outgoing field after OpticStudio's own interface step (<see cref="BareInterface"/>), and
@@ -77,7 +79,7 @@ internal static unsafe class UdsTests
         {
             fd->type = 5; fd->surf = 3; fd->wavelength = um; fd->n1 = n1; fd->n2 = n2; fd->cv = cv;
             fd->param[0] = f.Model; fd->param[1] = f.Thickness; fd->param[2] = f.No; fd->param[3] = f.Ne;
-            fd->param[4] = f.A; fd->param[5] = f.B; fd->param[6] = f.C; fd->param[7] = f.Sublayers;
+            fd->param[4] = f.A; fd->param[5] = f.B; fd->param[6] = f.C; fd->param[7] = f.Sublayers; fd->param[8] = f.Order;
             fd->Exr = e[0].Real; fd->Exi = e[0].Imaginary; fd->Eyr = e[1].Real; fd->Eyi = e[1].Imaginary; fd->Ezr = e[2].Real; fd->Ezi = e[2].Imaginary;
             var ud = new UserData { x = x, y = y, z = 0, l = d[0], m = d[1], n = d[2] };
             int status = UserDefinedSurface5(ref ud, fd);
@@ -221,6 +223,27 @@ internal static unsafe class UdsTests
         Check(worstC < 1e-11, $"a cholesteric, both hands, in and out of its band: the DLL's field is the API's ({worstC:G3})");
         Check(contrast > 10, $"in the band at normal incidence it passes one circular polarisation and not the other (ratio {contrast:G3}: ten pitches reflect about 95% of one hand)");
 
+        /* 6. Layer order. With the first layer on the back face (z = d) the director is
+              phi0 + h 360 (z - d) / P, which is the front-face film started at phi0 - h 360 d / P.
+              3.7 um is not a whole number of pitches, so the two orders are different films. */
+        {
+            double worstOrder = 0, apart = 0;
+            const double d = 3.7, pitch = 0.38, phi0 = 20;
+            foreach (var hand in new[] { +1, -1 })
+                foreach (var sign in new[] { +1, -1 })
+                {
+                    var (dir, s, p, _) = Ray(30, 20, sign);
+                    var input = Field(p, s, 1 / Math.Sqrt(2), new Complex(0, 1 / Math.Sqrt(2)));
+                    var (back, _, st, _) = Trace(new Film(1, d, 1.5, 1.7, pitch, hand, phi0, 640, Order: 1), n1, n2, um, dir, input);
+                    var (front, _, _, _) = Trace(new Film(1, d, 1.5, 1.7, pitch, hand, phi0 - hand * 360 * d / pitch, 640), n1, n2, um, dir, input);
+                    var (plain, _, _, _) = Trace(new Film(1, d, 1.5, 1.7, pitch, hand, phi0, 640), n1, n2, um, dir, input);
+                    worstOrder = Math.Max(worstOrder, st == 0 ? Diff(back, front) : double.PositiveInfinity);
+                    apart = Math.Max(apart, Diff(back, plain));
+                }
+            Check(worstOrder < 1e-12, $"layer 1 on the back face: the start is carried to that face and the hand is kept, both hands, rays both ways ({worstOrder:G3})");
+            Check(apart > 1e-3, $"and it is a different film from layer 1 on the front face ({apart:G3})");
+        }
+
         /* 5. Geometry on a sphere of radius 20: the intercept lies on it, the normal is radial. */
         {
             double cv = 0.05, x0 = 3, y0 = -2;
@@ -237,7 +260,7 @@ internal static unsafe class UdsTests
     }
 
     /// <summary>
-    /// 6. The Visual Studio project for optical engineers and the CMake build that is tested and
+    /// 7. The Visual Studio project for optical engineers and the CMake build that is tested and
     /// shipped compile the same .cpp files, and every header the project lists exists.
     /// </summary>
     private static void ProjectMatchesCMake()
