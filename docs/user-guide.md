@@ -24,7 +24,8 @@ reproduced.
 
 The window shows the stack being edited on the left and its results on the right. Every change
 is evaluated as you make it (**Analysis > Evaluate after every change**, on by default); **F5**
-evaluates on demand. Every edit can be undone (**Ctrl+Z**) and redone (**Ctrl+Y**).
+evaluates on demand. Every edit, on any tab, can be undone with Edit > Undo (**Ctrl+Z**) and
+redone (**Ctrl+Y**); there is one Undo for the whole window.
 
 ### Files
 
@@ -178,8 +179,8 @@ material is used.
 - **Save to my materials** keeps the selected material, in any form, for use in other stacks.
 
 The selected material has two pages. Every change on them is one undoable edit: **Apply** puts
-what you typed into the stack, and the **Undo** beside it takes back the last change (as Ctrl+Z
-does). A material that would not evaluate is refused, with the reason in the status line.
+what you typed into the stack, and Edit > Undo (Ctrl+Z) takes it back. A material that would not
+evaluate is refused, with the reason in the status line.
 
 - **Material.** The material as an index per direction:
   - **Directions:** the same in every direction (isotropic); ordinary and extraordinary
@@ -224,7 +225,7 @@ layer count, so it does not replace an error message.
 ### The File tab
 
 The stack exactly as it is saved. Edits made in the tables show here at once; an edit made here
-is taken by **Apply**, as one undoable change, and **Undo** beside it takes back the last change.
+is taken by **Apply**, as one undoable change.
 The file is written in a standard layout: comments in a hand-written file are not kept (the notes
 field is the place for them), and keys this version does not know are.
 

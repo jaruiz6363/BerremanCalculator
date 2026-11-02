@@ -200,13 +200,11 @@ public partial class MainWindow : Window
                 _ws.Edit(m => m.Material(name)!.Spec = spec);
             }, $"'{name}' updated.");
         };
-        UndoMaterialButton.Click += (_, _) => _ws.Undo();
         InitMaterialEditor();
         InitResults();
 
         // ---- the file tab ----------------------------------------------------------------------
         ApplyTextButton.Click += (_, _) => Try(() => _ws.EditText(Editor.Text ?? ""), "The file text is applied.");
-        UndoTextButton.Click += (_, _) => _ws.Undo();
         Tabs.SelectionChanged += (_, e) => { if (e.Source == Tabs) Editor.Text = _ws.Text; };
 
         // ---- keys ------------------------------------------------------------------------------
@@ -299,7 +297,7 @@ public partial class MainWindow : Window
             LayerGrid.ItemsSource = _ws.Rows();
             if (selected >= 0 && selected < m.Layers.Count) LayerGrid.SelectedIndex = selected;
 
-            foreach (var b in new Control[] { UndoItem, UndoButton, UndoPlainButton, UndoTermButton, UndoMaterialButton, UndoTextButton }) b.IsEnabled = _ws.CanUndo;
+            foreach (var b in new Control[] { UndoItem, UndoButton }) b.IsEnabled = _ws.CanUndo;
             RedoItem.IsEnabled = RedoButton.IsEnabled = _ws.CanRedo;
             SummaryText.Text = $"{m.Layers.Count} layer{(m.Layers.Count == 1 ? "" : "s")}, {_ws.TotalThickness.ToString("0.###", Inv)} {(m.LengthUnit == "um" ? "µm" : m.LengthUnit)} in all";
 

@@ -9,6 +9,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Berreman.Api;
@@ -81,6 +82,13 @@ public static class WindowTests
             if (done()) return true;
         }
         return false;
+    }
+
+    /// <summary>Edit > Undo, the one Undo of the window.</summary>
+    private static void EditUndo(MainWindow window)
+    {
+        Find<MenuItem>(window, "UndoItem").RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+        Pump(window);
     }
 
     private static void Click(Window window, Control control)
@@ -285,9 +293,9 @@ public static class WindowTests
             Find<TextBox>(w, "PlainN0").Text = "1.0003";
             Click(w, Find<Button>(w, "ApplyPlainButton"));
             h.Expect(w.Workspace.Model.Material("air")!.Spec["n"]!.GetValue<double>() == 1.0003, "Apply writes n");
-            Click(w, Find<Button>(w, "UndoPlainButton"));
+            EditUndo(w);
             h.Expect(w.Workspace.Model.Material("air")!.Spec["n"]!.GetValue<double>() == 1 && Find<TextBox>(w, "PlainN0").Text == "1",
-                     "the Undo beside Apply takes it back, and the box follows");
+                     "Edit > Undo takes it back, and the box follows");
 
             /* Uniaxial, with a formula for the extraordinary index. */
             Find<ComboBox>(w, "PlainAxesBox").SelectedIndex = 1;
@@ -302,7 +310,7 @@ public static class WindowTests
                      $"Apply writes an ordinary constant and an extraordinary Cauchy law ({air.ToJsonString()})");
             h.Expect(Find<SpectrumPlot>(w, "PlainPlot").Series?.Select(s => s.Name).SequenceEqual(["n ordinary", "n extraordinary"]) == true, "the plot shows both indices");
             Shot(w, "materials-plain");
-            Click(w, Find<Button>(w, "UndoPlainButton"));
+            EditUndo(w);
 
             /* Ga2O3 is a list of terms: the page says so, and Advanced edits it. */
             list.SelectedIndex = w.Workspace.Model.Materials.FindIndex(m => m.Name == "Ga2O3");

@@ -10,7 +10,7 @@
 //                       whether it is passive and reciprocal;
 //             Text      the material as the file writes it.
 // Every change goes through the workspace like any other edit, so it is checked, can be undone
-// (each page has an Undo beside its Apply), and redraws everything.
+// with Edit > Undo, and redraws everything.
 
 using System.Globalization;
 using System.Numerics;
@@ -52,7 +52,6 @@ public partial class MainWindow
         // ---- the material page ---------------------------------------------------------------
         PlainAxesBox.SelectionChanged += (_, _) => { if (!_showingMaterial) ChangePlainAxes(); };
         ApplyPlainButton.Click += (_, _) => ApplyPlain();
-        UndoPlainButton.Click += (_, _) => _ws.Undo();
         MakeSimpleButton.Click += (_, _) => MakeSimple();
         PlainPlot.EmptyText = "No material, or it cannot be evaluated in the stack's range.";
         PlainPlot.YTitle = "n";
@@ -98,7 +97,6 @@ public partial class MainWindow
             t[_termIndex] = BuildTerm();
             return _termIndex;
         }, "The term is applied.");
-        UndoTermButton.Click += (_, _) => _ws.Undo();
 
         // ---- response ----------------------------------------------------------------------------
         ResponseQuantityBox.SelectedIndex = 0;

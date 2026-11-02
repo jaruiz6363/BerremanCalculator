@@ -329,7 +329,6 @@
                         <StackPanel x:Name="PlainValuesPanel" Spacing="12"/>
                         <StackPanel Orientation="Horizontal" Spacing="6">
                           <Button x:Name="ApplyPlainButton" Content="Apply" FontWeight="SemiBold"/>
-                          <Button x:Name="UndoPlainButton" Content="Undo" ToolTip.Tip="Undo the last change (Ctrl+Z)"/>
                         </StackPanel>
                       </StackPanel>
                     </ScrollViewer>
@@ -427,7 +426,6 @@
                         </ScrollViewer>
                         <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="6" Margin="0,6,0,0">
                           <Button x:Name="ApplyTermButton" Content="Apply term" FontWeight="SemiBold"/>
-                          <Button x:Name="UndoTermButton" Content="Undo" ToolTip.Tip="Undo the last change (Ctrl+Z)"/>
                         </StackPanel>
                       </Grid>
                     </TabItem>
@@ -472,7 +470,6 @@
                                    Text="The material as the stack file writes it: n, eps, no/ne, nx/ny/nz, a dispersion law, terms, or a model. docs/stack-format.md lists every form."/>
                         <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="6" Margin="0,6,0,0">
                           <Button x:Name="ApplyMaterialButton" Content="Apply" FontWeight="SemiBold"/>
-                          <Button x:Name="UndoMaterialButton" Content="Undo" ToolTip.Tip="Undo the last change (Ctrl+Z)"/>
                         </StackPanel>
                         <TextBox x:Name="MaterialSpecBox" AcceptsReturn="True" TextWrapping="NoWrap"
                                  FontFamily="Cascadia Mono,Consolas,Menlo,DejaVu Sans Mono,monospace" FontSize="12"/>
@@ -490,7 +487,6 @@
           <DockPanel Margin="4">
             <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="6" Margin="4">
               <Button x:Name="ApplyTextButton" Content="Apply" FontWeight="SemiBold"/>
-              <Button x:Name="UndoTextButton" Content="Undo" ToolTip.Tip="Undo the last change (Ctrl+Z)"/>
               <TextBlock Classes="hint" VerticalAlignment="Center"
                          Text="The stack exactly as it is saved (docs/stack-format.md). Edit it here and Apply, or edit the tables and watch it follow."/>
             </StackPanel>
