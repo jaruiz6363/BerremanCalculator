@@ -153,6 +153,17 @@ internal static unsafe class UdsTests
 
     public static void Run()
     {
+        /* The surface DLL comes from the engine's CMake build. Someone changing only the C# code,
+           with a ready-made engine library and no C++ build, has none: the checks that call it are
+           then skipped, saying so, rather than ending the whole suite. */
+        if (!NativeLibrary.TryLoad("US_BERREMAN", typeof(UdsTests).Assembly, null, out var surface))
+        {
+            Console.WriteLine("  SKIPPED  the OpticStudio surface's checks: US_BERREMAN is not built (it comes from the engine's CMake build, docs/building.md)");
+            ProjectMatchesCMake();
+            return;
+        }
+        NativeLibrary.Free(surface);
+
         const double um = 0.6, n1 = 1.0, n2 = 1.5;
 
         /* A ray in the plane at azimuth β (from global X), at θ in medium n1, going +z (sign = +1)

@@ -4,6 +4,10 @@ A Berreman 4×4 transfer-matrix evaluator for stratified media: plane waves thro
 homogeneous layers whose materials may be isotropic, uniaxial, biaxial or described by a general
 dielectric tensor. It is for Windows, macOS on Apple Silicon and Linux.
 
+**Installing.** Installers for all three are published with each release, on the
+[Releases](https://github.com/jaruiz6363/BerremanCalculator/releases) page; nothing needs to be
+built. To change the program, see [building from source](docs/building.md).
+
 It is a **simulation engine**: given a stack, it computes what light does in it. It does not
 optimise thicknesses or material properties. The engine is a native library with a plain C
 interface ([berreman.h](native/include/berreman.h)), so other programs can call it as well as

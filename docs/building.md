@@ -1,15 +1,23 @@
 # Building from source
 
 This page builds BerremanCalculator from its source code: the native engine, the three programs
-(the GUI, the command line `berreman` and the MCP server), and the tests. You do not need it to
-use the program: the installers include everything. You need it to change the program, to check a
-change, or to run it on a system without an installer.
+(the GUI, the command line `berreman` and the MCP server), and the tests.
+
+**To use the program, you do not need to build it.** Installers for Windows, macOS (Apple Silicon)
+and Linux are published with each release, on the
+[Releases](https://github.com/jaruiz6363/BerremanCalculator/releases) page. They include
+everything: the three programs, the engine, .NET, the samples, the documents and the examples. You
+need this page only to change the program, or to run it on a system that has no installer.
 
 There are two parts, built in this order:
 1. **The engine** (`native/`), in C++, built with CMake. It is a shared library,
    `berreman_native` (`.dll` on Windows, `.so` on Linux, `.dylib` on macOS).
 2. **The programs and tests** (`managed/`), in C#, built with the .NET SDK. Each program copies the
-   engine library from `build/` beside itself, so the engine must be built first.
+   engine library from `build/` beside itself, so the engine must be there first.
+
+**Changing only the C# code** (the GUI, the command line, the API, the MCP server) needs no C++
+compiler and no CMake. Use the engine library an installer already put on your computer instead of
+building it: see [Changing only the C# code](#changing-only-the-c-code).
 
 ## What to install
 
@@ -95,6 +103,32 @@ assistant, not typed into.
 
 The built programs are also in `managed/<project>/bin/Release/net8.0/`, for example
 `managed/Berreman.Cli/bin/Release/net8.0/berreman.exe`, and can be run from there.
+
+## Changing only the C# code
+
+Skip the C++ compiler, CMake and step 2. Copy the engine library from an installed program into a
+folder `build` in the source folder, then carry on with step 3:
+
+| | The engine library | Where an installed program has it |
+|---|---|---|
+| Windows | `berreman_native.dll` | the folder you installed it in. By default that is `%LOCALAPPDATA%\Programs\BerremanCalculator` (installed for you) or `C:\Program Files\BerremanCalculator` (for all users) |
+| macOS | `libberreman_native.dylib` | `BerremanCalculator.app/Contents/MacOS` (in Finder, Show Package Contents) |
+| Linux | `libberreman_native.so` | inside the AppImage: `./BerremanCalculator-<version>-x86_64.AppImage --appimage-extract`, then `squashfs-root/usr/lib/berremancalculator` |
+
+For example, on Windows, in a Command Prompt (`cmd`):
+
+```
+mkdir build
+copy "%LOCALAPPDATA%\Programs\BerremanCalculator\berreman_native.dll" build\
+dotnet build managed/BerremanCalculator.sln -c Release
+```
+
+- **Use the engine of the same version as your source.** The C interface between the engine and
+  the C# code may still change between versions. If they do not match, the programs say so: "ABI
+  mismatch: the native engine is version …, this program expects …".
+- **The tests skip the OpticStudio surface.** Its DLL is built only by the engine's CMake build, so
+  Berreman.Native.Tests prints `SKIPPED  the OpticStudio surface's checks` and runs all its other
+  checks. The GUI tests run as usual.
 
 ## Optional parts
 
