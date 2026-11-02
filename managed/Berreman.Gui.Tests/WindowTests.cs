@@ -464,6 +464,19 @@ public static partial class WindowTests
             w.MoreQuantities = [];
             Pump(w);
 
+            /* In dB: the R and T curves become 10 log10 of themselves, on a dB axis. */
+            var plotDb = Find<SpectrumPlot>(w, "Plot");
+            var rFraction = plotDb.Series!.First(x => x.Name.StartsWith("R_0")).Y;
+            Click(w, Find<CheckBox>(w, "ShowDb"));
+            Pump(w);
+            var rDb = plotDb.Series!.FirstOrDefault(x => x.Name.StartsWith("R_0 (dB)"));
+            h.Expect(rDb is { Axis: "dB" } && plotDb.Series!.All(x => x.Axis == "dB")
+                     && rDb.Y.Zip(rFraction).All(z => Math.Abs(z.First - 10 * Math.Log10(Math.Max(z.Second, 1e-30))) < 1e-12),
+                     $"in dB, R and T are drawn as 10 log10 on a dB axis ({string.Join(", ", plotDb.Series!.Take(4).Select(x => $"{x.Name} [{x.Axis}]"))})");
+            Click(w, Find<CheckBox>(w, "ShowDb"));
+            Pump(w);
+            h.Expect(plotDb.Series!.All(x => x.Axis is null), "and as fractions again when it is unticked");
+
             /* More…'s names keep their underscores. A string label is shown by an AccessText, which
                hides "_" as an access key though its Text keeps it; a plain TextBlock shows it. */
             var dialog = new QuantityDialog([], ("p", "s"));

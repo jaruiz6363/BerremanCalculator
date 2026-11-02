@@ -100,7 +100,7 @@ public partial class MainWindow : Window
         BrowseSamplesItem.Click += async (_, _) => await BrowseSamples();
 
         // ---- results ---------------------------------------------------------------------------
-        foreach (var box in new[] { ShowR, ShowT, ShowA, ShowP, ShowS, ShowMean, ShowEllipsometry })
+        foreach (var box in new[] { ShowR, ShowT, ShowA, ShowDb, ShowP, ShowS, ShowMean, ShowEllipsometry })
             box.IsCheckedChanged += (_, _) => Redraw();
         _autoTimer.Tick += async (_, _) => { _autoTimer.Stop(); await Evaluate(auto: true); };
 

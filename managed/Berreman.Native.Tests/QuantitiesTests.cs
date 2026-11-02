@@ -36,6 +36,22 @@ internal static class QuantitiesTests
         Check(Math.Abs(rot[1, 1] - Math.Cos(2 * t)) < 1e-14 && Math.Abs(rot[1, 2] + Math.Sin(2 * t)) < 1e-14
               && Math.Abs(rot[2, 1] - Math.Sin(2 * t)) < 1e-14 && Math.Abs(rot[3, 3] - 1) < 1e-14, "a rotator by t turns (S1, S2) by 2t");
 
+        /* Decibels: 10 log10 of the power fraction; nothing at all is -300 dB, not minus infinity. */
+        Check(Math.Abs(Quantities.Decibels(0.5) + 3.0102999566398) < 1e-12 && Quantities.Decibels(1) == 0 && Quantities.Decibels(0.001) == -30,
+              "dB: a half is -3.0103 dB, all is 0 dB, a thousandth -30 dB");
+        Check(Quantities.Decibels(0) == -300 && double.IsNaN(Quantities.Decibels(double.NaN)), "dB: zero power is -300 dB, and NaN stays NaN");
+        {
+            var radome = Evaluator.Evaluate(ApiTests.Sample("anshin-2024/sandwich-radome.berr"));
+            double worstDb = 0;
+            foreach (var p in radome.Points)
+                foreach (var (name, k) in new[] { ("R_p_dB", 0), ("T_p_dB", 1), ("R_s_dB", 3), ("T_s_dB", 4) })
+                    worstDb = Math.Max(worstDb, Math.Abs(Quantities.Find(name)!.Value(p) - 10 * Math.Log10(p.Power[k])));
+            var tMean = Quantities.Find("T_mean_dB")!.Value(radome.Points[0]);
+            Check(worstDb < 1e-12 && Math.Abs(tMean - 10 * Math.Log10((radome.Points[0].Power[1] + radome.Points[0].Power[4]) / 2)) < 1e-12,
+                  $"R and T in dB are 10 log10 of R and T, for every point of the radome wall ({worstDb:G2})");
+            Check(Quantities.Find("T_p_dB")!.Group == "dB", "and they have an axis of their own, dB");
+        }
+
         /* An isotropic sample: the standard form with this program's Ψ and Δ. */
         var doc = StackDocument.Parse("""
             { "format": "berreman-stack", "version": 1, "units": { "length": "nm", "spectral": "nm" },

@@ -217,6 +217,21 @@ The *Twist* column says "338 nm right", and **Properties…** shows the twist:
   midpoint. Here 128 per pitch. The status line reports how much doubling them changes R, T and A,
   so you can tell whether the cut is fine enough.
 
+### Microwaves and dB
+
+The program works the same at any wavelength, so a microwave radome wall is a stack like any other.
+The sample *anshin-2024 / sandwich-radome* is a three-layer wall (two 1.8 mm fibreglass skins and a
+6.9 mm foam core, Anshin et al., RMC 2024). Its lengths are in mm and its spectral axis in GHz,
+both chosen under *Lengths in* and *Spectral axis in*. Microwave engineers read transmission in
+decibels, so here only T and s are ticked, with **in dB**:
+
+![A radome wall: s transmission in dB against frequency, at 0°, 20°, 40° and 60°.](images/radome-db.png)
+
+At 60° the s wave loses up to 8.65 dB, at 19.5 GHz; at normal incidence it loses at most 2.98 dB,
+at 24 GHz. The same values are quantities of their own, R_p_dB, T_s_dB,
+T_mean_dB and so on, for **More…**, the command line (`berreman evaluate wall.berr --quantities
+T_p_dB,T_s_dB`) and the MCP server.
+
 ### The Mueller matrix
 
 **view: Mueller matrix, reflection** (or transmission) shows all sixteen elements at once, each
@@ -531,6 +546,8 @@ field is the place for them), and keys this version does not know are.
   azimuth. Every other combination of sweep values is its own curve, labelled by its values.
 - **Show** chooses the curves: R, T and A; the p and s waves (modes 0 and 1 with anisotropic outer
   media) and their mean, which is the unpolarised value; Ψ and Δ, on their own axis in degrees.
+  **in dB** draws R and T in decibels, 10 log₁₀ of the power fraction, on a dB axis: 0 dB is
+  everything and −3 dB half. A fraction of exactly zero is drawn at −300 dB.
 - **More…** adds any other quantity, each unit on its own y axis. The quantities are:
   - generalised ellipsometry (Ψ_ps, Δ_ps, Ψ_sp, Δ_sp);
   - the conversion reflectances R_ps and R_sp;

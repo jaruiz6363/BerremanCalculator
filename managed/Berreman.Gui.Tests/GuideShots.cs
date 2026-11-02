@@ -31,6 +31,7 @@ public static partial class WindowTests
         GuideOrientation(session);
         GuideMaterials(session);
         GuideCholesteric(session);
+        GuideMicrowave(session);
         GuideMueller(session);
         GuideConoscope(session);
         GuideFieldProfile(session);
@@ -262,6 +263,26 @@ public static partial class WindowTests
             if (p is null) return;
             Save(p, "cholesteric-twist");
             p.Close();
+        });
+    }
+
+    /* 4b. Microwaves: Anshin's radome wall against GHz, T in dB. */
+    private static void GuideMicrowave(HeadlessUnitTestSession session)
+    {
+        WithWindow(session, w =>
+        {
+            w.LoadSample(Sample("anshin-2024 / sandwich-radome"), "anshin-2024 / sandwich-radome");
+            Pump(w);
+            Evaluate(w, "radome");
+            XAxis(w, "frequency");
+            Tick(w, "ShowR", false);
+            Tick(w, "ShowT", true);
+            Tick(w, "ShowP", false);
+            Tick(w, "ShowS", true);
+            Tick(w, "ShowDb", true);
+            Pump(w);
+            Need(Find<SpectrumPlot>(w, "Plot").Series!.All(s => s.Axis == "dB"), "the radome's T is drawn in dB");
+            Save(w, "radome-db");
         });
     }
 

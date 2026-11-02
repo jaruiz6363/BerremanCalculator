@@ -52,7 +52,7 @@ this way ([the material model](docs/material-model.md)).
   - the Mueller matrix as sixteen panels;
   - conoscopic maps;
   - field and index profiles through the stack.
-  It evaluates as you edit, with undo and redo, and plots R, T, A and Ψ/Δ. It imports
+  It evaluates as you edit, with undo and redo, and plots R, T, A (as fractions or in dB) and Ψ/Δ. It imports
   ThinFilmDesigner designs, and coatings from OpticStudio coating files and from Optiland.
 
 

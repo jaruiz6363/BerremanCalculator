@@ -501,7 +501,8 @@
           <TextBlock Text="Show:" VerticalAlignment="Center" Margin="0,0,8,0"/>
           <CheckBox x:Name="ShowR" Content="R" IsChecked="True" Margin="0,0,8,0"/>
           <CheckBox x:Name="ShowT" Content="T" IsChecked="True" Margin="0,0,8,0"/>
-          <CheckBox x:Name="ShowA" Content="A" Margin="0,0,20,0"/>
+          <CheckBox x:Name="ShowA" Content="A" Margin="0,0,8,0"/>
+          <CheckBox x:Name="ShowDb" Content="in dB" Margin="0,0,20,0" ToolTip.Tip="R and T in decibels: 10 log10 of the power fraction, so 0 dB is everything and -3 dB half"/>
           <CheckBox x:Name="ShowP" Content="p" IsChecked="True" Margin="0,0,8,0" ToolTip.Tip="The incident p wave; with an anisotropic incident or exit medium, its mode 0"/>
           <CheckBox x:Name="ShowS" Content="s" IsChecked="True" Margin="0,0,8,0" ToolTip.Tip="The incident s wave; with an anisotropic incident or exit medium, its mode 1"/>
           <CheckBox x:Name="ShowMean" Content="mean" Margin="0,0,20,0"/>

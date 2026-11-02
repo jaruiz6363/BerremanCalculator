@@ -20,6 +20,9 @@ public sealed record PlotChoice(bool R = true, bool T = true, bool A = false,
                                 bool P = true, bool S = true, bool Mean = false,
                                 bool Ellipsometry = false)
 {
+    /// <summary>R and T in decibels, 10 log10, on a dB axis, instead of as fractions. A is not changed.</summary>
+    public bool Decibels { get; init; }
+
     /// <summary>More quantities by name (Api/Quantities.cs), beside the checkboxes'.</summary>
     public IReadOnlyList<string> More { get; init; } = [];
 
@@ -118,6 +121,13 @@ public static class ResultPlot
         void Add(bool on, string q, int offset)
         {
             if (!on) return;
+            if (choice.Decibels && offset < 2)
+            {
+                if (choice.P) quantities.Add(($"{q}_{a} (dB)", p => Quantities.Decibels(p.Power[offset]), "dB"));
+                if (choice.S) quantities.Add(($"{q}_{b} (dB)", p => Quantities.Decibels(p.Power[3 + offset]), "dB"));
+                if (choice.Mean) quantities.Add(($"{q} mean (dB)", p => Quantities.Decibels((p.Power[offset] + p.Power[3 + offset]) / 2), "dB"));
+                return;
+            }
             if (choice.P) quantities.Add(($"{q}_{a}", p => p.Power[offset], null));
             if (choice.S) quantities.Add(($"{q}_{b}", p => p.Power[3 + offset], null));
             if (choice.Mean) quantities.Add(($"{q} mean", p => (p.Power[offset] + p.Power[3 + offset]) / 2, null));

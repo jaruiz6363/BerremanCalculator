@@ -48,6 +48,15 @@ public static class Quantities
             list.Add(new($"{what[k]}_{b}", "fraction", $"{desc[k]}, {b} incident", p => p.Power[3 + kk]));
             list.Add(new($"{what[k]}_mean", "fraction", $"{desc[k]}, unpolarised", p => (p.Power[kk] + p.Power[3 + kk]) / 2));
         }
+        /* Reflectance and transmittance in decibels, as microwave engineers read them: 10 log10 of
+           the power fraction, so 0 dB is everything and -3 dB half (see Decibels). */
+        for (int k = 0; k < 2; ++k)
+        {
+            int kk = k;
+            list.Add(new($"{what[k]}_{a}_dB", "dB", $"{desc[k]} in dB, 10 log10, {a} incident", p => Decibels(p.Power[kk])));
+            list.Add(new($"{what[k]}_{b}_dB", "dB", $"{desc[k]} in dB, 10 log10, {b} incident", p => Decibels(p.Power[3 + kk])));
+            list.Add(new($"{what[k]}_mean_dB", "dB", $"{desc[k]} in dB, 10 log10, unpolarised", p => Decibels((p.Power[kk] + p.Power[3 + kk]) / 2)));
+        }
         list.Add(new($"R_{a}{b}", "fraction", $"conversion reflectance |r_{a}{b}|², {a} in, {b} out (same medium)", p => Sq(p.Jones[1])));
         list.Add(new($"R_{b}{a}", "fraction", $"conversion reflectance |r_{b}{a}|², {b} in, {a} out (same medium)", p => Sq(p.Jones[2])));
         list.Add(new("Psi", "degrees", "Ψ from r_pp/r_ss = tan Ψ e^{iΔ}", p => p.Ellipsometry().Psi));
@@ -93,6 +102,12 @@ public static class Quantities
             return -1;
         }
     }
+
+    /// <summary>
+    /// A power fraction in decibels, 10 log10 x. A fraction of exactly zero (no power at all) is shown
+    /// as -300 dB, 10^-30, rather than minus infinity, which no plot or table can hold; NaN stays NaN.
+    /// </summary>
+    public static double Decibels(double fraction) => 10 * Math.Log10(Math.Max(fraction, 1e-30));
 
     private static double Sq(Complex z) => z.Real * z.Real + z.Imaginary * z.Imaginary;
     private static double Phase(Complex z) => z.Phase * 180 / Math.PI;

@@ -163,7 +163,7 @@ public partial class MainWindow
             R: ShowR.IsChecked == true, T: ShowT.IsChecked == true, A: ShowA.IsChecked == true,
             P: ShowP.IsChecked == true, S: ShowS.IsChecked == true, Mean: ShowMean.IsChecked == true,
             Ellipsometry: ShowEllipsometry.IsChecked == true)
-        { More = _moreQuantities, Axis = axis };
+        { More = _moreQuantities, Axis = axis, Decibels = ShowDb.IsChecked == true };
         var curves = ResultPlot.Build(_result, choice);
         Plot.XTitle = curves.XTitle;
         Plot.YTitle = curves.YTitle;
@@ -183,12 +183,12 @@ public sealed class QuantityDialog : Window
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         var boxes = new List<CheckBox>();
         var list = new StackPanel { Spacing = 2 };
-        string[] groupTitles = ["fraction", "degrees", "amplitude", "normalised"];
+        string[] groupTitles = ["fraction", "dB", "degrees", "amplitude", "normalised"];
         foreach (var group in Quantities.All(waves.A, waves.B).GroupBy(q => q.Group).OrderBy(g => Array.IndexOf(groupTitles, g.Key)))
         {
             list.Children.Add(new TextBlock
             {
-                Text = group.Key switch { "fraction" => "Powers", "degrees" => "Angles (ellipsometry, phases)", "amplitude" => "Amplitudes", _ => "Mueller elements, divided by M11" },
+                Text = group.Key switch { "fraction" => "Powers", "dB" => "Powers in dB (10 log10)", "degrees" => "Angles (ellipsometry, phases)", "amplitude" => "Amplitudes", _ => "Mueller elements, divided by M11" },
                 FontWeight = FontWeight.SemiBold, Margin = new Thickness(0, 8, 0, 2),
             });
             var wrap = new WrapPanel();
