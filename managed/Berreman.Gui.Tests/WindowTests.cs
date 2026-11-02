@@ -33,7 +33,7 @@ public sealed class Harness
     }
 }
 
-public static class WindowTests
+public static partial class WindowTests
 {
     public static bool Failed;
 
@@ -460,6 +460,16 @@ public static class WindowTests
             w.MoreQuantities = [];
             Pump(w);
 
+            /* More…'s names keep their underscores. A string label is shown by an AccessText, which
+               hides "_" as an access key though its Text keeps it; a plain TextBlock shows it. */
+            var dialog = new QuantityDialog([], ("p", "s"));
+            _ = dialog.ShowDialog<List<string>?>(w);
+            Pump(dialog);
+            var shown = dialog.GetVisualDescendants().OfType<CheckBox>().Where(b => b.Name is "Q_R_ps" or "Q_|r_ps|")
+                .Select(b => b.GetVisualDescendants().OfType<TextBlock>().FirstOrDefault() is { } t and not Avalonia.Controls.Primitives.AccessText ? t.Text : "(an access-key label)").ToList();
+            h.Expect(shown.SequenceEqual(["R_ps", "|r_ps|"]), $"More… shows R_ps and |r_ps| as written ({string.Join(", ", shown)})");
+            dialog.Close();
+
             /* Zoom: drag a rectangle over the plot, then double-click to see everything again. */
             var plot = Find<SpectrumPlot>(w, "Plot");
             Point At(double fx, double fy) => plot.TranslatePoint(new Point(plot.Bounds.Width * fx, plot.Bounds.Height * fy), w)!.Value;
@@ -773,8 +783,9 @@ public static class WindowTests
             var shown2 = d2.ShowDialog<CoatingChoice?>(w);
             Pump(d2);
             var mediaBox = Find<CheckBox>(d2, "MediaBox");
-            h.Expect(mediaBox.IsEffectivelyVisible && mediaBox.IsChecked == true && (mediaBox.Content as string)!.Contains("n=1.52"),
-                     $"an Optiland coating offers its media ({mediaBox.Content})");
+            var mediaText = (mediaBox.Content as TextBlock)?.Text ?? "";   /* a TextBlock, so "_" in a name shows */
+            h.Expect(mediaBox.IsEffectivelyVisible && mediaBox.IsChecked == true && mediaText.Contains("n=1.52"),
+                     $"an Optiland coating offers its media ({mediaText})");
             Click(d2, Find<Button>(d2, "OkButton"));
             Pump(w);
             if (shown2.Result is not { } opt) { h.Expect(false, "the Optiland dialog returned a coating"); return; }

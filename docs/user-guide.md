@@ -20,6 +20,113 @@ The samples from the literature are installed beside the programs, under `sample
 names the paper it reproduces. [samples/README.md](../samples/README.md) says how closely each is
 reproduced.
 
+## Getting started
+
+This chapter walks through the program with a sample from the literature: Mansuripur's
+magneto-optic quadrilayer (*J. Appl. Phys.* **67**, 6466 (1990)). The pictures are taken from the
+program itself (see [Pictures](#pictures) at the end of this chapter).
+
+### The window
+
+The program opens with a new stack: air, one 100 nm layer of index 1.38, and glass. It evaluates
+it straight away.
+
+![The window as it opens: the stack on the left, its results on the right.](images/window-new.png)
+
+- **Left: the stack.** The tabs are *Stack* (the layers, the outer media and the sweep), *Materials*
+  (what each material is) and *File* (the stack file as text).
+- **Right: the results.** Tick what to plot (R, T, A, the two incident waves, Ψ and Δ), choose the
+  x axis and the view, and press **Evaluate (F5)**. With *Analysis > Evaluate after every change*
+  (on by default), every edit is evaluated as you make it.
+- **Bottom: the status line.** It says what just happened, or why a value was refused. On the right
+  it gives the number of points, the time taken, and the layers and total thickness.
+
+The two incident waves are labelled **p (mode 0)** and **s (mode 1)**. With isotropic media they
+are the p and s waves. An anisotropic incident or exit medium has its own two modes, which are not
+p and s; the labels then name them 0 and 1.
+
+### Opening a sample
+
+**File > Browse samples…** lists the samples. Type in the box to search their titles, sources and
+notes. Each one shows its source and its notes: what the paper gives, and anything it leaves out.
+
+![The sample browser, searched for "quadrilayer".](images/sample-browser.png)
+
+**Open** opens a copy, so the sample itself is never changed. Save as… keeps your copy.
+
+### Evaluating
+
+The quadrilayer is SiOx, a 20 nm magneto-optic (MO) layer, SiOx and aluminium, on glass, at
+830 nm, for angles of incidence from 0° to 85°. Its sweep is one wavelength and many angles, so
+the x axis is the angle of incidence.
+
+![The quadrilayer: R and T against the angle of incidence.](images/quadrilayer-angle.png)
+
+R_p (blue) and R_s (red) are reflectances. T is zero: 500 nm of aluminium lets nothing through.
+
+### Choosing what to plot
+
+R, T, A, Ψ and Δ have boxes of their own. Everything else is under **More…**: the reflection and
+transmission powers and amplitudes, the phases, the cross-polarised terms and the Mueller
+elements. Hover over a name to see what it is.
+
+![More…: |r_ps| and |r_sp| chosen.](images/more-quantities.png)
+
+The MO layer converts some of an incident p wave into s, and s into p. |r_ps| is the amplitude of
+the s wave reflected from a p wave of amplitude 1, and |r_sp| the other way round. Here R and T
+are unticked, so the plot shows only the conversion:
+
+![|r_ps| and |r_sp| against angle. The two are equal at every angle, as the paper says.](images/rps-untilted.png)
+
+### Turning a layer
+
+The table has three angles for each anisotropic layer, φ, θ and ψ. They turn the material from
+its own axes into the stack's. Isotropic layers have none, since turning them changes nothing. The
+*Optic axis* column says where the material's own z axis ends up. For the MO layer, that is the
+direction of the magnetization.
+
+Typing φ = 20°, θ = 39°, ψ = 30° into the MO layer's row tilts its magnetization 39° from the
+normal:
+
+![The MO layer tilted 39°: |r_ps| and |r_sp| are smaller, and no longer equal.](images/rps-tilted.png)
+
+**What to expect.** The tilt hardly changes R; the change is in the conversion:
+
+| At normal incidence | Not tilted | Tilted 39° |
+|---|---|---|
+| R_p | 0.05527 | 0.05523 |
+| \|r_ps\| | 0.01016 | 0.00790 |
+
+- **Why R hardly moves.** The MO layer's ε has −4.90 + 19.4i on its diagonal and only about 0.43
+  off it. R, T and A come almost entirely from the diagonal, which is the same along every axis,
+  so turning the layer leaves it unchanged. Only the small off-diagonal part turns. That part is
+  the magneto-optic effect, and it shows in r_ps and r_sp, the Kerr effect.
+- **Why |r_ps| falls by cos 39°.** At normal incidence only the component of the magnetization
+  along the normal acts (the polar Kerr effect): 0.01016 × cos 39° = 0.00790.
+- **Why |r_ps| and |r_sp| part.** At oblique incidence the in-plane part of the tilted
+  magnetization adds the longitudinal and transverse effects, which act differently on p and s.
+
+**Some angles change nothing, correctly.** This material's only special direction is its
+magnetization, its own z axis:
+- **ψ** turns the material about that axis, so it changes nothing here;
+- **φ with θ = 0** turns it about the normal, which also changes nothing at normal incidence.
+
+Only θ, the tilt, changes the results here. A material with three different principal indices
+(biaxial) responds to all three angles.
+
+**Properties…** (or the … button at the end of the row) shows the same angles, with a second way
+to set them: give the direction of the optic axis, as a tilt from the normal and an azimuth, and
+**Set the angles** fills in φ and θ. It also sets a twist, for a cholesteric.
+
+![Layer properties: the Euler angles, or the optic axis's tilt and azimuth.](images/layer-properties.png)
+
+### Pictures
+
+The pictures in this guide are taken from the program itself, headless, by
+`dotnet run --project managed/Berreman.Gui.Tests -c Release -- --guide docs/images`. Each one is
+taken after driving the window as a person would, so they can be taken again whenever the window
+changes.
+
 ## The GUI
 
 The window shows the stack being edited on the left and its results on the right. Every change

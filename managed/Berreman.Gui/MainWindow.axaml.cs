@@ -91,7 +91,7 @@ public partial class MainWindow : Window
         var samples = SampleCatalog.List(SampleCatalog.DefaultRoot);
         SamplesItem.ItemsSource = samples.Select(s =>
         {
-            var item = new MenuItem { Header = s.Name };
+            var item = new MenuItem { Header = new TextBlock { Text = s.Name } };   /* a string header hides "_" */
             item.Click += async (_, _) => await OpenSample(s);
             return item;
         }).ToList();

@@ -112,7 +112,7 @@
       </Grid>
     </Border>
 
-    <Grid ColumnDefinitions="11*,Auto,9*">
+    <Grid ColumnDefinitions="6*,Auto,4*">
       <TabControl x:Name="Tabs" Grid.Column="0" Margin="4,0,0,0">
 
         <!-- ===== Stack ========================================================================= -->
@@ -223,53 +223,54 @@
                       AutoGenerateColumns="False" CanUserSortColumns="False" CanUserReorderColumns="False"
                       GridLinesVisibility="All" HeadersVisibility="Column" SelectionMode="Extended" IsReadOnly="False">
               <DataGrid.Columns>
-                <DataGridTextColumn Header="#" Binding="{Binding Number}" IsReadOnly="True" Width="44"/>
-                <DataGridTemplateColumn Header="Material" Width="140" IsReadOnly="True">
+                <DataGridTextColumn Header="#" Binding="{Binding Number}" IsReadOnly="True" Width="36"/>
+                <DataGridTemplateColumn Header="Material" Width="130" IsReadOnly="True">
                   <DataGridTemplateColumn.CellTemplate>
                     <DataTemplate x:DataType="core:LayerRow">
                       <ComboBox ItemsSource="{Binding MaterialOptions}" SelectedItem="{Binding Material}" HorizontalAlignment="Stretch" Margin="2,0"/>
                     </DataTemplate>
                   </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <!-- What the material is: its type, read from its matrix, and how it disperses. -->
-                <DataGridTemplateColumn Header="Type" Width="170" IsReadOnly="True">
+                <!-- What the material is: its type, read from its matrix, and how it disperses. It
+                     takes the width the other columns leave, so the table fits the pane. -->
+                <DataGridTemplateColumn Header="Type" Width="*" MinWidth="110" IsReadOnly="True">
                   <DataGridTemplateColumn.CellTemplate>
                     <DataTemplate x:DataType="core:LayerRow">
                       <TextBlock Text="{Binding TypeText}" ToolTip.Tip="{Binding MaterialSummary}" VerticalAlignment="Center" Margin="4,0" TextTrimming="CharacterEllipsis"/>
                     </DataTemplate>
                   </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="Thickness" Width="120" IsReadOnly="True">
+                <DataGridTemplateColumn Header="Thickness" Width="104" IsReadOnly="True">
                   <DataGridTemplateColumn.CellTemplate>
                     <DataTemplate x:DataType="core:LayerRow">
                       <TextBox Classes="cell" Text="{Binding ThicknessText, UpdateSourceTrigger=LostFocus}"/>
                     </DataTemplate>
                   </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="φ (°)" Width="62" IsReadOnly="True">
+                <DataGridTemplateColumn Header="φ (°)" Width="56" IsReadOnly="True">
                   <DataGridTemplateColumn.CellTemplate>
                     <DataTemplate x:DataType="core:LayerRow">
                       <TextBox Classes="cell" Text="{Binding Phi, UpdateSourceTrigger=LostFocus}" IsVisible="{Binding Oriented}"/>
                     </DataTemplate>
                   </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="θ (°)" Width="62" IsReadOnly="True">
+                <DataGridTemplateColumn Header="θ (°)" Width="56" IsReadOnly="True">
                   <DataGridTemplateColumn.CellTemplate>
                     <DataTemplate x:DataType="core:LayerRow">
                       <TextBox Classes="cell" Text="{Binding Theta, UpdateSourceTrigger=LostFocus}" IsVisible="{Binding Oriented}"/>
                     </DataTemplate>
                   </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="ψ (°)" Width="62" IsReadOnly="True">
+                <DataGridTemplateColumn Header="ψ (°)" Width="56" IsReadOnly="True">
                   <DataGridTemplateColumn.CellTemplate>
                     <DataTemplate x:DataType="core:LayerRow">
                       <TextBox Classes="cell" Text="{Binding Psi, UpdateSourceTrigger=LostFocus}" IsVisible="{Binding Oriented}"/>
                     </DataTemplate>
                   </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTextColumn Header="Optic axis" Binding="{Binding AxisText}" IsReadOnly="True" Width="128"/>
+                <DataGridTextColumn Header="Optic axis" Binding="{Binding AxisText}" IsReadOnly="True" Width="126"/>
                 <DataGridTextColumn Header="Twist" Binding="{Binding TwistText}" IsReadOnly="True" Width="100"/>
-                <DataGridTemplateColumn Header="" Width="40" IsReadOnly="True">
+                <DataGridTemplateColumn Header="" Width="36" IsReadOnly="True">
                   <DataGridTemplateColumn.CellTemplate>
                     <DataTemplate x:DataType="core:LayerRow">
                       <Button Classes="layerProperties" Content="…" Padding="8,0" HorizontalAlignment="Center" ToolTip.Tip="Layer properties"/>
@@ -507,7 +508,7 @@
           <CheckBox x:Name="ShowEllipsometry" Content="Ψ, Δ" Margin="0,0,12,0"/>
           <Button x:Name="MoreQuantitiesButton" Content="More…" Margin="0,0,12,0"/>
           <TextBlock Text="x:" VerticalAlignment="Center" Margin="0,0,4,0"/>
-          <ComboBox x:Name="XAxisBox" Width="140" Margin="0,0,12,0"/>
+          <ComboBox x:Name="XAxisBox" Width="210" Margin="0,0,12,0"/>
           <TextBlock Text="view:" VerticalAlignment="Center" Margin="0,0,4,0"/>
           <ComboBox x:Name="ViewBox" Width="190" SelectedIndex="0">
             <ComboBoxItem Content="curves"/>

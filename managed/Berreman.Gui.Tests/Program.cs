@@ -6,9 +6,13 @@
 using Avalonia.Headless;
 using Berreman.Gui.Tests;
 
+using var session = HeadlessUnitTestSession.GetOrStartForAssembly(typeof(WindowTests).Assembly);
+
+/* --guide <folder>: the user guide's screen captures instead of the tests (GuideShots.cs). */
+if (args is ["--guide", var guideDir]) return WindowTests.Guide(session, guideDir);
+
 Console.WriteLine("=== Berreman.Gui: the window, headless ===");
 var h = new Harness();
-using var session = HeadlessUnitTestSession.GetOrStartForAssembly(typeof(WindowTests).Assembly);
 
 WindowTests.TheWindowOpensAndEvaluatesTheNewStack(h, session);
 WindowTests.LayersAreInsertedMovedAndUndone(h, session);

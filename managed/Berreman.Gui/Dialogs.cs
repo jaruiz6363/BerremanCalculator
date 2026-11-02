@@ -405,7 +405,8 @@ public sealed class CoatingImportDialog : Window
                     var c = OptilandCoatingReader.Read(text, it.Index, gridUm);
                     if (c.Incident is not null || c.Exit is not null)
                     {
-                        media.Content = $"Also use the coating's media: {c.Incident?.Name ?? "(the stack's own)"} and {c.Exit?.Name ?? "(the stack's own)"}";
+                        /* A TextBlock: material names may contain "_", which a string label hides. */
+                        media.Content = new TextBlock { Text = $"Also use the coating's media: {c.Incident?.Name ?? "(the stack's own)"} and {c.Exit?.Name ?? "(the stack's own)"}" };
                         media.IsVisible = true;
                     }
                     detail.Text = string.Join(". ", c.Notes.Select(n => char.ToUpper(n[0]) + n[1..]));

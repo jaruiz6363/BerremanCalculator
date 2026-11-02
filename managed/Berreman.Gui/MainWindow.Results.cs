@@ -199,7 +199,8 @@ public sealed class QuantityDialog : Window
             {
                 var box = new CheckBox
                 {
-                    Name = $"Q_{q.Name}", Content = q.Name, Tag = q.Name, Margin = new Thickness(0, 0, 10, 0),
+                    /* A TextBlock, not the string: a string label hides "_" as an access key. */
+                    Name = $"Q_{q.Name}", Content = new TextBlock { Text = q.Name }, Tag = q.Name, Margin = new Thickness(0, 0, 10, 0),
                     MinWidth = group.Key == "normalised" ? 60 : 110,
                     IsChecked = chosen.Contains(q.Name, StringComparer.OrdinalIgnoreCase),
                 };
