@@ -3,12 +3,11 @@
 This page builds BerremanCalculator from its source code: the native engine, the three programs
 (the GUI, the command line `berreman` and the MCP server), and the tests.
 
-**To use the program, you will not need to build it.** Installers for Windows, macOS (Apple
-Silicon) and Linux will be published on the
-[Releases](https://github.com/jaruiz6363/BerremanCalculator/releases) page from the first release.
+**To use the program, you do not need to build it.** Installers for Windows, macOS (Apple Silicon)
+and Linux are on the [Releases](https://github.com/jaruiz6363/BerremanCalculator/releases) page.
 They include everything: the three programs, the engine, .NET, the samples, the documents and the
-examples. There is no release yet, so for now this page is how to get the program. After the first
-release, you need it only to change the program, or to run it on a system that has no installer.
+examples. You need this page only to change the program, or to run it on a system that has no
+installer.
 
 There are two parts, built in this order:
 1. **The engine** (`native/`), in C++, built with CMake. It is a shared library,
