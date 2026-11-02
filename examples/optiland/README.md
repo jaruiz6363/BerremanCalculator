@@ -14,10 +14,10 @@ parameters, orientation and layer order, and it gives the same results.
 
 ## What you need
 
-- Python 3.10 or later, with Optiland (checked with 0.6.3 on Python 3.12) and NumPy:
-  `pip install optiland`. The newest Python can be ahead of Optiland's dependencies: on 3.15,
-  `pip install optiland` fails because its `vtk` dependency has no package for 3.15 yet. Use an
-  earlier Python, such as 3.12, if that happens.
+- Python with Optiland (checked with 0.6.3) and NumPy: `pip install optiland`. The tests pass on
+  Python 3.12, 3.13 and 3.14. On 3.15, `pip install optiland` fails before this example is
+  reached: Optiland's `vtk` dependency has packages up to 3.14 only (2 November 2026). Use 3.14
+  or earlier until it has one.
 - The BerremanCalculator engine, `berreman_native.dll` (`libberreman_native.so` on Linux,
   `libberreman_native.dylib` on macOS). The program installs it in its own folder, and this file
   finds it there (see [Finding the engine](#finding-the-engine)).
