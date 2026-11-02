@@ -1,0 +1,15 @@
+{
+  "format": "berreman-stack",
+  "version": 1,
+  "title": "Light incident from a biaxial crystal onto another, differently oriented",
+  "source": "G. D. Landry and T. A. Maldonado, J. Opt. Soc. Am. A 12, 2048-2063 (1995), Section 4D (numerical example) and Fig. 4",
+  "notes": "Both regions have principal indices 1.2, 1.7 and 2.2, turned by the paper's Euler angles (x convention, Appendix A): region 1 (90, 70, -90) degrees, region 2 (30, 30, 30). This program's Euler convention, R = Rz(phi) Rx(theta) Rz(psi), gives the paper's laboratory tensors (its Eqs. 34-35) to their last printed digit. No layers: the interface alone. The paper's incident wave is the inner sheet at 30 degrees, an e wave with n_i = 1.42439, so xi = k_x/k_0 = 1.42439 sin 30 = 0.712195; at that xi the other incident mode is region 1's o wave. Wavelength 1 um (the paper normalises to k_0 = 1). The paper uses exp(jwt); its coefficients here are real, so the convention does not change them.",
+  "units": { "length": "um", "spectral": "um" },
+  "materials": {
+    "crystal": { "biaxial": { "x": { "n": 1.2 }, "y": { "n": 1.7 }, "z": { "n": 2.2 } } }
+  },
+  "incident": { "material": "crystal", "euler_deg": [90, 70, -90] },
+  "layers": [],
+  "exit": { "material": "crystal", "euler_deg": [30, 30, 30] },
+  "sweep": { "spectral": 1, "xi": 0.712195 }
+}

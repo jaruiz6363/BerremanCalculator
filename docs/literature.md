@@ -214,6 +214,36 @@ examples. Its closed forms:
 | Eigenvalues of an arbitrary biaxial medium | 21–22 | Closed form |
 | A continuously twisted biaxial slab at normal incidence | 28–35 | Closed form, stated to be exact |
 
+### Landry and Maldonado (1995): light incident from a crystal
+
+G. D. Landry and T. A. Maldonado, "Complete method to determine transmission and reflection
+characteristics at a planar interface between arbitrarily oriented biaxial media," *J. Opt. Soc.
+Am. A* **12**, 2048–2063 (1995). University of Texas at Arlington.
+
+**The only worked example in hand with an anisotropic incident medium.** Two biaxial crystals meet
+at a plane, each oriented by Euler angles, so the incident waves are the crystal's own modes and
+neither is p or s.
+- **Conventions.** Time dependence exp(jωt), the opposite of ours. Its example is lossless with no
+  total reflection, so every coefficient is real and the convention changes nothing. Euler angles in
+  Goldstein's x convention: the paper's angles in R = Rz(φ) Rx(θ) Rz(ψ), applied as R ε Rᵀ, give its
+  laboratory tensors (Eqs. 34–35) to their printed digits. So its angles are ours as they stand.
+- **Field normalisation.** The incident wave has |E| = 1; each outgoing wave is E ê, with ê a unit
+  vector whose sign the paper chooses. The engine's modes have unit ψ instead. The test therefore
+  compares field vectors per unit incident field, which no choice of sign or normalisation changes.
+- **What it prints (Section 4D).** Principal indices 1.2, 1.7 and 2.2 in both regions, Euler angles
+  (90°, 70°, −90°) and (30°, 30°, 30°), incidence at 30° on region 1's inner sheet (an e wave,
+  n_i = 1.42439). Then every intermediate result: the k_z of all waves (Eq. 38), the indices, the
+  field and displacement directions (Eqs. 40–42), the characteristic angles and the four amplitudes
+  (Eq. 43).
+- **Sample and test.** [landry-1995/biaxial-biaxial.berr](../samples/literature/landry-1995/biaxial-biaxial.berr):
+  - its tensors from its Euler angles: to 5 × 10⁻⁶;
+  - the four outgoing fields as vectors: to 1 × 10⁻⁵;
+  - the incident field's direction: to 3 × 10⁻⁶;
+  - R and T against its power balance (Eq. 33) from its own amplitudes and angles: to 1 × 10⁻⁵.
+- **Not used yet.** Fig. 7, the coefficients against angle from −30° to 30° for both incident
+  sheets, is printed only as curves. Section 5 treats the isotropic–biaxial, biaxial–isotropic and
+  isotropic–isotropic limits, with examples in Figs. 8–11.
+
 ### Schubert et al. (2016): monoclinic β-Ga₂O₃
 
 M. Schubert, R. Korlacki, S. Knight, T. Hofmann, S. Schöche, V. Darakchieva, E. Janzén,

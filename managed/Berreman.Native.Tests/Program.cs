@@ -114,6 +114,7 @@ Berreman.Native.Tests.McpToolTests.Run();
 Berreman.Native.Tests.DesignReportTests.Run();
 Berreman.Native.Tests.UdsTests.Run();
 Berreman.Native.Tests.CoatingImportTests.Run();
+Berreman.Native.Tests.LandryTests.Run();
 Berreman.Native.Tests.NoticeTests.Run();
 checks += Berreman.Native.Tests.ApiTests.Checks;
 failures += Berreman.Native.Tests.ApiTests.Failures;
@@ -157,6 +158,8 @@ checks += Berreman.Native.Tests.CoatingImportTests.Checks;
 failures += Berreman.Native.Tests.CoatingImportTests.Failures;
 checks += Berreman.Native.Tests.UdsTests.Checks;
 failures += Berreman.Native.Tests.UdsTests.Failures;
+checks += Berreman.Native.Tests.LandryTests.Checks;
+failures += Berreman.Native.Tests.LandryTests.Failures;
 checks += Berreman.Native.Tests.NoticeTests.Checks;
 failures += Berreman.Native.Tests.NoticeTests.Failures;
 

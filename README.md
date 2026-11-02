@@ -48,11 +48,11 @@ Two examples put a Berreman film on a surface of a lens, evaluated ray by ray in
 trace: an [OpticStudio user-defined surface](examples/zemax-uds/README.md) and an
 [Optiland coating](examples/optiland/README.md).
 
-Eighteen literature samples are reproduced: Mansuripur (1990), nine closed forms, three of Passler
+Nineteen literature samples are reproduced: Mansuripur (1990), nine closed forms, three of Passler
 and Paarmann's (2017) infrared Otto-geometry examples, Ting's (2006) cholesteric, three microwave
-radome walls (Anshin 2024; Peshlov 2006, against measurements), and monoclinic β-Ga₂O₃ (Schubert
-et al. 2016). See
-[samples](samples/README.md).
+radome walls (Anshin 2024; Peshlov 2006, against measurements), monoclinic β-Ga₂O₃ (Schubert
+et al. 2016), and light incident from one biaxial crystal onto another (Landry and Maldonado
+1995). See [samples](samples/README.md).
 
 The tests come before each part of the engine, as listed in the [engine design](docs/engine-design.md).
 
