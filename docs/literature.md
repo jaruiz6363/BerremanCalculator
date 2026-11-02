@@ -1,6 +1,6 @@
 # Examples from the literature
 
-The papers whose results the program is to reproduce, what each gives, and whether its inputs are
+The papers the program's results are checked against, what each gives, and whether its inputs are
 complete. Examples whose inputs are incomplete are still useful; the assumptions made to complete
 them are written beside the result.
 

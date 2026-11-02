@@ -4,15 +4,22 @@ A Berreman 4×4 transfer-matrix evaluator for stratified media: plane waves thro
 homogeneous layers whose materials may be isotropic, uniaxial, biaxial or described by a general
 dielectric tensor. It is for Windows, macOS on Apple Silicon and Linux.
 
-It **evaluates** a given stack. It does not optimise thicknesses or material properties. Its purpose
-is to reproduce examples from the literature, and every example it ships is checked against the
-paper it comes from.
-
-One shared API drives three programs:
+It is a **simulation engine**: given a stack, it computes what light does in it. It does not
+optimise thicknesses or material properties. The engine is a native library with a plain C
+interface ([berreman.h](native/include/berreman.h)), so other programs can call it as well as
+these three, which share one C# API:
 
 - **the GUI**;
 - **the command line**, for scripts;
 - **an MCP server**, so an AI assistant can set up and evaluate stacks with the program.
+
+Two examples put the engine inside a lens design program, where it evaluates an anisotropic film
+on a surface ray by ray in a polarization ray trace: an
+[OpticStudio user-defined surface](examples/zemax-uds/README.md) and an
+[Optiland coating](examples/optiland/README.md).
+
+**Its results are checked against the literature.** Every sample it ships reproduces a published
+example, and a test compares it with the paper's numbers.
 
 **Status.** The native engine computes any stack of layers, of any material, between any outer
 media. The incident medium must be lossless. It returns:
@@ -44,9 +51,6 @@ this way ([the material model](docs/material-model.md)).
   It evaluates as you edit, with undo and redo, and plots R, T, A and Ψ/Δ. It imports
   ThinFilmDesigner designs, and coatings from OpticStudio coating files and from Optiland.
 
-Two examples put a Berreman film on a surface of a lens, evaluated ray by ray in a polarization ray
-trace: an [OpticStudio user-defined surface](examples/zemax-uds/README.md) and an
-[Optiland coating](examples/optiland/README.md).
 
 Nineteen literature samples are reproduced: Mansuripur (1990), nine closed forms, three of Passler
 and Paarmann's (2017) infrared Otto-geometry examples, Ting's (2006) cholesteric, three microwave

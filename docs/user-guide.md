@@ -7,6 +7,11 @@ fields against depth. From those it draws spectra, Mueller-matrix panels, conosc
 field profiles. It never changes the stack: it evaluates, and ThinFilmDesigner, which shares its
 design files, optimises.
 
+The engine itself is a native library that other programs can call. The examples
+[examples/zemax-uds](../examples/zemax-uds/README.md) and
+[examples/optiland](../examples/optiland/README.md) use it inside OpticStudio and Optiland, to put an
+anisotropic film on a lens surface in a polarization ray trace.
+
 A stack is described by a **stack file**, a JSON document ([the format](stack-format.md)). All
 three programs read the same file:
 

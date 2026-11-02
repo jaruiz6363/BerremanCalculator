@@ -50,9 +50,9 @@ for Windows, macOS (Apple Silicon) and Linux are built by scripts kept in a sepa
 
 ## Verification
 
-The purpose of the program is to reproduce examples from the literature, so verification is built
-around them. Each example is a sample file and a test, with the paper's numbers and how closely
-they are matched. A second, independent calculation is used where one exists. For isotropic stacks,
+The program is a simulation engine, and its results are trusted because they are checked against
+the literature, so verification is built around published examples. Each example is a sample file
+and a test, with the paper's numbers and how closely they are matched. A second, independent calculation is used where one exists. For isotropic stacks,
 the 4×4 result must agree with the 2×2 (Abelès) result.
 
 ## Exchange with other programs
