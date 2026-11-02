@@ -28,7 +28,25 @@ public sealed record FieldProfileResult(
 public static class FieldProfile
 {
     public static readonly string[] QuantityNames = ["|E|²", "|Ex|², |Ey|², |Ez|²", "|H̃|²", "Re Ex, Re Ey, Re Ez"];
-    public static readonly string[] WaveNames = ["incident p (mode 0)", "incident s (mode 1)", "unpolarised (mean of the two intensities)"];
+    /// <summary>
+    /// The two incident waves' names: p and s when both outer media are isotropic; otherwise the
+    /// incident medium's own modes, which are neither, numbered 0 and 1 as the engine orders them.
+    /// </summary>
+    public static string[] WaveNames(bool isotropic) => isotropic
+        ? ["incident p", "incident s", "unpolarised (mean of the two intensities)"]
+        : ["incident mode 0", "incident mode 1", "unpolarised (mean of the two intensities)"];
+
+    /// <summary>Whether both outer media are isotropic at this wavelength, so the waves are p and s.
+    /// Turning an isotropic medium changes nothing, so its Euler angles do not matter.</summary>
+    public static bool OuterMediaIsotropic(StackDocument doc, double wavelengthNm)
+    {
+        try
+        {
+            return doc.Materials[doc.Incident.Material].At(wavelengthNm, 0).IsIsotropic(out _, out _)
+                && doc.Materials[doc.Exit.Material].At(wavelengthNm, 0).IsIsotropic(out _, out _);
+        }
+        catch (StackFormatException) { return true; }
+    }
 
     /// <summary>
     /// The stack evaluated at one spectral value, one angle (or ξ) and one azimuth, at

@@ -41,9 +41,10 @@ it straight away.
 - **Bottom: the status line.** It says what just happened, or why a value was refused. On the right
   it gives the number of points, the time taken, and the layers and total thickness.
 
-The two incident waves are labelled **p (mode 0)** and **s (mode 1)**. With isotropic media they
-are the p and s waves. An anisotropic incident or exit medium has its own two modes, which are not
-p and s; the labels then name them 0 and 1.
+The two incident waves are **p** and **s** when the incident and exit media are both isotropic.
+When either is anisotropic, the waves are that medium's own two modes, which in general are neither
+p nor s, and the boxes and the curves say **mode 0** and **mode 1** instead (R_0, R_1, and so on).
+Mode 0 is the more p-like of the two.
 
 ### Opening a sample
 
@@ -119,6 +120,73 @@ to set them: give the direction of the optic axis, as a tilt from the normal and
 **Set the angles** fills in φ and θ. It also sets a twist, for a cholesteric.
 
 ![Layer properties: the Euler angles, or the optic axis's tilt and azimuth.](images/layer-properties.png)
+
+### Materials
+
+The **Materials** tab lists the stack's materials, each with a summary, and edits the one selected.
+In the new stack, the layer's material is `low`, a constant index of 1.38:
+
+![The Materials tab: the list on the left, the selected material on the right, with its index over the stack's spectral range.](images/materials-constant.png)
+
+- **Name** renames the material everywhere it is used. Under it, the tab says where that is
+  ("Used by the layer 1").
+- **Directions** says whether the index is the same in every direction (isotropic), ordinary and
+  extraordinary (uniaxial), or different along x, y and z (biaxial).
+- **Defined by** says how each index varies with wavelength: a constant, a catalogue glass, a
+  Sellmeier or Cauchy formula, a table of measured values, a Tauc–Lorentz law, or phonons.
+- **The plot** shows n (and k, where it is not zero) over the stack's spectral range. Under it, the
+  tab says whether the material is passive and reciprocal.
+
+### Adding a material from a library
+
+**From library…** offers ThinFilmDesigner's material databases, five vendors' glass catalogues and
+your own saved materials. Choose a library, type to search it, and select one or several entries.
+Below the list is each entry's source and its index at the stack's first wavelength.
+
+![From library…: the thin-film database searched for MgF2.](images/library-dialog.png)
+
+A crystal listed in the database as an ordinary (o) and an extraordinary (e) material is also
+offered as one uniaxial material: here **MgF2 (uniaxial)**, from Palik's two tables. A database
+material is copied into the stack. A catalogue glass is not copied: the stack names it, and its
+index is always read from the catalogue.
+
+![MgF2 added: ordinary and extraordinary, each a table of measured values, and both indices plotted.](images/materials-uniaxial.png)
+
+### Using a crystal in a layer
+
+On the Stack tab, the layer's **Material** box now offers MgF2. Choose it, and the *Type* column says
+"uniaxial · table". The angles φ, θ and ψ appear, because turning a crystal changes it. With
+θ = 60°, the optic axis tilts 60° from the normal; with φ = 0°, its azimuth is −90°, so it lies in
+the y–z plane:
+
+![A 1000 nm MgF2 layer on glass, its optic axis tilted 60°, at 0°, 35° and 70°: R for p and s.](images/stack-uniaxial-layer.png)
+
+The tilted axis makes p and s different even at normal incidence. A wave polarized along x (p)
+sees only the ordinary index. One polarized along y (s) has a component along the tilted axis, so
+it sees an index between the ordinary and the extraordinary. With an untilted axis (θ = 0) the two
+would be equal at normal incidence.
+
+### A crystal with turning axes: Ga₂O₃
+
+Some materials are more than an index per direction. The sample *schubert-2016 / ga2o3-010* is
+monoclinic β-Ga₂O₃, written as **terms** ([material-model.md](material-model.md)): a background ε,
+and oscillators, each along its own direction. The Material page says what it is, and
+**Advanced › Terms** lists the terms and edits each one: its law (here a Lorentz oscillator, with
+its amplitude, centre and damping) and its shape (here a direction in the crystal's a–c plane).
+
+![Ga₂O₃ as 16 terms: the B_u-2 oscillator at 692.44 cm⁻¹, along 5.1° in the a–c plane.](images/materials-terms.png)
+
+**Advanced › Response** plots the material over any range: n and k along its principal axes, any
+element of its 6×6 matrix, or the directions of its principal axes. Ga₂O₃ shows why the terms are
+needed. One principal axis stays along z (the crystal's b axis, normal to this (010) surface). The
+other two lie in the a–c plane (tilt 90°) and turn as the wavenumber changes. The oscillators lie
+along different directions in that plane, and near its resonance each one dominates ε, so the axes
+follow. In a crystal of higher symmetry the axes are fixed by the symmetry.
+
+![Ga₂O₃'s principal-axis directions against wavenumber: two turn in the a–c plane, one stays along b.](images/materials-axes.png)
+
+Each axis is followed from point to point, so an azimuth can run past ±180°. An axis is a line, so
+−260° and 100° are the same direction. Under the plot, M at one wavenumber is printed in full.
 
 ### Pictures
 

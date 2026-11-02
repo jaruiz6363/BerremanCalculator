@@ -502,8 +502,8 @@
           <CheckBox x:Name="ShowR" Content="R" IsChecked="True" Margin="0,0,8,0"/>
           <CheckBox x:Name="ShowT" Content="T" IsChecked="True" Margin="0,0,8,0"/>
           <CheckBox x:Name="ShowA" Content="A" Margin="0,0,20,0"/>
-          <CheckBox x:Name="ShowP" Content="p (mode 0)" IsChecked="True" Margin="0,0,8,0"/>
-          <CheckBox x:Name="ShowS" Content="s (mode 1)" IsChecked="True" Margin="0,0,8,0"/>
+          <CheckBox x:Name="ShowP" Content="p" IsChecked="True" Margin="0,0,8,0" ToolTip.Tip="The incident p wave; with an anisotropic incident or exit medium, its mode 0"/>
+          <CheckBox x:Name="ShowS" Content="s" IsChecked="True" Margin="0,0,8,0" ToolTip.Tip="The incident s wave; with an anisotropic incident or exit medium, its mode 1"/>
           <CheckBox x:Name="ShowMean" Content="mean" Margin="0,0,20,0"/>
           <CheckBox x:Name="ShowEllipsometry" Content="Ψ, Δ" Margin="0,0,12,0"/>
           <Button x:Name="MoreQuantitiesButton" Content="More…" Margin="0,0,12,0"/>

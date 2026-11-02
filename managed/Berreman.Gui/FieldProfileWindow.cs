@@ -54,7 +54,9 @@ public sealed class FieldProfileWindow : Window
         _after = Box("ProfileAfterBox", margin.ToString("G6", inv), 70);
         _quantity.ItemsSource = FieldProfile.QuantityNames.Append("index profile: n and k along x, y, z").ToList();
         _quantity.SelectedIndex = 0;
-        _wave.ItemsSource = FieldProfile.WaveNames;
+        bool isotropic = true;
+        try { var d = model.ToDocument(); isotropic = FieldProfile.OuterMediaIsotropic(d, Units.ToWavelengthNm(First(model.Spectral, 550), d.SpectralUnit)); } catch (StackFormatException) { }
+        _wave.ItemsSource = FieldProfile.WaveNames(isotropic);
         _wave.SelectedIndex = 0;
         _quantity.SelectionChanged += (_, _) => Draw();
         _wave.SelectionChanged += (_, _) => Draw();

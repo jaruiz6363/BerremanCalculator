@@ -51,15 +51,8 @@ public partial class MainWindow
     private (string A, string B) OuterWaveNames()
     {
         if (_result is null) return ("p", "s");
-        var doc = _result.Document;
         double l = _result.Points.Count > 0 ? _result.Points[0].WavelengthNm : 500;
-        try
-        {
-            bool iso = doc.Materials[doc.Incident.Material].At(l, 0).IsIsotropic(out _, out _)
-                    && doc.Materials[doc.Exit.Material].At(l, 0).IsIsotropic(out _, out _);
-            return iso ? ("p", "s") : ("0", "1");
-        }
-        catch (StackFormatException) { return ("p", "s"); }
+        return FieldProfile.OuterMediaIsotropic(_result.Document, l) ? ("p", "s") : ("0", "1");
     }
 
     private void ShowMoreQuantities() =>
@@ -146,6 +139,10 @@ public partial class MainWindow
             foreach (var p in _muellerPlots) p.Series = null;
             return;
         }
+        /* p and s with isotropic media; an anisotropic medium's own modes are neither. */
+        bool ps = OuterWaveNames().A == "p";
+        ShowP.Content = ps ? "p" : "mode 0";
+        ShowS.Content = ps ? "s" : "mode 1";
         var axis = ChosenAxis();
         if (mueller)
         {

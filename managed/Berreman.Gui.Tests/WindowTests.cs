@@ -184,6 +184,8 @@ public static partial class WindowTests
             h.Expect(Rows(w).Count == 1 && Rows(w)[0].ThicknessText == "100", "one 100 nm layer to start");
             h.Expect(PumpUntil(w, () => !w.IsEvaluating && Find<SpectrumPlot>(w, "Plot").Series is { Count: > 0 }),
                      "and the plot fills by itself");
+            h.Expect((string?)Find<CheckBox>(w, "ShowP").Content == "p" && (string?)Find<CheckBox>(w, "ShowS").Content == "s",
+                     "with air and glass the incident waves are labelled p and s");
         });
     }
 
@@ -446,6 +448,8 @@ public static partial class WindowTests
                DispatcherTimer's ticks to windows opened after the first one is closed. */
             Click(w, Find<Button>(w, "EvaluateButton"));
             h.Expect(PumpUntil(w, () => Find<SpectrumPlot>(w, "Plot").Series is { Count: > 0 }), $"the sample evaluates ({Find<SelectableTextBlock>(w, "StatusText").Text}; evaluating {w.IsEvaluating}; empty text {Find<SpectrumPlot>(w, "Plot").EmptyText}; visible {Find<SpectrumPlot>(w, "Plot").IsVisible}; eval {Find<TextBlock>(w, "EvaluationText").Text})");
+            h.Expect((string?)Find<CheckBox>(w, "ShowP").Content == "mode 0" && (string?)Find<CheckBox>(w, "ShowS").Content == "mode 1",
+                     $"with an anisotropic exit medium the incident waves are its modes 0 and 1 ({Find<CheckBox>(w, "ShowP").Content}, {Find<CheckBox>(w, "ShowS").Content})");
             var axes = Find<ComboBox>(w, "XAxisBox");
             h.Expect(axes.ItemCount == 2, $"wavenumber and angle are offered as x ({axes.ItemCount})");
             axes.SelectedIndex = 1;
