@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;

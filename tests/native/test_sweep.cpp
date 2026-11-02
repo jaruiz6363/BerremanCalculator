@@ -1,3 +1,6 @@
+/* Copyright (c) 2026 Javier Ruiz
+ * SPDX-License-Identifier: MIT */
+
 /* test_sweep.cpp — the sweep through the stack (engine design, Section 6, tests 2–7).
  *
  * THE REFERENCE. For any stack whose Δ splits into a p block (ψ1, ψ2) and an s block (ψ3, ψ4), as

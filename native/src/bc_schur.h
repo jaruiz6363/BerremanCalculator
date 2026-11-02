@@ -1,3 +1,6 @@
+/* Copyright (c) 2026 Javier Ruiz
+ * SPDX-License-Identifier: MIT */
+
 /* bc_schur.h — complex Schur decomposition of a 4×4, and reordering of its diagonal (engine
  * design, Section 2).
  *

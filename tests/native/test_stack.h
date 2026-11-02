@@ -1,3 +1,6 @@
+/* Copyright (c) 2026 Javier Ruiz
+ * SPDX-License-Identifier: MIT */
+
 /* test_stack.h — building one-point problems, and the closed-form block reference, shared by the
  * stack tests.
  *

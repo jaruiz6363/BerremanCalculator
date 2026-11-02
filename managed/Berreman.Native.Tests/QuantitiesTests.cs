@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // QuantitiesTests.cs — the derived quantities (Api/Quantities.cs), above all the Mueller matrix's
 // convention: an isotropic sample must give the standard ellipsometric form with the program's Ψ
 // and Δ, element by element.

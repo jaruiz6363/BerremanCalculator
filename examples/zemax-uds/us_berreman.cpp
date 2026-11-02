@@ -1,3 +1,6 @@
+/* Copyright (c) 2026 Javier Ruiz
+ * SPDX-License-Identifier: MIT */
+
 /* us_berreman.cpp — an OpticStudio user-defined surface (UDS) whose thin film is evaluated by the
  * BerremanCalculator engine, ray by ray, for polarization ray tracing.
  *
@@ -326,19 +329,17 @@ extern "C" UDS_EXPORT int UserDefinedSurface5(USER_DATA* UD, FIXED_DATA5* FD)
     case 3:   /* the sag */
         return Sag(FD->cv, FD->k, UD->x, UD->y, &UD->sag1, &UD->sag2);
 
-    case 4:   /* a paraxial trace: a plane with the conic's paraxial power; the thin film adds none */
+    case 4:   /* a paraxial trace. The surface is its vertex plane, with the conic's power
+                 phi = (n2 - n1) cv; in x and in y the ray's slope u = l/n obeys n2 u' = n1 u - h phi.
+                 The thin film has no power. */
     {
         UD->ln = 0.0; UD->mn = 0.0; UD->nn = -1.0;
-        const double power = (FD->n2 - FD->n1) * FD->cv;
-        if (UD->n != 0.0)
-        {
-            double l = UD->l / UD->n, m = UD->m / UD->n;
-            l = (FD->n1 * l - UD->x * power) / FD->n2;
-            m = (FD->n1 * m - UD->y * power) / FD->n2;
-            UD->n = std::sqrt(1.0 / (1.0 + l * l + m * m));
-            UD->l = l * UD->n;
-            UD->m = m * UD->n;
-        }
+        if (UD->n == 0.0) return 0;
+        const double phi = (FD->n2 - FD->n1) * FD->cv;
+        const V3 slope{(FD->n1 * (UD->l / UD->n) - phi * UD->x) / FD->n2,
+                       (FD->n1 * (UD->m / UD->n) - phi * UD->y) / FD->n2, 1.0};
+        const V3 d = Unit(slope);
+        UD->l = d.x; UD->m = d.y; UD->n = d.z;
         return 0;
     }
 

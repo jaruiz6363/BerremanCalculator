@@ -1,3 +1,6 @@
+/* Copyright (c) 2026 Javier Ruiz
+ * SPDX-License-Identifier: MIT */
+
 /* bc_delta.h — Berreman's Δ from the 6×6 material matrix M.
  *
  * The derivation is docs/derivation-delta.md; the section numbers below are that note's. Layouts:

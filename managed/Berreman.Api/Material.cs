@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // Material.cs — a material is a model evaluated at a wavelength (and, for a resistive sheet, at the
 // thickness of the layer that holds it). Constants are the common case; the models below are the
 // ones the microwave examples need. Every model returns M in the program's exp(−iωt) convention.

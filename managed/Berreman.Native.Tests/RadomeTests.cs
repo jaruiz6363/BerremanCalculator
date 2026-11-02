@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // RadomeTests.cs — microwave radome walls with complete inputs: Anshin et al. (2024), isotropic,
 // against the paper's calculated curves; Peshlov et al. (2006), uniaxial layers, against MEASURED
 // insertion loss. Figure values were read off the figures enlarged to 300 dpi.

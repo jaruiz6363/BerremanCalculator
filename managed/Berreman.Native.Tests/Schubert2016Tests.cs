@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // Schubert2016Tests.cs — monoclinic β-Ga₂O₃ (Schubert et al., PRB 93, 125209 (2016)), the general
 // material model's literature check.
 //

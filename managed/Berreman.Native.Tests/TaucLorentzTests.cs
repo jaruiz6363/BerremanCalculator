@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // TaucLorentzTests.cs — the Tauc–Lorentz law's real part against its own definition.
 //
 // The closed form of Re χ (Jellison and Modine 1996, with its erratum) is long, and was

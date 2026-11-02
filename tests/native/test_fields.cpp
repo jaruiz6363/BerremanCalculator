@@ -1,3 +1,6 @@
+/* Copyright (c) 2026 Javier Ruiz
+ * SPDX-License-Identifier: MIT */
+
 /* test_fields.cpp — the fields against depth (engine design, Section 4).
  *
  *   1. Isotropic stacks against the block reference. The p block (E_x, H_y) and the s block

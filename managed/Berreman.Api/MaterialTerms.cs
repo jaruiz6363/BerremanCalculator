@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // MaterialTerms.cs — every material form written as terms (docs/material-model.md, "Shorthand").
 //
 // The short forms of the stack file (n, eps, no/ne, a Sellmeier per axis, the ferrite and conductor

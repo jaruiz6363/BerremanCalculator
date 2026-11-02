@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // Program.cs — the berreman command.
 //
 // Exit codes: 0 success, 1 the engine failed on some point, 2 a usage error, an unreadable stack,

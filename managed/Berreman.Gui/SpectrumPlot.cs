@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // SpectrumPlot.cs — a chart control that draws what PlotModel computed and decides nothing. (From
 // ThinFilmDesigner, the same authors and licence.)
 //

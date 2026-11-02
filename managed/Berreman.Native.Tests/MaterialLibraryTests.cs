@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // MaterialLibraryTests.cs — the shipped databases and glass catalogues (Api/MaterialLibrary.cs).
 //
 // THE CHECK THAT MATTERS for the catalogues, as in ThinFilmDesigner: every NM line carries the

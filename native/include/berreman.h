@@ -1,3 +1,6 @@
+/* Copyright (c) 2026 Javier Ruiz
+ * SPDX-License-Identifier: MIT */
+
 /* berreman.h — the native evaluation contract.
  *
  * This header is the ABI. docs/contract.md (Section 6) and docs/engine-design.md are its prose;

@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // Lattice.cs — directions given in a crystal's own axes (docs/material-model.md, "Crystal axes").
 //
 // A monoclinic or triclinic crystal's oscillators are often given as directions in its lattice:

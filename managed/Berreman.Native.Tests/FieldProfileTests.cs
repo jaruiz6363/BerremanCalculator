@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // FieldProfileTests.cs — fields against depth through the API (Gui.Core/FieldProfile.cs), against
 // closed forms:
 //   1. a bare glass surface at normal incidence: the standing wave in front is

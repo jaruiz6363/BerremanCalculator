@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // MaterialEditingTests.cs — the Materials tab's arithmetic (Gui.Core/MaterialEditing.cs).
 //
 // The property that matters: editing a material through the tab's fields, changing nothing, gives

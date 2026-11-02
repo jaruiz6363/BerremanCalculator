@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // MainWindow.axaml.cs — the stack being edited on the left (its layers, media, materials and the
 // file itself), its results on the right.
 //

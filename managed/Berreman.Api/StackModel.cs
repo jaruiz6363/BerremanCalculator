@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // StackModel.cs — the stack file as something to edit.
 //
 // StackDocument is the file READ FOR EVALUATION: every material parsed into a model, every range

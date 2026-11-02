@@ -1,3 +1,6 @@
+/* Copyright (c) 2026 Javier Ruiz
+ * SPDX-License-Identifier: MIT */
+
 /* test_support.h — checks, random inputs and test-only numerics shared by the native tests.
  *
  * Nothing here is engine code, and nothing here may be used by the engine: the tests' own

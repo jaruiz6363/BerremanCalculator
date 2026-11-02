@@ -1,3 +1,6 @@
+/* Copyright (c) 2026 Javier Ruiz
+ * SPDX-License-Identifier: MIT */
+
 /* bc_plan.cpp — input checks and scratch sizing.
  *
  * Everything the evaluator would otherwise have to check per point is checked here, once, so that

@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // EngineStatus.cs — whether the native engine loads, which ABI it has, and what it can do.
 //
 // The first thing every front end asks, and the only question the skeleton can answer. It runs the

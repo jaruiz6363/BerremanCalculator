@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // PlotModel.cs — the arithmetic of a plot, with no Avalonia in it. (From ThinFilmDesigner, the
 // same authors and licence.)
 //

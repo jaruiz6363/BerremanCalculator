@@ -1,3 +1,6 @@
+/* Copyright (c) 2026 Javier Ruiz
+ * SPDX-License-Identifier: MIT */
+
 /* test_delta.cpp — Berreman's Δ (docs/derivation-delta.md; engine design, Section 6, test 1).
  *
  * Five independent checks of one piece of algebra:

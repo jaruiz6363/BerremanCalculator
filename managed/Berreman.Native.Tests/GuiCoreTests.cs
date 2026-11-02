@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // GuiCoreTests.cs — the testable half of the GUI: the plot arithmetic, the choice of curves, and
 // the sample list.
 

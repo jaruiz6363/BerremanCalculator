@@ -1,3 +1,6 @@
+/* Copyright (c) 2026 Javier Ruiz
+ * SPDX-License-Identifier: MIT */
+
 /* test_isotropic.cpp — isotropic outer-medium modes and the bare interface (engine design,
  * Sections 2 and 3, and the s/p rule of the contract, Section 1).
  *

@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // MainWindow.Results.cs — the results pane: which quantities, against which swept variable, as
 // curves or as the Mueller matrix's sixteen panels. What to draw is decided in Gui.Core
 // (ResultPlot, tested); this file only wires the controls to it.

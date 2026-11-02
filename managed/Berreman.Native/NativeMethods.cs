@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // NativeMethods.cs — the exported calls, declared and not wrapped.
 //
 // Every signature takes pointers to structs and buffers the caller already owns, and returns a

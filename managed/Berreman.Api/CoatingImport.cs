@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // CoatingImport.cs — coatings read from OpticStudio coating files and from Optiland, as layers and
 // materials of a stack. The parsing is ported from ThinFilmDesigner (ZemaxCoating.cs and
 // OptilandCoating.cs, MIT, the same author); what comes out is this program's stack form.

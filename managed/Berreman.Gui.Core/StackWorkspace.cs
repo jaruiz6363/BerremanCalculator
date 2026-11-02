@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // StackWorkspace.cs — the stack being edited: the model, its file, undo and redo, and the rows the
 // layer table shows. No Avalonia: every edit the window makes is a call here, and tested.
 //

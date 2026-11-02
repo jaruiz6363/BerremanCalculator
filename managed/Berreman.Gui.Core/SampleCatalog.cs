@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // SampleCatalog.cs — the literature samples installed beside the program, for the GUI's list.
 
 using Berreman.Api;

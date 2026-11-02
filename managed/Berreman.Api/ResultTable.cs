@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // ResultTable.cs — results as a table of named columns, for the CLI, the MCP server and the GUI
 // alike, so all three show the same numbers under the same names.
 

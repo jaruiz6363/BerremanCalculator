@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // MainWindow.Materials.cs — the Materials tab (docs/material-model.md; the arithmetic is
 // Gui.Core/MaterialEditing.cs, which is tested). Two pages:
 //   Material  the material as people think of it: the same in every direction, ordinary and

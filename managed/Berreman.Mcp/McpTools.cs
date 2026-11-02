@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // McpTools.cs — the MCP tools beyond evaluate_stack: finding samples and materials, describing and
 // editing a stack, moving designs to and from ThinFilmDesigner, and the analyses the GUI has.
 //

@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // Conoscope.cs — a conoscopic map: one quantity over every direction of incidence at one
 // wavelength, the angle of incidence as the radius and the azimuth as the polar angle. No Avalonia:
 // the sweep, the quantities and the colours are arithmetic, and tested.

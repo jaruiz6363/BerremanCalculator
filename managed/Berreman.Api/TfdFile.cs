@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // TfdFile.cs — ThinFilmDesigner designs (.tfd), read into a stack and written from one.
 //
 // THE TWO PROGRAMS DIVIDE THE WORK: ThinFilmDesigner designs and optimises isotropic coatings;

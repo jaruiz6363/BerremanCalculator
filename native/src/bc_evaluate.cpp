@@ -1,3 +1,6 @@
+/* Copyright (c) 2026 Javier Ruiz
+ * SPDX-License-Identifier: MIT */
+
 /* bc_evaluate.cpp — the evaluation of a range of points (engine design, Sections 2–5).
  *
  * WHAT IS BUILT. Any outer media (closed-form modes when isotropic, Schur otherwise) and any

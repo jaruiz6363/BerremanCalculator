@@ -1,3 +1,6 @@
+/* Copyright (c) 2026 Javier Ruiz
+ * SPDX-License-Identifier: MIT */
+
 /* bc_complex.h — complex scalar arithmetic on bc_complex.
  *
  * Header-only and BC_HD throughout: these are the innermost operations, they must inline, and they

@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // CholestericTests.cs — twisted layers (contract, Section 2: sublayers), against the exact solution
 // at normal incidence.
 //

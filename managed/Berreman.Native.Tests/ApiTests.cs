@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // ApiTests.cs — the C# side: units, rotation, the stack format, and the first literature example.
 
 using System.Numerics;

@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // MaterialLibrary.cs — the materials a stack can take from outside itself (docs/material-model.md,
 // "Libraries"):
 //

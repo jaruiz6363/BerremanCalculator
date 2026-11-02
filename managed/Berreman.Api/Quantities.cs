@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // Quantities.cs — every number the program derives from a point, by name (contract, Section 3).
 //
 // The table, the plot and the MCP server all take their quantities from here, so a quantity has

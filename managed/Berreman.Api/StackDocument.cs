@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // StackDocument.cs — the stack file: materials, layers, units and the sweep to evaluate.
 //
 // JSON, read by hand from JsonNode so that every error names the place in the file it came from.

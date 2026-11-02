@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // FieldProfile.cs — the fields against depth at one point of the sweep, and the stack's index
 // profile, as curves. No Avalonia; tested.
 //

@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // DesignReport.cs — a stack as numbers another program can take: the layers in physical units with
 // their orientations, and every material as a table over a spectral range.
 //

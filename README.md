@@ -142,4 +142,5 @@ Javier Ruiz and Claude Code. See [AUTHORS](AUTHORS).
 
 ## Licence
 
-MIT, copyright (c) 2026 Javier Ruiz. See [LICENSE](LICENSE).
+MIT, copyright (c) 2026 Javier Ruiz. See [LICENSE](LICENSE). Every source file opens with the same
+notice (`SPDX-License-Identifier: MIT`), so it stays with a file that is copied on its own.

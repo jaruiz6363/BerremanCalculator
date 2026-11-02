@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // McpToolTests.cs — the MCP tools beyond evaluate_stack (Mcp/McpTools.cs), driven as a client drives
 // them: tools/call, and the text that comes back.
 

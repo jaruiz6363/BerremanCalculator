@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // Evaluator.cs — a stack document in, results out, through the contract's call sequence
 // (contract, Section 6): sizes from counts, allocation in C#, bc_plan, scratch per worker,
 // bc_evaluate over disjoint point ranges.

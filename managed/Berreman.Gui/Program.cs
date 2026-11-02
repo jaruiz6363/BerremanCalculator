@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // Program.cs — the Avalonia entry point.
 
 using Avalonia;

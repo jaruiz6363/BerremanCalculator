@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // StackModelTests.cs — the stack held for editing (StackModel) and the editor's workspace.
 //
 // The one property everything rests on: a stack read into the model and written back evaluates

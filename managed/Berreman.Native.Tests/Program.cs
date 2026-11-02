@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // Program.cs — the managed suite.
 //
 // The checks that need both sides: that the C# structs have the native sizes, that the library
@@ -111,6 +114,7 @@ Berreman.Native.Tests.McpToolTests.Run();
 Berreman.Native.Tests.DesignReportTests.Run();
 Berreman.Native.Tests.UdsTests.Run();
 Berreman.Native.Tests.CoatingImportTests.Run();
+Berreman.Native.Tests.NoticeTests.Run();
 checks += Berreman.Native.Tests.ApiTests.Checks;
 failures += Berreman.Native.Tests.ApiTests.Failures;
 checks += Berreman.Native.Tests.ClosedFormTests.Checks;
@@ -153,6 +157,8 @@ checks += Berreman.Native.Tests.CoatingImportTests.Checks;
 failures += Berreman.Native.Tests.CoatingImportTests.Failures;
 checks += Berreman.Native.Tests.UdsTests.Checks;
 failures += Berreman.Native.Tests.UdsTests.Failures;
+checks += Berreman.Native.Tests.NoticeTests.Checks;
+failures += Berreman.Native.Tests.NoticeTests.Failures;
 
 Console.WriteLine($"{checks} checks, {failures} failures");
 return failures == 0 ? 0 : 1;

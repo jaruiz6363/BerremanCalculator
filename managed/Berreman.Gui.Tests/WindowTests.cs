@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // WindowTests.cs — the editor window, driven as a person drives it, with no display.
 //
 // REAL MOUSE INPUT: a click is MouseDown and MouseUp at the point the control occupies after

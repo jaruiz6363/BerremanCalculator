@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // TfdTests.cs — ThinFilmDesigner designs in and out (Api/TfdFile.cs).
 //
 // THE REFERENCE IS THINFILMDESIGNER ITSELF. Three of its samples (tests/fixtures/tfd, its own files

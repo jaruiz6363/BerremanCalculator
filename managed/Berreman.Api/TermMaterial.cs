@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // TermMaterial.cs — the general material: M(λ) = Σ f_k(λ) T_k (docs/material-model.md).
 //
 // Each term is a scalar law f_k (a constant 1, Sellmeier, Lorentz, Drude, a table, ...) times a

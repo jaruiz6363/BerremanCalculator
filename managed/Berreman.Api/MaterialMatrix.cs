@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // MaterialMatrix.cs — the 6×6 constitutive matrix M = [[ε, ρ], [ρ', μ]] the engine sees, and its
 // rotation (contract, Sections 1 and 2; derivation note, Section 8).
 

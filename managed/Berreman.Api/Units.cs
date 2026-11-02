@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // Units.cs — the units a person types and reads (contract, Section 1a).
 //
 // The engine is scale-free; C# works in nanometres throughout and converts at the edges. A spectral

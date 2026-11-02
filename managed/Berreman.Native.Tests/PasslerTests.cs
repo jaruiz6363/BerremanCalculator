@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // PasslerTests.cs — Passler and Paarmann (2017), the Otto-geometry samples.
 //
 // Two kinds of check:

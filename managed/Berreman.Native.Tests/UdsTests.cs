@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // UdsTests.cs — the OpticStudio user-defined surface example (examples/zemax-uds/us_berreman.cpp),
 // called as OpticStudio calls it, against the BerremanCalculator API.
 //
@@ -18,7 +21,7 @@
 //   2. An O-plate at oblique incidence, several planes of incidence, both incident polarisations.
 //   3. The same O-plate, the ray going the other way (-z): the film is fixed to the surface.
 //   4. A cholesteric, right- and left-handed, inside and outside its reflection band.
-//   5. Geometry: the intercept and normal on a sphere.
+//   5. Geometry: the intercept and normal on a sphere, and the paraxial trace.
 //   6. The layer order (parameter 8): a cholesteric's first layer on the back face is the same
 //      film as one whose starting azimuth is carried to the front face, keeping its hand.
 //   7. The Visual Studio project (us_berreman.vcxproj) compiles the same files as CMake.
@@ -86,6 +89,21 @@ internal static unsafe class UdsTests
             var outE = new[] { new Complex(fd->Exr, fd->Exi), new Complex(fd->Eyr, fd->Eyi), new Complex(fd->Ezr, fd->Ezi) };
             double[] dout = [ud.l, ud.m, ud.n], normal = [ud.ln, ud.mn, ud.nn];
             return (BareInterface(outE, d, dout, normal, n1, n2), [ud.l, ud.m, ud.n, ud.x, ud.y, ud.z, ud.ln, ud.mn, ud.nn, fd->did_polar], status, outE);
+        }
+        finally { NativeMemory.Free(fd); }
+    }
+
+    /// <summary>A paraxial ray through the DLL (type 4): direction cosines d at height (x, y) on
+    /// the vertex plane; returns the outgoing direction cosines and the normal.</summary>
+    private static (double[] Dir, double[] Normal, int Status) Paraxial(double n1, double n2, double cv, double[] d, double x, double y)
+    {
+        var fd = (FixedData5*)NativeMemory.AllocZeroed((nuint)sizeof(FixedData5));
+        try
+        {
+            fd->type = 4; fd->surf = 3; fd->n1 = n1; fd->n2 = n2; fd->cv = cv;
+            var ud = new UserData { x = x, y = y, z = 0, l = d[0], m = d[1], n = d[2] };
+            int status = UserDefinedSurface5(ref ud, fd);
+            return ([ud.l, ud.m, ud.n], [ud.ln, ud.mn, ud.nn], status);
         }
         finally { NativeMemory.Free(fd); }
     }
@@ -254,6 +272,25 @@ internal static unsafe class UdsTests
             var radial = new[] { hx / 20, hy / 20, (hz - 20) / 20 };
             double normalErr = Math.Abs(r[6] - radial[0]) + Math.Abs(r[7] - radial[1]) + Math.Abs(r[8] - radial[2]);
             Check(st == 0 && onSphere < 1e-10 && normalErr < 1e-12, $"on a sphere the intercept is on it and the normal radial ({onSphere:G3}, {normalErr:G3})");
+
+            /* The paraxial trace: n2 u' = n1 u - h (n2 - n1) cv for the slopes u = l/n, and the
+               real trace tends to it for a ray near the axis (height and slope 1e-4: the
+               difference is third order, below 1e-12). */
+            double u = 0.1, v = 0.05, phi = (n2 - n1) * cv;
+            var dp = new[] { u, v, 1.0 };
+            double norm = Math.Sqrt(Dot(dp, dp));
+            var (px, pn, pst) = Paraxial(n1, n2, cv, [u / norm, v / norm, 1 / norm], x0, y0);
+            double slopeErr = Math.Abs(px[0] / px[2] - (n1 * u - x0 * phi) / n2) + Math.Abs(px[1] / px[2] - (n1 * v - y0 * phi) / n2);
+            double unitErr = Math.Abs(Dot(px, px) - 1);
+            Check(pst == 0 && slopeErr < 1e-14 && unitErr < 1e-14 && pn[0] == 0 && pn[1] == 0 && pn[2] == -1,
+                  $"the paraxial trace refracts the slopes by the surface's power, on the vertex plane ({slopeErr:G3}, {unitErr:G3})");
+
+            double h = 1e-4, a = 1e-4, an = Math.Sqrt(1 + 2 * a * a);
+            double[] dSmall = [a / an, -a / an, 1 / an];
+            var (pSmall, _, _) = Paraxial(n1, n2, cv, dSmall, h, -h);
+            var (_, rSmall, _, _) = Trace(new Film(0, 0, 1.5, 1.6, 0, 0), n1, n2, um, dSmall, [1, 0, 0], cv, h, -h);
+            double nearAxis = Math.Abs(pSmall[0] - rSmall[0]) + Math.Abs(pSmall[1] - rSmall[1]) + Math.Abs(pSmall[2] - rSmall[2]);
+            Check(nearAxis < 1e-12, $"and near the axis the real trace agrees with it ({nearAxis:G3})");
         }
 
         ProjectMatchesCMake();

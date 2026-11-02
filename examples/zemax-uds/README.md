@@ -189,6 +189,18 @@ The Visual Studio project and CMake compile the same three files; a test checks 
 `uds_abi.h` declares the two structures OpticStudio passes, in the layout OpticStudio's own
 `usersurf.h` gives, so the example builds without it.
 
+## Licence and OpticStudio's interface
+
+The example's source, like the rest of BerremanCalculator, is MIT licensed, copyright (c) 2026
+Javier Ruiz; each file says so in its first two lines, so the notice goes with a copy.
+
+The interface it implements is OpticStudio's. The function `UserDefinedSurface5`, the structures
+`USER_DATA` and `FIXED_DATA5`, their field names and their layout are defined by Ansys in
+`usersurf.h` and in OpticStudio's documentation. `uds_abi.h` declares that layout in its own
+words so the example builds on its own; no code from `usersurf.h` or from OpticStudio's sample
+surfaces is copied into this example. Ansys, OpticStudio and Zemax are trademarks of Ansys, Inc.
+This example is not made or endorsed by Ansys.
+
 ## Threads
 
 OpticStudio calls the DLL from several threads at once. Everything per ray is on the stack or in
@@ -211,7 +223,8 @@ incidence by the sample azimuth, so the two share only the engine.
 - **Layer order.** A cholesteric with its first layer on the back face is the same film as one
   started on the front face at the azimuth the helix has there, with the same hand. Both hands
   are checked, with rays going each way.
-- **Geometry.** The intercept and normal on a sphere.
+- **Geometry.** The intercept and normal on a sphere, and the paraxial trace: its formula, and
+  agreement with the real trace near the axis.
 - **The Visual Studio project.** It compiles the same files as CMake.
 
 The agreement is 10⁻¹² or better. The suite applies OpticStudio's step after the DLL, as described

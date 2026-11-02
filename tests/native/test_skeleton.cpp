@@ -1,3 +1,6 @@
+/* Copyright (c) 2026 Javier Ruiz
+ * SPDX-License-Identifier: MIT */
+
 /* test_skeleton.cpp — the calls exist, refuse bad input, and write every output asked for.
  *
  * No test framework, as in ThinFilmDesigner: a dependency that buys a nicer assertion message is

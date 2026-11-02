@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // CoatingImportTests.cs — coatings imported from OpticStudio coating files and from Optiland
 // (Berreman.Api/CoatingImport.cs), and merged into a stack (StackWorkspace.ImportCoating).
 //

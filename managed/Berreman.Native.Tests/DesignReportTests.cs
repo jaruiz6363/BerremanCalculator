@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // DesignReportTests.cs — the design report (Api/DesignReport.cs): the right table for each kind of
 // material, and the numbers in it are the material's.
 

@@ -1,3 +1,6 @@
+/* Copyright (c) 2026 Javier Ruiz
+ * SPDX-License-Identifier: MIT */
+
 /* bc_linalg.h — the small dense solves the engine needs, on caller-supplied storage.
  *
  * Row-major throughout. Everything is a fixed 4×4 or 4×2 shape set by the physics.

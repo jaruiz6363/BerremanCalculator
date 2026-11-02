@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // Dialogs.cs — the small dialogs, built in code: a question with buttons, the layer properties, the
 // library, the samples and coating import. Each returns what it decided and changes nothing itself;
 // the window applies the result through the workspace, so it is one undoable edit.

@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // McpServer.cs — the Model Context Protocol over stdio, by hand.
 //
 // JSON-RPC 2.0, one JSON object per line in and out; no SDK. The same framing as ThinFilmDesigner's

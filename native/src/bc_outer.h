@@ -1,3 +1,6 @@
+/* Copyright (c) 2026 Javier Ruiz
+ * SPDX-License-Identifier: MIT */
+
 /* bc_outer.h — modes of an isotropic outer medium (engine design, Section 2).
  *
  * Layout of a mode set: 16 complex, row-major 4×4, whose COLUMNS are the field vectors ψ of

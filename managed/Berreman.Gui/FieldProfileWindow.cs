@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // FieldProfileWindow.cs — Analysis > Field profile: the fields against depth at one point of the
 // sweep, and the stack's index profile. The arithmetic is Gui.Core's (FieldProfile, tested).
 

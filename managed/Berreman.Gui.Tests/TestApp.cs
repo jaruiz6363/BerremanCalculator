@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // TestApp.cs — the app builder the headless session uses: Skia behind a headless window, so a
 // frame really is rendered, with no display attached.
 

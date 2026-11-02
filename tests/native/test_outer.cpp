@@ -1,3 +1,6 @@
+/* Copyright (c) 2026 Javier Ruiz
+ * SPDX-License-Identifier: MIT */
+
 /* test_outer.cpp — anisotropic outer media (engine design, Section 2).
  *
  *   - The Schur decomposition: A = Q T Qᴴ, Q unitary, T upper triangular, eigenvalues equal to the

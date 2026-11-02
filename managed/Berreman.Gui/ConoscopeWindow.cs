@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // ConoscopeWindow.cs — Analysis > Conoscopic map: one quantity over every direction of incidence,
 // at one spectral value. The sweep and the quantities are Gui.Core's (Conoscope, tested); this
 // window takes the settings, evaluates in the background and draws.

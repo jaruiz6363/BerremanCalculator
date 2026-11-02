@@ -1,3 +1,6 @@
+/* Copyright (c) 2026 Javier Ruiz
+ * SPDX-License-Identifier: MIT */
+
 /* bc_internal.h — definitions shared by the engine's translation units, not part of the ABI. */
 
 #ifndef BC_INTERNAL_H

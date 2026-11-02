@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // MaterialEditing.cs — the arithmetic behind the Materials tab, with no Avalonia in it.
 //
 // A material is edited in one of two ways (docs/material-model.md):

@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // DesignString.cs — a layer stack written as text: "(1H 1L)12", "( 1H (1L 1H)6 1L)3 (0.5H 0.3L)2".
 //
 // THE NOTATION is ThinFilmDesigner's, so a string typed in one program means the same in the other:

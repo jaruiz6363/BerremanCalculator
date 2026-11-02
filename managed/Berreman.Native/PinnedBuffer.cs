@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // PinnedBuffer.cs — the allocation primitive (rule 1: C# allocates everything).
 //
 // The native side holds pointers into these across a call, so they must never move. They are

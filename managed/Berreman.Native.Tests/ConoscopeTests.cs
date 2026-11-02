@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // ConoscopeTests.cs — conoscopic maps (Gui.Core/Conoscope.cs) against closed forms.
 //
 // 1. A c-cut uniaxial plate between crossed polarisers: the isochromes. Along the azimuth at 45° to

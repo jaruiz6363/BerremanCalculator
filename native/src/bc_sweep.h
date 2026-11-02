@@ -1,3 +1,6 @@
+/* Copyright (c) 2026 Javier Ruiz
+ * SPDX-License-Identifier: MIT */
+
 /* bc_sweep.h — the matrix exponential and the re-orthonormalisation step (engine design,
  * Section 3).
  *

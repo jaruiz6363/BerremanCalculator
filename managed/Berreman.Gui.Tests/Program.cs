@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // Program.cs — the window suite, run as its own executable, headless.
 
 using Avalonia.Headless;

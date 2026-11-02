@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // ClosedFormTests.cs — the closed-form literature samples, each against a formula computed here
 // independently of the engine.
 

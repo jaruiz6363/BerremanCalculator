@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // MoreClosedFormTests.cs — Catarina (2020), Lakhtakia (2018) and Schubert (1996): each sample
 // against the paper's closed form, computed here.
 

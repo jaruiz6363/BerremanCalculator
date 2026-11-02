@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // Abi.cs — the structs of berreman.h, field for field.
 //
 // Sequential layout, blittable fields only, so [LibraryImport] passes them with no marshalling and

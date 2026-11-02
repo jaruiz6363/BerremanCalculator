@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Javier Ruiz
+// SPDX-License-Identifier: MIT
+
 // ResultPlot.cs — which curves a result becomes. No Avalonia: the choices are arithmetic and tested.
 //
 // THE X AXIS IS WHATEVER THE SWEEP VARIES MOST NATURALLY: the spectral variable if there is more
