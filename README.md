@@ -73,6 +73,7 @@ The tests come before each part of the engine, as listed in the [engine design](
 | [The material model](docs/material-model.md) | How a material becomes the 6×6 matrix: laws times shapes, the short forms, the checks. |
 | [Materials](materials/README.md) | The shipped databases and glass catalogues, and the user's own materials. |
 | [User guide](docs/user-guide.md) | The GUI, the command line and the MCP server. |
+| [Building from source](docs/building.md) | What to install on Windows, macOS and Linux; building the engine and the programs; running the tests. |
 | [Samples](samples/README.md) | The examples from the literature, and how closely each is reproduced. |
 
 ## Shape
@@ -127,8 +128,10 @@ examples/   a Berreman film in OpticStudio (examples/zemax-uds) and in Optiland 
 
 ## Building
 
-Needs CMake 3.20 or later, a C++17 compiler and the .NET 8 SDK or later. Build the engine
-first: the C# projects copy the library from `build/`.
+[docs/building.md](docs/building.md) explains each step, on Windows, macOS and Linux: what to
+install, what each command does, and what to do when one fails. In short, with CMake 3.20 or later,
+a C++17 compiler and the .NET 8 SDK or later, build the engine first, because the C# projects copy
+the library from `build/`:
 
 ```
 cmake -S . -B build
