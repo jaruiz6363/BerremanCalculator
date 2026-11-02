@@ -44,6 +44,10 @@ this way ([the material model](docs/material-model.md)).
   It evaluates as you edit, with undo and redo, and plots R, T, A and Ψ/Δ. It imports
   ThinFilmDesigner designs, and coatings from OpticStudio coating files and from Optiland.
 
+Two examples put a Berreman film on a surface of a lens, evaluated ray by ray in a polarization ray
+trace: an [OpticStudio user-defined surface](examples/zemax-uds/README.md) and an
+[Optiland coating](examples/optiland/README.md).
+
 Eighteen literature samples are reproduced: Mansuripur (1990), nine closed forms, three of Passler
 and Paarmann's (2017) infrared Otto-geometry examples, Ting's (2006) cholesteric, three microwave
 radome walls (Anshin 2024; Peshlov 2006, against measurements), and monoclinic β-Ga₂O₃ (Schubert
@@ -102,7 +106,7 @@ tests/      the engine's tests, and fixtures both sides read
 tools/      build checks, including the rules above
 samples/    the examples from the literature
 materials/  material databases and glass catalogues
-examples/   an OpticStudio user-defined surface with a Berreman film (examples/zemax-uds)
+examples/   a Berreman film in OpticStudio (examples/zemax-uds) and in Optiland (examples/optiland)
 ```
 
 | Project | Builds |

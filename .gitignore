@@ -39,3 +39,9 @@ scratch/
 
 # Claude Code working notes - local only
 .claude/
+
+# Python
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.venv/

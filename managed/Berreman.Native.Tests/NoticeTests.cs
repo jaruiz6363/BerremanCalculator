@@ -4,8 +4,9 @@
 // NoticeTests.cs — every source file carries the copyright and licence lines.
 //
 // The files travel on their own: the installer puts the engine's sources in the OpticStudio
-// example's engine folder, away from LICENSE, and a surface's source may be copied into another
-// DLL. MIT asks that the notice go with the code, so each file opens with
+// example's engine folder, away from LICENSE, a surface's source may be copied into another DLL,
+// and the Optiland example's Python files into another project. MIT asks that the notice go with
+// the code, so each source file (.cpp, .h, .cs, .py) opens with
 //   Copyright (c) 2026 Javier Ruiz
 //   SPDX-License-Identifier: MIT
 // as a comment, before its own description. A new file without them fails here.
@@ -28,13 +29,13 @@ internal static class NoticeTests
         while (root is not null && !File.Exists(Path.Combine(root.FullName, "CMakeLists.txt"))) root = root.Parent;
         if (root is null) { Check(false, "the source repository (CMakeLists.txt) is found above the test"); return; }
 
-        /* Sources only: build output and Visual Studio's own folders are not ours. */
-        string[] skip = ["bin", "obj", "build", ".vs", "out"];
+        /* Sources only: build output, Visual Studio's and Python's own folders are not ours. */
+        string[] skip = ["bin", "obj", "build", ".vs", "out", "__pycache__", ".venv", ".pytest_cache", ".ruff_cache"];
         var files = new[] { "native", "examples", "tests", "managed" }
             .Select(d => Path.Combine(root.FullName, d))
             .Where(Directory.Exists)
             .SelectMany(d => Directory.EnumerateFiles(d, "*", SearchOption.AllDirectories))
-            .Where(f => f.EndsWith(".cpp") || f.EndsWith(".h") || f.EndsWith(".cs"))
+            .Where(f => f.EndsWith(".cpp") || f.EndsWith(".h") || f.EndsWith(".cs") || f.EndsWith(".py"))
             .Where(f => !Path.GetRelativePath(root.FullName, f).Split('\\', '/').Any(skip.Contains))
             .ToList();
 
