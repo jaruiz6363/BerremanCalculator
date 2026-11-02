@@ -200,13 +200,13 @@ public partial class MainWindow : Window
                 _ws.Edit(m => m.Material(name)!.Spec = spec);
             }, $"'{name}' updated.");
         };
-        RevertMaterialButton.Click += (_, _) => ShowMaterial();
+        UndoMaterialButton.Click += (_, _) => _ws.Undo();
         InitMaterialEditor();
         InitResults();
 
         // ---- the file tab ----------------------------------------------------------------------
         ApplyTextButton.Click += (_, _) => Try(() => _ws.EditText(Editor.Text ?? ""), "The file text is applied.");
-        RevertTextButton.Click += (_, _) => Editor.Text = _ws.Text;
+        UndoTextButton.Click += (_, _) => _ws.Undo();
         Tabs.SelectionChanged += (_, e) => { if (e.Source == Tabs) Editor.Text = _ws.Text; };
 
         // ---- keys ------------------------------------------------------------------------------
@@ -299,7 +299,7 @@ public partial class MainWindow : Window
             LayerGrid.ItemsSource = _ws.Rows();
             if (selected >= 0 && selected < m.Layers.Count) LayerGrid.SelectedIndex = selected;
 
-            UndoItem.IsEnabled = UndoButton.IsEnabled = _ws.CanUndo;
+            foreach (var b in new Control[] { UndoItem, UndoButton, UndoPlainButton, UndoTermButton, UndoMaterialButton, UndoTextButton }) b.IsEnabled = _ws.CanUndo;
             RedoItem.IsEnabled = RedoButton.IsEnabled = _ws.CanRedo;
             SummaryText.Text = $"{m.Layers.Count} layer{(m.Layers.Count == 1 ? "" : "s")}, {_ws.TotalThickness.ToString("0.###", Inv)} {(m.LengthUnit == "um" ? "µm" : m.LengthUnit)} in all";
 
@@ -339,7 +339,7 @@ public partial class MainWindow : Window
         var uses = mat is null ? [] : _ws.Model.Uses(mat.Name);
         MaterialUses.Text = mat is null ? "" : uses.Count == 0 ? "Not used in the stack." : $"Used by the {string.Join(", ", uses.Take(8))}{(uses.Count > 8 ? $" and {uses.Count - 8} more" : "")}.";
         MaterialSpecBox.Text = mat is null ? "" : JsonText.Write(mat.Spec).TrimEnd();
-        foreach (var c in new Control[] { RenameMaterialButton, ApplyMaterialButton, RevertMaterialButton, DuplicateMaterialButton, RemoveMaterialButton, MaterialSpecBox, MaterialNameBox })
+        foreach (var c in new Control[] { RenameMaterialButton, ApplyMaterialButton, DuplicateMaterialButton, RemoveMaterialButton, MaterialSpecBox, MaterialNameBox })
             c.IsEnabled = mat is not null;
         ShowMaterialViews();
     }

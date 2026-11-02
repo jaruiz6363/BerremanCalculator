@@ -313,171 +313,172 @@
               </StackPanel>
               <TabControl x:Name="MaterialTabs" Margin="0,6,0,0">
 
-                <!-- A constant n and k per principal axis -->
-                <TabItem Header="Simple">
-                  <StackPanel Margin="4" Spacing="8">
-                    <TextBlock x:Name="SimpleHint" Classes="hint" TextWrapping="Wrap"/>
-                    <StackPanel x:Name="SimplePanel" Spacing="8">
-                      <StackPanel Orientation="Horizontal" Spacing="6">
-                        <TextBlock Classes="label" Text="Kind" VerticalAlignment="Center"/>
-                        <ComboBox x:Name="SimpleKindBox" Width="180">
-                          <ComboBoxItem Content="isotropic"/>
-                          <ComboBoxItem Content="uniaxial (axis z)"/>
-                          <ComboBoxItem Content="biaxial (axes x, y, z)"/>
-                        </ComboBox>
-                      </StackPanel>
-                      <Grid ColumnDefinitions="120,110,110" RowDefinitions="Auto,Auto,Auto,Auto">
-                        <TextBlock Grid.Column="1" Text="n" Margin="4,0"/>
-                        <TextBlock Grid.Column="2" Text="k" Margin="4,0"/>
-                        <TextBlock x:Name="SimpleLabel0" Grid.Row="1" Text="x" VerticalAlignment="Center"/>
-                        <TextBox x:Name="SimpleN0" Grid.Row="1" Grid.Column="1" Margin="2"/>
-                        <TextBox x:Name="SimpleK0" Grid.Row="1" Grid.Column="2" Margin="2"/>
-                        <TextBlock x:Name="SimpleLabel1" Grid.Row="2" Text="y" VerticalAlignment="Center"/>
-                        <TextBox x:Name="SimpleN1" Grid.Row="2" Grid.Column="1" Margin="2"/>
-                        <TextBox x:Name="SimpleK1" Grid.Row="2" Grid.Column="2" Margin="2"/>
-                        <TextBlock x:Name="SimpleLabel2" Grid.Row="3" Text="z" VerticalAlignment="Center"/>
-                        <TextBox x:Name="SimpleN2" Grid.Row="3" Grid.Column="1" Margin="2"/>
-                        <TextBox x:Name="SimpleK2" Grid.Row="3" Grid.Column="2" Margin="2"/>
-                      </Grid>
-                      <StackPanel Orientation="Horizontal" Spacing="6">
-                        <Button x:Name="ApplySimpleButton" Content="Apply" FontWeight="SemiBold"/>
-                        <Button x:Name="RevertSimpleButton" Content="Revert"/>
-                      </StackPanel>
-                    </StackPanel>
-                    <Button x:Name="MakeSimpleButton" Content="Replace with a constant n, k material"/>
-                  </StackPanel>
-                </TabItem>
-
-                <!-- The general form: laws times 6x6 shapes -->
-                <TabItem Header="Terms">
-                  <Grid RowDefinitions="Auto,*,Auto" Margin="4">
-                    <DockPanel>
-                      <TextBlock DockPanel.Dock="Top" x:Name="TermsHint" Classes="hint" TextWrapping="Wrap" Margin="0,0,0,4"/>
-                      <WrapPanel DockPanel.Dock="Bottom" Margin="0,4,0,0">
-                        <Button x:Name="AddTermButton" Content="Add" Margin="0,0,4,4"/>
-                        <Button x:Name="DuplicateTermButton" Content="Duplicate" Margin="0,0,4,4"/>
-                        <Button x:Name="DeleteTermButton" Content="Delete" Margin="0,0,4,4"/>
-                        <Button x:Name="TermUpButton" Content="Up" Margin="0,0,4,4"/>
-                        <Button x:Name="TermDownButton" Content="Down" Margin="0,0,4,4"/>
-                      </WrapPanel>
-                      <ListBox x:Name="TermList" MaxHeight="190"/>
-                    </DockPanel>
-                    <ScrollViewer Grid.Row="1" Margin="0,8,0,0" HorizontalScrollBarVisibility="Disabled">
-                      <StackPanel x:Name="TermEditor" Spacing="8">
+                <!-- The material as people think of it: an index, or one formula, per direction -->
+                <TabItem Header="Material">
+                  <DockPanel Margin="4">
+                    <ScrollViewer x:Name="PlainScroll" DockPanel.Dock="Top" MaxHeight="440" HorizontalScrollBarVisibility="Disabled">
+                      <StackPanel x:Name="PlainPanel" Spacing="8">
                         <StackPanel Orientation="Horizontal" Spacing="6">
-                          <TextBlock Classes="label" Text="Label" VerticalAlignment="Center" Width="60"/>
-                          <TextBox x:Name="TermLabelBox" Width="260"/>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Spacing="6">
-                          <TextBlock Classes="label" Text="Law" VerticalAlignment="Center" Width="60"/>
-                          <ComboBox x:Name="TermLawBox" Width="180"/>
-                        </StackPanel>
-                        <TextBlock x:Name="TermLawFormula" Classes="hint" TextWrapping="Wrap"/>
-                        <StackPanel x:Name="LawFieldsPanel" Spacing="4"/>
-                        <StackPanel Orientation="Horizontal" Spacing="6">
-                          <TextBlock Classes="label" Text="Shape" VerticalAlignment="Center" Width="60"/>
-                          <ComboBox x:Name="ShapeModeBox" Width="260">
-                            <ComboBoxItem Content="a direction, by angles"/>
-                            <ComboBoxItem Content="a direction, by vector"/>
-                            <ComboBoxItem Content="the 6×6 matrix"/>
-                            <ComboBoxItem Content="a direction in crystal axes [u v w]"/>
+                          <TextBlock Classes="label" Text="Directions" VerticalAlignment="Center" Width="150"/>
+                          <ComboBox x:Name="PlainAxesBox" Width="360">
+                            <ComboBoxItem Content="The same in every direction (isotropic)"/>
+                            <ComboBoxItem Content="Ordinary and extraordinary (uniaxial)"/>
+                            <ComboBoxItem Content="Different along x, y and z (biaxial)"/>
                           </ComboBox>
                         </StackPanel>
-                        <StackPanel x:Name="DirectionCrystalPanel" Spacing="4">
-                          <StackPanel Orientation="Horizontal" Spacing="6">
-                            <TextBlock Text="[u v w]" VerticalAlignment="Center" Width="60"/>
-                            <TextBox x:Name="UvwUBox" Width="60"/>
-                            <TextBox x:Name="UvwVBox" Width="60"/>
-                            <TextBox x:Name="UvwWBox" Width="60"/>
-                            <TextBlock Classes="hint" VerticalAlignment="Center" Text="the direction u a + v b + w c"/>
-                          </StackPanel>
-                          <StackPanel Orientation="Horizontal" Spacing="4">
-                            <TextBlock Text="lattice" VerticalAlignment="Center" Width="60"/>
-                            <TextBlock Text="a" VerticalAlignment="Center"/><TextBox x:Name="LatticeABox" Width="64"/>
-                            <TextBlock Text="b" VerticalAlignment="Center"/><TextBox x:Name="LatticeBBox" Width="64"/>
-                            <TextBlock Text="c" VerticalAlignment="Center"/><TextBox x:Name="LatticeCBox" Width="64"/>
-                            <TextBlock Text="α" VerticalAlignment="Center"/><TextBox x:Name="LatticeAlphaBox" Width="56"/>
-                            <TextBlock Text="β" VerticalAlignment="Center"/><TextBox x:Name="LatticeBetaBox" Width="56"/>
-                            <TextBlock Text="γ" VerticalAlignment="Center"/><TextBox x:Name="LatticeGammaBox" Width="56"/>
-                          </StackPanel>
-                          <TextBlock Classes="hint" TextWrapping="Wrap"
-                                     Text="The lattice belongs to the material and is shared by its terms. It is placed with a along x, b in the x–y plane and c towards +z (docs/material-model.md, Crystal axes); a paper that places it otherwise is matched with the layer's Euler angles."/>
-                        </StackPanel>
-                        <StackPanel x:Name="DirectionAnglesPanel" Orientation="Horizontal" Spacing="6">
-                          <TextBlock Text="angle from x towards y (°)" VerticalAlignment="Center"/>
-                          <TextBox x:Name="AxisAngleBox" Width="80"/>
-                          <TextBlock Text="elevation towards z (°)" VerticalAlignment="Center"/>
-                          <TextBox x:Name="AxisElevationBox" Width="80"/>
-                        </StackPanel>
-                        <StackPanel x:Name="DirectionVectorPanel" Orientation="Horizontal" Spacing="6">
-                          <TextBlock Text="x" VerticalAlignment="Center"/>
-                          <TextBox x:Name="AxisXBox" Width="70"/>
-                          <TextBlock Text="y" VerticalAlignment="Center"/>
-                          <TextBox x:Name="AxisYBox" Width="70"/>
-                          <TextBlock Text="z" VerticalAlignment="Center"/>
-                          <TextBox x:Name="AxisZBox" Width="70"/>
-                        </StackPanel>
-                        <TextBlock x:Name="DirectionHint" Classes="hint" TextWrapping="Wrap"
-                                   Text="The law is added to ε along this direction ê, as f(λ) ê êᵀ, in the material's own axes. The layer's Euler angles turn the whole material."/>
-                        <StackPanel x:Name="ShapeMatrixPanel" Spacing="4">
-                          <TextBlock Classes="hint" TextWrapping="Wrap"
-                                     Text="Rows and columns are (Ex, Ey, Ez, H̃x, H̃y, H̃z): ε top left, ρ top right, ρ′ bottom left, μ bottom right. Type 2, -0.08, 0.1i or 2+0.1i; empty is 0."/>
-                          <Grid x:Name="ShapeGrid"/>
+                        <StackPanel x:Name="PlainValuesPanel" Spacing="12"/>
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                          <Button x:Name="ApplyPlainButton" Content="Apply" FontWeight="SemiBold"/>
+                          <Button x:Name="UndoPlainButton" Content="Undo" ToolTip.Tip="Undo the last change (Ctrl+Z)"/>
                         </StackPanel>
                       </StackPanel>
                     </ScrollViewer>
-                    <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="6" Margin="0,6,0,0">
-                      <Button x:Name="ApplyTermButton" Content="Apply term" FontWeight="SemiBold"/>
-                      <Button x:Name="RevertTermButton" Content="Revert"/>
+                    <StackPanel DockPanel.Dock="Top" x:Name="NotPlainPanel" Spacing="6">
+                      <TextBlock x:Name="NotPlainText" TextWrapping="Wrap"/>
+                      <TextBlock Classes="hint" TextWrapping="Wrap" Text="Its details are on the Advanced tab. The plot below is n and k along its principal axes."/>
+                      <Button x:Name="MakeSimpleButton" Content="Replace with a constant n, k"/>
                     </StackPanel>
-                  </Grid>
-                </TabItem>
-
-                <!-- What the material does across a range -->
-                <TabItem Header="Response">
-                  <DockPanel Margin="4">
-                    <WrapPanel DockPanel.Dock="Top">
-                      <TextBlock Text="from" VerticalAlignment="Center" Margin="0,0,4,4"/>
-                      <TextBox x:Name="ResponseFromBox" Width="80" Margin="0,0,8,4"/>
-                      <TextBlock Text="to" VerticalAlignment="Center" Margin="0,0,4,4"/>
-                      <TextBox x:Name="ResponseToBox" Width="80" Margin="0,0,4,4"/>
-                      <TextBlock x:Name="ResponseUnit" VerticalAlignment="Center" Margin="0,0,12,4"/>
-                      <TextBlock Text="points" VerticalAlignment="Center" Margin="0,0,4,4"/>
-                      <TextBox x:Name="ResponsePointsBox" Width="60" Text="401" Margin="0,0,12,4"/>
-                      <ComboBox x:Name="ResponseQuantityBox" Width="250" Margin="0,0,8,4">
-                        <ComboBoxItem Content="n and k along the principal axes"/>
-                        <ComboBoxItem Content="one element of M"/>
-                        <ComboBoxItem Content="principal-axis directions"/>
-                      </ComboBox>
-                      <ComboBox x:Name="ResponseRowBox" Width="70" Margin="0,0,4,4"/>
-                      <ComboBox x:Name="ResponseColBox" Width="70" Margin="0,0,8,4"/>
-                      <Button x:Name="ResponsePlotButton" Content="Plot" Margin="0,0,4,4"/>
-                    </WrapPanel>
-                    <TextBlock DockPanel.Dock="Top" x:Name="ResponseChecks" TextWrapping="Wrap" Margin="0,4"/>
-                    <StackPanel DockPanel.Dock="Bottom" Spacing="4" Margin="0,6,0,0">
-                      <StackPanel Orientation="Horizontal" Spacing="6">
-                        <TextBlock Text="M at" VerticalAlignment="Center"/>
-                        <TextBox x:Name="ResponseAtBox" Width="80"/>
-                        <TextBlock x:Name="ResponseAtUnit" VerticalAlignment="Center"/>
-                      </StackPanel>
-                      <SelectableTextBlock x:Name="ResponseMatrix" FontFamily="Cascadia Mono,Consolas,Menlo,DejaVu Sans Mono,monospace" FontSize="12"/>
-                    </StackPanel>
-                    <local:SpectrumPlot x:Name="ResponsePlot" MinHeight="220"/>
+                    <TextBlock DockPanel.Dock="Bottom" x:Name="PlainChecks" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                    <local:SpectrumPlot x:Name="PlainPlot" MinHeight="200" Margin="0,10,0,0"/>
                   </DockPanel>
                 </TabItem>
 
-                <!-- The material as the file writes it -->
-                <TabItem Header="Text">
-                  <DockPanel Margin="4">
-                    <TextBlock DockPanel.Dock="Top" Classes="hint" TextWrapping="Wrap" Margin="0,0,0,4"
-                               Text="The material as the stack file writes it: n, eps, no/ne, nx/ny/nz, a dispersion law, terms, or a model. docs/stack-format.md lists every form."/>
-                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="6" Margin="0,6,0,0">
-                      <Button x:Name="ApplyMaterialButton" Content="Apply" FontWeight="SemiBold"/>
-                      <Button x:Name="RevertMaterialButton" Content="Revert"/>
-                    </StackPanel>
-                    <TextBox x:Name="MaterialSpecBox" AcceptsReturn="True" TextWrapping="NoWrap"
-                             FontFamily="Cascadia Mono,Consolas,Menlo,DejaVu Sans Mono,monospace" FontSize="12"/>
-                  </DockPanel>
+                <!-- Everything else: terms, the response in detail, the text -->
+                <TabItem Header="Advanced">
+                  <TabControl x:Name="AdvancedTabs">
+
+                    <!-- The general form: laws times 6x6 shapes -->
+                    <TabItem Header="Terms">
+                      <Grid RowDefinitions="Auto,*,Auto" Margin="4">
+                        <DockPanel>
+                          <TextBlock DockPanel.Dock="Top" x:Name="TermsHint" Classes="hint" TextWrapping="Wrap" Margin="0,0,0,4"/>
+                          <WrapPanel DockPanel.Dock="Bottom" Margin="0,4,0,0">
+                            <Button x:Name="AddTermButton" Content="Add" Margin="0,0,4,4"/>
+                            <Button x:Name="DuplicateTermButton" Content="Duplicate" Margin="0,0,4,4"/>
+                            <Button x:Name="DeleteTermButton" Content="Delete" Margin="0,0,4,4"/>
+                            <Button x:Name="TermUpButton" Content="Up" Margin="0,0,4,4"/>
+                            <Button x:Name="TermDownButton" Content="Down" Margin="0,0,4,4"/>
+                          </WrapPanel>
+                          <ListBox x:Name="TermList" MaxHeight="190"/>
+                        </DockPanel>
+                        <ScrollViewer Grid.Row="1" Margin="0,8,0,0" HorizontalScrollBarVisibility="Disabled">
+                          <StackPanel x:Name="TermEditor" Spacing="8">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                              <TextBlock Classes="label" Text="Label" VerticalAlignment="Center" Width="60"/>
+                              <TextBox x:Name="TermLabelBox" Width="260"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                              <TextBlock Classes="label" Text="Law" VerticalAlignment="Center" Width="60"/>
+                              <ComboBox x:Name="TermLawBox" Width="180"/>
+                            </StackPanel>
+                            <TextBlock x:Name="TermLawFormula" Classes="hint" TextWrapping="Wrap"/>
+                            <StackPanel x:Name="LawFieldsPanel" Spacing="4"/>
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                              <TextBlock Classes="label" Text="Shape" VerticalAlignment="Center" Width="60"/>
+                              <ComboBox x:Name="ShapeModeBox" Width="260">
+                                <ComboBoxItem Content="a direction, by angles"/>
+                                <ComboBoxItem Content="a direction, by vector"/>
+                                <ComboBoxItem Content="the 6×6 matrix"/>
+                                <ComboBoxItem Content="a direction in crystal axes [u v w]"/>
+                              </ComboBox>
+                            </StackPanel>
+                            <StackPanel x:Name="DirectionCrystalPanel" Spacing="4">
+                              <StackPanel Orientation="Horizontal" Spacing="6">
+                                <TextBlock Text="[u v w]" VerticalAlignment="Center" Width="60"/>
+                                <TextBox x:Name="UvwUBox" Width="60"/>
+                                <TextBox x:Name="UvwVBox" Width="60"/>
+                                <TextBox x:Name="UvwWBox" Width="60"/>
+                                <TextBlock Classes="hint" VerticalAlignment="Center" Text="the direction u a + v b + w c"/>
+                              </StackPanel>
+                              <StackPanel Orientation="Horizontal" Spacing="4">
+                                <TextBlock Text="lattice" VerticalAlignment="Center" Width="60"/>
+                                <TextBlock Text="a" VerticalAlignment="Center"/><TextBox x:Name="LatticeABox" Width="64"/>
+                                <TextBlock Text="b" VerticalAlignment="Center"/><TextBox x:Name="LatticeBBox" Width="64"/>
+                                <TextBlock Text="c" VerticalAlignment="Center"/><TextBox x:Name="LatticeCBox" Width="64"/>
+                                <TextBlock Text="α" VerticalAlignment="Center"/><TextBox x:Name="LatticeAlphaBox" Width="56"/>
+                                <TextBlock Text="β" VerticalAlignment="Center"/><TextBox x:Name="LatticeBetaBox" Width="56"/>
+                                <TextBlock Text="γ" VerticalAlignment="Center"/><TextBox x:Name="LatticeGammaBox" Width="56"/>
+                              </StackPanel>
+                              <TextBlock Classes="hint" TextWrapping="Wrap"
+                                         Text="The lattice belongs to the material and is shared by its terms. It is placed with a along x, b in the x–y plane and c towards +z (docs/material-model.md, Crystal axes); a paper that places it otherwise is matched with the layer's Euler angles."/>
+                            </StackPanel>
+                            <StackPanel x:Name="DirectionAnglesPanel" Orientation="Horizontal" Spacing="6">
+                              <TextBlock Text="angle from x towards y (°)" VerticalAlignment="Center"/>
+                              <TextBox x:Name="AxisAngleBox" Width="80"/>
+                              <TextBlock Text="elevation towards z (°)" VerticalAlignment="Center"/>
+                              <TextBox x:Name="AxisElevationBox" Width="80"/>
+                            </StackPanel>
+                            <StackPanel x:Name="DirectionVectorPanel" Orientation="Horizontal" Spacing="6">
+                              <TextBlock Text="x" VerticalAlignment="Center"/>
+                              <TextBox x:Name="AxisXBox" Width="70"/>
+                              <TextBlock Text="y" VerticalAlignment="Center"/>
+                              <TextBox x:Name="AxisYBox" Width="70"/>
+                              <TextBlock Text="z" VerticalAlignment="Center"/>
+                              <TextBox x:Name="AxisZBox" Width="70"/>
+                            </StackPanel>
+                            <TextBlock x:Name="DirectionHint" Classes="hint" TextWrapping="Wrap"
+                                       Text="The law is added to ε along this direction ê, as f(λ) ê êᵀ, in the material's own axes. The layer's Euler angles turn the whole material."/>
+                            <StackPanel x:Name="ShapeMatrixPanel" Spacing="4">
+                              <TextBlock Classes="hint" TextWrapping="Wrap"
+                                         Text="Rows and columns are (Ex, Ey, Ez, H̃x, H̃y, H̃z): ε top left, ρ top right, ρ′ bottom left, μ bottom right. Type 2, -0.08, 0.1i or 2+0.1i; empty is 0."/>
+                              <Grid x:Name="ShapeGrid"/>
+                            </StackPanel>
+                          </StackPanel>
+                        </ScrollViewer>
+                        <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="6" Margin="0,6,0,0">
+                          <Button x:Name="ApplyTermButton" Content="Apply term" FontWeight="SemiBold"/>
+                          <Button x:Name="UndoTermButton" Content="Undo" ToolTip.Tip="Undo the last change (Ctrl+Z)"/>
+                        </StackPanel>
+                      </Grid>
+                    </TabItem>
+
+                    <!-- What the material does across a range -->
+                    <TabItem Header="Response">
+                      <DockPanel Margin="4">
+                        <WrapPanel DockPanel.Dock="Top">
+                          <TextBlock Text="from" VerticalAlignment="Center" Margin="0,0,4,4"/>
+                          <TextBox x:Name="ResponseFromBox" Width="80" Margin="0,0,8,4"/>
+                          <TextBlock Text="to" VerticalAlignment="Center" Margin="0,0,4,4"/>
+                          <TextBox x:Name="ResponseToBox" Width="80" Margin="0,0,4,4"/>
+                          <TextBlock x:Name="ResponseUnit" VerticalAlignment="Center" Margin="0,0,12,4"/>
+                          <TextBlock Text="points" VerticalAlignment="Center" Margin="0,0,4,4"/>
+                          <TextBox x:Name="ResponsePointsBox" Width="60" Text="401" Margin="0,0,12,4"/>
+                          <ComboBox x:Name="ResponseQuantityBox" Width="250" Margin="0,0,8,4">
+                            <ComboBoxItem Content="n and k along the principal axes"/>
+                            <ComboBoxItem Content="one element of M"/>
+                            <ComboBoxItem Content="principal-axis directions"/>
+                          </ComboBox>
+                          <ComboBox x:Name="ResponseRowBox" Width="70" Margin="0,0,4,4"/>
+                          <ComboBox x:Name="ResponseColBox" Width="70" Margin="0,0,8,4"/>
+                          <Button x:Name="ResponsePlotButton" Content="Plot" Margin="0,0,4,4"/>
+                        </WrapPanel>
+                        <TextBlock DockPanel.Dock="Top" x:Name="ResponseChecks" TextWrapping="Wrap" Margin="0,4"/>
+                        <StackPanel DockPanel.Dock="Bottom" Spacing="4" Margin="0,6,0,0">
+                          <StackPanel Orientation="Horizontal" Spacing="6">
+                            <TextBlock Text="M at" VerticalAlignment="Center"/>
+                            <TextBox x:Name="ResponseAtBox" Width="80"/>
+                            <TextBlock x:Name="ResponseAtUnit" VerticalAlignment="Center"/>
+                          </StackPanel>
+                          <SelectableTextBlock x:Name="ResponseMatrix" FontFamily="Cascadia Mono,Consolas,Menlo,DejaVu Sans Mono,monospace" FontSize="12"/>
+                        </StackPanel>
+                        <local:SpectrumPlot x:Name="ResponsePlot" MinHeight="220"/>
+                      </DockPanel>
+                    </TabItem>
+
+                    <!-- The material as the file writes it -->
+                    <TabItem Header="Text">
+                      <DockPanel Margin="4">
+                        <TextBlock DockPanel.Dock="Top" Classes="hint" TextWrapping="Wrap" Margin="0,0,0,4"
+                                   Text="The material as the stack file writes it: n, eps, no/ne, nx/ny/nz, a dispersion law, terms, or a model. docs/stack-format.md lists every form."/>
+                        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="6" Margin="0,6,0,0">
+                          <Button x:Name="ApplyMaterialButton" Content="Apply" FontWeight="SemiBold"/>
+                          <Button x:Name="UndoMaterialButton" Content="Undo" ToolTip.Tip="Undo the last change (Ctrl+Z)"/>
+                        </StackPanel>
+                        <TextBox x:Name="MaterialSpecBox" AcceptsReturn="True" TextWrapping="NoWrap"
+                                 FontFamily="Cascadia Mono,Consolas,Menlo,DejaVu Sans Mono,monospace" FontSize="12"/>
+                      </DockPanel>
+                    </TabItem>
+                  </TabControl>
                 </TabItem>
               </TabControl>
             </DockPanel>
@@ -489,7 +490,7 @@
           <DockPanel Margin="4">
             <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="6" Margin="4">
               <Button x:Name="ApplyTextButton" Content="Apply" FontWeight="SemiBold"/>
-              <Button x:Name="RevertTextButton" Content="Revert"/>
+              <Button x:Name="UndoTextButton" Content="Undo" ToolTip.Tip="Undo the last change (Ctrl+Z)"/>
               <TextBlock Classes="hint" VerticalAlignment="Center"
                          Text="The stack exactly as it is saved (docs/stack-format.md). Edit it here and Apply, or edit the tables and watch it follow."/>
             </StackPanel>

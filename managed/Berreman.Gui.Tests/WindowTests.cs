@@ -131,8 +131,15 @@ public static class WindowTests
 
     private static void ShowMaterialTab(MainWindow window, string header)
     {
-        var tab = Find<TabControl>(window, "MaterialTabs").Items.OfType<TabItem>().First(t => (string?)t.Header == header);
-        Click(window, tab);
+        /* Terms, Response and Text are under Advanced. */
+        var advanced = Find<TabControl>(window, "AdvancedTabs").Items.OfType<TabItem>().FirstOrDefault(t => (string?)t.Header == header);
+        if (advanced is not null)
+        {
+            Click(window, Find<TabControl>(window, "MaterialTabs").Items.OfType<TabItem>().First(t => (string?)t.Header == "Advanced"));
+            Click(window, advanced);
+            return;
+        }
+        Click(window, Find<TabControl>(window, "MaterialTabs").Items.OfType<TabItem>().First(t => (string?)t.Header == header));
     }
 
     private static string Sample(string name) =>
@@ -268,18 +275,42 @@ public static class WindowTests
             ShowTab(w, "Materials");
             var list = Find<ListBox>(w, "MaterialList");
 
-            /* Simple: air is n = 1. */
+            /* The Material page: air is n = 1. */
             list.SelectedIndex = w.Workspace.Model.Materials.FindIndex(m => m.Name == "air");
             Pump(w);
-            h.Expect(Find<TabControl>(w, "MaterialTabs").SelectedIndex == 0 && Find<TextBox>(w, "SimpleN0").Text == "1", $"a constant material opens on Simple, n = 1 (tab {Find<TabControl>(w, "MaterialTabs").SelectedIndex}, n {Find<TextBox>(w, "SimpleN0").Text}, selected {list.SelectedIndex})");
-            Find<TextBox>(w, "SimpleN0").Text = "1.0003";
-            Click(w, Find<Button>(w, "ApplySimpleButton"));
+            h.Expect(Find<TabControl>(w, "MaterialTabs").SelectedIndex == 0 && Find<TextBox>(w, "PlainN0").Text == "1"
+                     && Find<ComboBox>(w, "PlainChoice0").SelectedIndex == 0 && Find<ComboBox>(w, "PlainAxesBox").SelectedIndex == 0,
+                     $"a constant material opens on the Material page: the same in every direction, constant, n = 1 (tab {Find<TabControl>(w, "MaterialTabs").SelectedIndex}, n {Find<TextBox>(w, "PlainN0").Text})");
+            h.Expect(Find<SpectrumPlot>(w, "PlainPlot").Series is { Count: 1 } one && one[0].Name == "n", "and its plot is one curve, n");
+            Find<TextBox>(w, "PlainN0").Text = "1.0003";
+            Click(w, Find<Button>(w, "ApplyPlainButton"));
             h.Expect(w.Workspace.Model.Material("air")!.Spec["n"]!.GetValue<double>() == 1.0003, "Apply writes n");
+            Click(w, Find<Button>(w, "UndoPlainButton"));
+            h.Expect(w.Workspace.Model.Material("air")!.Spec["n"]!.GetValue<double>() == 1 && Find<TextBox>(w, "PlainN0").Text == "1",
+                     "the Undo beside Apply takes it back, and the box follows");
 
-            /* Terms: Ga2O3 opens on its 16 terms. */
+            /* Uniaxial, with a formula for the extraordinary index. */
+            Find<ComboBox>(w, "PlainAxesBox").SelectedIndex = 1;
+            Pump(w);
+            h.Expect(Find<TextBox>(w, "PlainN0").Text == "1" && Find<TextBox>(w, "PlainN1").Text == "1", "uniaxial starts from the isotropic value on both axes");
+            Find<ComboBox>(w, "PlainChoice1").SelectedIndex = Array.FindIndex(MaterialEditing.PlainChoices, c => c.Law == "cauchy");
+            Pump(w);
+            Find<TextBox>(w, "Plain1_a").Text = "1.2";
+            Click(w, Find<Button>(w, "ApplyPlainButton"));
+            var air = w.Workspace.Model.Material("air")!.Spec;
+            h.Expect(air["uniaxial"]?["ordinary"]?["n"]?.GetValue<double>() == 1 && air["uniaxial"]?["extraordinary"]?["cauchy"]?["a"]?.GetValue<double>() == 1.2,
+                     $"Apply writes an ordinary constant and an extraordinary Cauchy law ({air.ToJsonString()})");
+            h.Expect(Find<SpectrumPlot>(w, "PlainPlot").Series?.Select(s => s.Name).SequenceEqual(["n ordinary", "n extraordinary"]) == true, "the plot shows both indices");
+            Shot(w, "materials-plain");
+            Click(w, Find<Button>(w, "UndoPlainButton"));
+
+            /* Ga2O3 is a list of terms: the page says so, and Advanced edits it. */
             list.SelectedIndex = w.Workspace.Model.Materials.FindIndex(m => m.Name == "Ga2O3");
             Pump(w);
-            h.Expect(Find<TabControl>(w, "MaterialTabs").SelectedIndex == 1, "a material written as terms opens on Terms");
+            h.Expect(Find<StackPanel>(w, "NotPlainPanel").IsVisible && !Find<StackPanel>(w, "PlainPanel").IsVisible && Find<TextBlock>(w, "NotPlainText").Text!.Contains("16 terms"),
+                     $"a material written as terms says what it is on the Material page ({Find<TextBlock>(w, "NotPlainText").Text})");
+            h.Expect(Find<SpectrumPlot>(w, "PlainPlot").Series is { Count: > 0 }, "and still plots n and k");
+            ShowMaterialTab(w, "Terms");
             var terms = Find<ListBox>(w, "TermList");
             h.Expect(terms.ItemCount == 16, $"its 16 terms are listed ({terms.ItemCount})");
             terms.SelectedIndex = 1;
@@ -339,6 +370,11 @@ public static class WindowTests
             })));
             Pump(w);
             list.SelectedIndex = w.Workspace.Model.Materials.FindIndex(m => m.Name == "SiO2");
+            Pump(w);
+            h.Expect(Find<TabControl>(w, "MaterialTabs").SelectedIndex == 0 && Find<ComboBox>(w, "PlainChoice0").SelectedItem as string == "Sellmeier formula"
+                     && Find<TextBox>(w, "Plain0_terms").Text!.Contains("0.6961663"),
+                     "the Material page shows a Sellmeier glass as its formula, with its numbers");
+            ShowMaterialTab(w, "Terms");
             Pump(w);
             h.Expect(terms.ItemCount == 2 && Find<ComboBox>(w, "TermLawBox").SelectedItem as string == "sellmeier", "a Sellmeier material shows as its law and μ = 1");
             h.Expect(Find<TextBox>(w, "Law_terms").Text!.Contains("0.6961663"), "its terms are lines of numbers");

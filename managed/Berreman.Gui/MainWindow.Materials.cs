@@ -1,13 +1,16 @@
-// MainWindow.Materials.cs — the Materials tab's four views of the selected material
-// (docs/material-model.md; the arithmetic is Gui.Core/MaterialEditing.cs, which is tested):
-//   Simple    a constant n and k per principal axis;
-//   Terms     each law and its 6×6 shape, typed into fields; any material can be shown this way,
-//             and applying a change writes it as terms;
-//   Response  what the material does across a range: n and k, any element of M, the directions
-//             of its principal axes, and whether it is passive and reciprocal;
-//   Text      the material as the file writes it.
-// Every change goes through the workspace like any other edit, so it is checked, can be undone,
-// and redraws everything.
+// MainWindow.Materials.cs — the Materials tab (docs/material-model.md; the arithmetic is
+// Gui.Core/MaterialEditing.cs, which is tested). Two pages:
+//   Material  the material as people think of it: the same in every direction, ordinary and
+//             extraordinary, or x, y and z, each a constant n, k or one dispersion formula; and
+//             a plot of n and k over the stack's range. A material that is more than that says
+//             what it is and is edited on Advanced.
+//   Advanced  Terms     each law and its 6×6 shape, typed into fields; any material can be shown
+//                       this way, and applying a change writes it as terms;
+//             Response  n and k, any element of M, the directions of the principal axes, and
+//                       whether it is passive and reciprocal;
+//             Text      the material as the file writes it.
+// Every change goes through the workspace like any other edit, so it is checked, can be undone
+// (each page has an Undo beside its Apply), and redraws everything.
 
 using System.Globalization;
 using System.Numerics;
@@ -46,11 +49,13 @@ public partial class MainWindow
                 $"'{name}' saved to your materials ({MaterialLibrary.UserFile}); From library… offers it in any stack.");
         };
 
-        // ---- simple ------------------------------------------------------------------------------
-        SimpleKindBox.SelectionChanged += (_, _) => { if (!_showingMaterial) SimpleRows(); };
-        ApplySimpleButton.Click += (_, _) => ApplySimple();
-        RevertSimpleButton.Click += (_, _) => ShowMaterialViews(force: true);
+        // ---- the material page ---------------------------------------------------------------
+        PlainAxesBox.SelectionChanged += (_, _) => { if (!_showingMaterial) ChangePlainAxes(); };
+        ApplyPlainButton.Click += (_, _) => ApplyPlain();
+        UndoPlainButton.Click += (_, _) => _ws.Undo();
         MakeSimpleButton.Click += (_, _) => MakeSimple();
+        PlainPlot.EmptyText = "No material, or it cannot be evaluated in the stack's range.";
+        PlainPlot.YTitle = "n";
 
         // ---- terms -------------------------------------------------------------------------------
         TermLawBox.ItemsSource = MaterialEditing.LawChoices;
@@ -93,7 +98,7 @@ public partial class MainWindow
             t[_termIndex] = BuildTerm();
             return _termIndex;
         }, "The term is applied.");
-        RevertTermButton.Click += (_, _) => ShowTerm();
+        UndoTermButton.Click += (_, _) => _ws.Undo();
 
         // ---- response ----------------------------------------------------------------------------
         ResponseQuantityBox.SelectedIndex = 0;
@@ -108,7 +113,7 @@ public partial class MainWindow
         foreach (var box in new[] { ResponseFromBox, ResponseToBox, ResponsePointsBox, ResponseAtBox })
             box.KeyDown += (_, e) => { if (e.Key == Key.Enter) { e.Handled = true; PlotResponse(); } };
         ResponsePlot.EmptyText = "Choose a material and a range, then Plot.";
-        MaterialTabs.SelectionChanged += (_, e) => { if (e.Source == MaterialTabs && MaterialTabs.SelectedIndex == 2 && !_showingMaterial) PlotResponse(); };
+        MaterialTabs.SelectionChanged += (_, e) => { if ((e.Source == MaterialTabs || e.Source == AdvancedTabs) && ShowingResponse && !_showingMaterial) PlotResponse(); };
     }
 
     /// <summary>The library dialog; what it returns is added to the stack as one undoable edit.</summary>
@@ -159,8 +164,9 @@ public partial class MainWindow
         var mat = _selectedMaterial is null ? null : _ws.Model.Material(_selectedMaterial);
         bool changed = force || mat?.Name != _shownMaterial;
         /* The window redraws after every evaluation; the views are refilled only when the material
-           itself changed, so what is being typed into them is not lost. */
-        var specText = mat?.Spec.ToJsonString();
+           itself changed, so what is being typed into them is not lost. The sweep is part of what
+           is shown, since the plot covers it. */
+        var specText = mat is null ? null : mat.Spec.ToJsonString() + "|" + _ws.Model.Spectral + _ws.Model.SpectralUnit;
         if (!changed && specText == _shownSpec) return;
         _shownMaterial = mat?.Name;
         _shownSpec = specText;
@@ -168,23 +174,17 @@ public partial class MainWindow
         try
         {
             MaterialTabs.IsEnabled = mat is not null;
-            if (mat is null) { _terms = null; return; }
+            if (mat is null) { _terms = null; PlainPlot.Series = null; PlainChecks.Text = ""; return; }
 
-            /* Simple. */
-            var simple = MaterialEditing.AsSimple(mat.Spec);
-            SimplePanel.IsVisible = simple is not null;
-            MakeSimpleButton.IsVisible = simple is null;
-            SimpleHint.Text = simple is not null
-                ? "A constant n and k along each principal axis. A uniaxial material's optic axis is its z; a layer's Euler angles turn it."
-                : "This material is not a constant n and k: it disperses, or is a tensor, a model or a list of terms. Edit it on Terms or Text. "
-                  + "Or replace it with constants, its values at the stack's first spectral point.";
-            if (simple is not null)
+            /* The material page. */
+            var plain = MaterialEditing.AsPlain(mat.Spec);
+            PlainScroll.IsVisible = PlainPanel.IsVisible = plain is not null;
+            NotPlainPanel.IsVisible = plain is null;
+            if (plain is null) NotPlainText.Text = "This material is more than one index per direction. " + MaterialEditing.WhyNotPlain(mat.Spec);
+            else
             {
-                SimpleKindBox.SelectedIndex = (int)simple.Kind;
-                var n = new[] { SimpleN0, SimpleN1, SimpleN2 };
-                var k = new[] { SimpleK0, SimpleK1, SimpleK2 };
-                for (int i = 0; i < 3; ++i) { n[i].Text = simple.N[i].ToString("R", Inv); k[i].Text = simple.K[i].ToString("R", Inv); }
-                SimpleRows();
+                PlainAxesBox.SelectedIndex = (int)plain.Axes;
+                PlainValues(plain);
             }
 
             /* Terms. */
@@ -204,40 +204,178 @@ public partial class MainWindow
 
             if (changed)
             {
-                MaterialTabs.SelectedIndex = simple is not null ? 0 : mat.Spec.ContainsKey("terms") ? 1 : MaterialTabs.SelectedIndex is 0 ? 1 : MaterialTabs.SelectedIndex;
+                /* A material the page can show opens on it; another keeps the page the user was on. */
+                if (plain is not null) MaterialTabs.SelectedIndex = 0;
                 DefaultResponseRange();
             }
         }
         finally { _showingMaterial = false; }
         ShowTerm();
-        if (MaterialTabs.SelectedIndex == 2) PlotResponse();
+        PlotPlain();
+        if (ShowingResponse) PlotResponse();
     }
 
-    // ---- simple --------------------------------------------------------------------------------
+    private bool ShowingResponse => MaterialTabs.SelectedIndex == 1 && AdvancedTabs.SelectedIndex == 1;
 
-    private void SimpleRows()
+    // ---- the material page -----------------------------------------------------------------
+
+    /// <summary>One principal value's editor: its choice of constant or formula, and the boxes for it.</summary>
+    private sealed record PlainEditor(ComboBox Choice, TextBox? N, TextBox? K, List<(LawField Field, TextBox Box)> Fields);
+
+    private readonly List<PlainEditor> _plainEditors = [];
+
+    /// <summary>The editors for a plain form: for each principal value, a choice and its fields.</summary>
+    private void PlainValues(MaterialEditing.PlainForm f)
     {
-        int kind = Math.Max(0, SimpleKindBox.SelectedIndex);
-        SimpleLabel0.Text = kind switch { 0 => "all axes", 1 => "ordinary (x, y)", _ => "x" };
-        SimpleLabel2.Text = kind == 1 ? "extraordinary (z)" : "z";
-        foreach (var c in new Control[] { SimpleLabel1, SimpleN1, SimpleK1 }) c.IsVisible = kind == 2;
-        foreach (var c in new Control[] { SimpleLabel2, SimpleN2, SimpleK2 }) c.IsVisible = kind >= 1;
+        PlainValuesPanel.Children.Clear();
+        _plainEditors.Clear();
+        var names = MaterialEditing.PlainAxisNames(f.Axes);
+        for (int i = 0; i < f.Values.Length; ++i)
+        {
+            int at = i;
+            var group = new StackPanel { Spacing = 4 };
+            if (names[i] != "") group.Children.Add(new TextBlock { Text = names[i], FontWeight = FontWeight.SemiBold });
+            var choice = new ComboBox
+            {
+                Name = $"PlainChoice{i}", Width = 300,
+                ItemsSource = MaterialEditing.PlainChoices.Select(c => c.Title).ToList(),
+                SelectedIndex = Array.FindIndex(MaterialEditing.PlainChoices, c => c.Law == f.Values[i].Law),
+            };
+            group.Children.Add(new StackPanel
+            {
+                Orientation = Orientation.Horizontal, Spacing = 6,
+                Children = { new TextBlock { Text = "Defined by", Width = 150, VerticalAlignment = VerticalAlignment.Center }, choice },
+            });
+            var formula = new TextBlock { Classes = { "hint" }, TextWrapping = TextWrapping.Wrap, Text = MaterialEditing.PlainFormula(f.Values[i].Law) };
+            var fields = new StackPanel { Spacing = 4 };
+            group.Children.Add(formula);
+            group.Children.Add(fields);
+            PlainValuesPanel.Children.Add(group);
+            _plainEditors.Add(PlainFields(fields, choice, i, f.Values[i]));
+            choice.SelectionChanged += (_, _) =>
+            {
+                if (_showingMaterial || choice.SelectedIndex < 0) return;
+                var law = MaterialEditing.PlainChoices[choice.SelectedIndex].Law;
+                formula.Text = MaterialEditing.PlainFormula(law);
+                _plainEditors[at] = PlainFields(fields, choice, at, law is null ? ConstantNow(at) : new MaterialEditing.PlainValue(law, MaterialEditing.DefaultLaw(law)));
+            };
+        }
     }
 
-    private void ApplySimple()
+    private PlainEditor PlainFields(StackPanel panel, ComboBox choice, int i, MaterialEditing.PlainValue v)
+    {
+        panel.Children.Clear();
+        if (v.Law is not null)
+        {
+            var boxes = new List<(LawField, TextBox)>();
+            LawFields(panel, boxes, v.Parameters, $"Plain{i}_");
+            return new PlainEditor(choice, null, null, boxes);
+        }
+        var n = new TextBox { Name = $"PlainN{i}", Width = 110, Text = v.N.ToString("R", Inv) };
+        var k = new TextBox { Name = $"PlainK{i}", Width = 110, Text = v.K.ToString("R", Inv) };
+        panel.Children.Add(new StackPanel
+        {
+            Orientation = Orientation.Horizontal, Spacing = 6,
+            Children =
+            {
+                new TextBlock { Text = "n", Width = 150, VerticalAlignment = VerticalAlignment.Center }, n,
+                new TextBlock { Text = "k", Margin = new(12, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center }, k,
+            },
+        });
+        return new PlainEditor(choice, n, k, []);
+    }
+
+    /// <summary>
+    /// A constant for principal value i: the material's own value there at the first spectral
+    /// point, so switching from a formula to a constant starts close to where it was.
+    /// </summary>
+    private MaterialEditing.PlainValue ConstantNow(int i)
+    {
+        try
+        {
+            var doc = _ws.Model.ToDocument();
+            var M = doc.Materials[_selectedMaterial!].At(Units.ToWavelengthNm(doc.Spectral[0], doc.SpectralUnit), 100);
+            int d = _plainEditors.Count switch { 1 => 0, 2 => i == 0 ? 0 : 2, _ => i };
+            var z = Complex.Sqrt(M[d, d]);
+            if (z.Imaginary < 0) z = -z;
+            return new MaterialEditing.PlainValue(null, null, double.Parse(z.Real.ToString("G6", Inv), Inv), double.Parse(z.Imaginary.ToString("G6", Inv), Inv));
+        }
+        catch (Exception e) when (e is StackFormatException or KeyNotFoundException) { return new MaterialEditing.PlainValue(null, null); }
+    }
+
+    /// <summary>The values the editors show, or a FormatException naming the box that is wrong.</summary>
+    private MaterialEditing.PlainValue[] PlainValuesTyped()
+    {
+        var names = MaterialEditing.PlainAxisNames((MaterialEditing.PlainAxes)(_plainEditors.Count - 1));
+        return _plainEditors.Select((e, i) =>
+        {
+            string where = names[i] == "" ? "" : $"{names[i]}: ";
+            var law = MaterialEditing.PlainChoices[Math.Max(0, e.Choice.SelectedIndex)].Law;
+            if (law is not null)
+            {
+                foreach (var (f, box) in e.Fields) f.Text = box.Text ?? "";
+                try { return new MaterialEditing.PlainValue(law, MaterialEditing.FromFields(e.Fields.Select(p => p.Field))); }
+                catch (FormatException x) { throw new FormatException(where + x.Message); }
+            }
+            double V(TextBox b, string what) => double.TryParse((b.Text ?? "").Trim(), NumberStyles.Float, Inv, out var v) && double.IsFinite(v) && v >= 0
+                ? v : throw new FormatException($"{where}{what}: '{b.Text}' is not a number of 0 or more (k > 0 absorbs)");
+            return new MaterialEditing.PlainValue(null, null, V(e.N!, "n"), V(e.K!, "k"));
+        }).ToArray();
+    }
+
+    /// <summary>
+    /// A new choice of directions: the values typed so far are kept where they mean the same
+    /// thing (the isotropic value becomes every axis; ordinary becomes x and y), and nothing is
+    /// applied until Apply.
+    /// </summary>
+    private void ChangePlainAxes()
+    {
+        var axes = (MaterialEditing.PlainAxes)Math.Max(0, PlainAxesBox.SelectedIndex);
+        MaterialEditing.PlainValue[] now;
+        try { now = PlainValuesTyped(); }
+        catch (FormatException) { now = _plainEditors.Select(_ => new MaterialEditing.PlainValue(null, null)).ToArray(); }
+        var xyz = now.Length switch { 1 => new[] { now[0], now[0], now[0] }, 2 => [now[0], now[0], now[1]], _ => now };
+        var values = axes switch { MaterialEditing.PlainAxes.Same => [xyz[0]], MaterialEditing.PlainAxes.Uniaxial => [xyz[0], xyz[2]], _ => xyz };
+        _showingMaterial = true;
+        try { PlainValues(new MaterialEditing.PlainForm(axes, values)); }
+        finally { _showingMaterial = false; }
+    }
+
+    private void ApplyPlain()
     {
         if (_selectedMaterial is not { } name || _ws.Model.Material(name) is not { } mat) return;
         Try(() =>
         {
-            double V(TextBox b, string what) => double.TryParse((b.Text ?? "").Trim(), NumberStyles.Float, Inv, out var v) && double.IsFinite(v)
-                ? v : throw new FormatException($"{what}: '{b.Text}' is not a number");
-            var kind = (MaterialEditing.SimpleKind)Math.Max(0, SimpleKindBox.SelectedIndex);
-            var n = new[] { V(SimpleN0, "n"), SimpleN1.IsVisible ? V(SimpleN1, "n (y)") : 0, SimpleN2.IsVisible ? V(SimpleN2, "n (z)") : 0 };
-            var k = new[] { V(SimpleK0, "k"), SimpleK1.IsVisible ? V(SimpleK1, "k (y)") : 0, SimpleK2.IsVisible ? V(SimpleK2, "k (z)") : 0 };
-            if (n.Any(x => x < 0) || k.Any(x => x < 0)) throw new FormatException("n and k must not be negative (k ≥ 0 is absorption in this program's convention)");
-            var spec = MaterialEditing.FromSimple(new MaterialEditing.SimpleForm(kind, n, k), mat.Spec);
-            SetSpec(name, spec);
+            var axes = (MaterialEditing.PlainAxes)Math.Max(0, PlainAxesBox.SelectedIndex);
+            SetSpec(name, MaterialEditing.FromPlain(new MaterialEditing.PlainForm(axes, PlainValuesTyped()), mat.Spec));
         }, $"'{name}' updated.");
+    }
+
+    /// <summary>n and k over the stack's spectral range, with the passivity check under them.</summary>
+    private void PlotPlain()
+    {
+        if (_selectedMaterial is not { } name || _ws.Model.Material(name) is not { } mat) return;
+        var unit = _ws.Model.SpectralUnit;
+        try
+        {
+            var v = StackDocument.Values(SweepText.Parse(_ws.Model.Spectral, "spectral"), "spectral");
+            double lo = v.Min(), hi = v.Max();
+            if (lo == hi) { lo *= 0.6; hi *= 1.4; }
+            var x = MaterialResponse.Grid(lo, hi, 201);
+            var material = MaterialParser.Parse(mat.Spec, $"materials.{name}");
+            PlainPlot.XTitle = unit is "cm-1" ? "wavenumber (cm⁻¹)" : unit is "eV" ? "photon energy (eV)" : unit is "GHz" or "THz" ? $"frequency ({unit})" : $"wavelength ({unit})";
+            PlainPlot.Series = MaterialEditing.AsPlain(mat.Spec) is { } plain
+                ? MaterialResponse.IndexCurves(material, x, unit, plain.Axes)
+                : MaterialResponse.Curves(material, x, unit, ResponseQuantity.PrincipalIndex);
+            PlainChecks.Text = MaterialResponse.Checks(material, x, unit);
+            PlainChecks.Foreground = PlainChecks.Text.Contains("NOT PASSIVE") || PlainChecks.Text.Contains("cannot be evaluated") ? Brushes.Firebrick : Brushes.Black;
+        }
+        catch (StackFormatException e)
+        {
+            PlainPlot.Series = null;
+            PlainChecks.Text = e.Message;
+            PlainChecks.Foreground = Brushes.Firebrick;
+        }
     }
 
     private void MakeSimple()
@@ -326,14 +464,16 @@ public partial class MainWindow
     private static string Txt(JsonNode? n) => MaterialEditing.AsNumber(n) is { } d ? d.ToString("R", CultureInfo.InvariantCulture) : n?.ToJsonString() ?? "";
 
     /// <summary>One field per parameter of the law: a box for a number or word, a block of lines for a list.</summary>
-    private void LawFields(JsonObject? law)
+    private void LawFields(JsonObject? law) => LawFields(LawFieldsPanel, _lawBoxes, law, "Law_");
+
+    private static void LawFields(Panel panel, List<(LawField Field, TextBox Box)> boxes, JsonObject? law, string prefix)
     {
-        LawFieldsPanel.Children.Clear();
-        _lawBoxes.Clear();
+        panel.Children.Clear();
+        boxes.Clear();
         if (law is null) return;
         foreach (var f in MaterialEditing.Fields(law))
         {
-            var box = new TextBox { Text = f.Text, Name = $"Law_{f.Key}", Width = f.IsRows ? 420 : 160, HorizontalAlignment = HorizontalAlignment.Left };
+            var box = new TextBox { Text = f.Text, Name = $"{prefix}{f.Key}", Width = f.IsRows ? 420 : 160, HorizontalAlignment = HorizontalAlignment.Left };
             if (f.IsRows)
             {
                 box.AcceptsReturn = true;
@@ -349,8 +489,8 @@ public partial class MainWindow
                 : new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, Children = { label, box } };
             if (f.Key == "unit")
                 ((StackPanel)row).Children.Add(new TextBlock { Classes = { "hint" }, VerticalAlignment = VerticalAlignment.Center, Text = "nm, um, mm, cm, m, GHz, THz, cm-1, eV" });
-            LawFieldsPanel.Children.Add(row);
-            _lawBoxes.Add((f, box));
+            panel.Children.Add(row);
+            boxes.Add((f, box));
         }
     }
 

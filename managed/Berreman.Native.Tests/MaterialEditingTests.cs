@@ -27,6 +27,7 @@ internal static class MaterialEditingTests
         SampleMaterialsSurviveTheEditor();
         DefaultLawsAreValid();
         SimpleForms();
+        PlainForms();
         ResponseAndChecks();
     }
 
@@ -125,6 +126,55 @@ internal static class MaterialEditingTests
         var bi = MaterialEditing.FromSimple(new MaterialEditing.SimpleForm(MaterialEditing.SimpleKind.Biaxial, [1.5, 1.6, 1.7], [0, 0, 0]));
         Check(bi.ToJsonString() == """{"nx":1.5,"ny":1.6,"nz":1.7}""", "biaxial writes nx, ny, nz");
     }
+
+    private static void PlainForms()
+    {
+        JsonObject J(string s) => JsonNode.Parse(s)!.AsObject();
+        var glass = MaterialEditing.AsPlain(J("""{ "sellmeier": { "unit": "um", "terms": [ { "b": 0.6961663, "c2": 0.0046791 } ] }, "source": "x" }"""));
+        Check(glass is { Axes: MaterialEditing.PlainAxes.Same } && glass.Values[0].Law == "sellmeier", "a Sellmeier glass is the plain form, one law for every direction");
+        Check(MaterialEditing.AsPlain(J("""{ "n": [2.1, 0.01] }""")) is { Axes: MaterialEditing.PlainAxes.Same } c && c.Values[0] is { Law: null, N: 2.1, K: 0.01 }, "n, k is the plain constant");
+        var sic = MaterialEditing.AsPlain(J("""{ "uniaxial": { "ordinary": { "n": 2.6 }, "extraordinary": { "cauchy": { "unit": "um", "a": 2.6, "b": 0.03 } } } }"""));
+        Check(sic is { Axes: MaterialEditing.PlainAxes.Uniaxial } && sic.Values[0].Law is null && sic.Values[1].Law == "cauchy", "a uniaxial crystal may mix a constant and a law");
+        Check(MaterialEditing.AsPlain(J("""{ "terms": [ { "eps": 2 } ] }""")) is null, "terms are not plain");
+        Check(MaterialEditing.AsPlain(J("""{ "lorentz": { "unit": "eV", "amplitude": 1, "center": 2 } }""")) is null, "a lone Lorentz law is not plain: it has no background");
+        Check(MaterialEditing.AsPlain(J("""{ "sellmeier": { "unit": "um", "terms": [] }, "mu": 2 }""")) is null, "μ is not plain");
+        Check(MaterialEditing.AsPlain(J("""{ "eps": 2.25 }""")) is null && MaterialEditing.WhyNotPlain(J("""{ "eps": 2.25 }""")).Contains("ε rather than n"), "ε is not plain, and the page says why");
+
+        var mixed = MaterialEditing.FromPlain(new MaterialEditing.PlainForm(MaterialEditing.PlainAxes.Uniaxial,
+            [new(null, null, 1.5, 0), new("cauchy", J("""{ "unit": "um", "a": 1.6 }"""))]), J("""{ "n": 1, "notes": "kept" }"""));
+        Check(mixed.ToJsonString() == """{"uniaxial":{"ordinary":{"n":1.5},"extraordinary":{"cauchy":{"unit":"um","a":1.6}}},"notes":"kept"}""",
+              $"a mixed uniaxial form is written per axis, keeping the notes ({mixed.ToJsonString()})");
+        var constants = MaterialEditing.FromPlain(new MaterialEditing.PlainForm(MaterialEditing.PlainAxes.Biaxial, [new(null, null, 1.5), new(null, null, 1.6), new(null, null, 1.7, 0.1)]));
+        Check(constants.ToJsonString() == """{"nx":1.5,"ny":1.6,"nz":[1.7,0.1]}""", $"constants are written in the short form ({constants.ToJsonString()})");
+
+        /* Every sample material that is plain comes back as the same material, through the form. */
+        int plain = 0, all = 0;
+        foreach (var s in SampleCatalog.List(SampleCatalog.DefaultRoot))
+        {
+            var root = JsonNode.Parse(File.ReadAllText(s.Path), documentOptions: new() { CommentHandling = System.Text.Json.JsonCommentHandling.Skip })!;
+            var doc = StackDocument.Parse(File.ReadAllText(s.Path));
+            var lambdas = new[] { doc.Spectral[0], doc.Spectral[^1] }.Select(v => Units.ToWavelengthNm(v, doc.SpectralUnit)).ToArray();
+            foreach (var (name, node) in root["materials"]!.AsObject())
+            {
+                ++all;
+                var spec = node!.AsObject();
+                if (MaterialEditing.AsPlain(spec) is not { } f) continue;
+                ++plain;
+                var back = MaterialEditing.FromPlain(f, spec);
+                Check(SameMaterial(spec, back, lambdas), $"{s.Name} / {name} survives the Material page ({back.ToJsonString()})");
+                Check(MaterialEditing.AsPlain(back) is { } again && again.Axes == f.Axes, $"{s.Name} / {name} reads back as the same form");
+            }
+        }
+        Check(plain > all / 2, $"most sample materials are plain ({plain} of {all})");
+
+        /* The plot: a clear glass is one curve, n; an absorbing uniaxial crystal is n and k for each axis. */
+        var x = MaterialResponse.Grid(400, 800, 5);
+        var one = MaterialResponse.IndexCurves(MaterialParser.Parse(J("""{ "cauchy": { "unit": "um", "a": 1.5, "b": 0.004 } }"""), "g"), x, "nm", MaterialEditing.PlainAxes.Same);
+        Check(one.Count == 1 && one[0].Name == "n" && Math.Abs(one[0].Y[0] - (1.5 + 0.004 / 0.16)) < 1e-12, "a clear glass plots as one curve, its n");
+        var two = MaterialResponse.IndexCurves(MaterialParser.Parse(J("""{ "no": [1.5, 0.01], "ne": 1.6 }"""), "u"), x, "nm", MaterialEditing.PlainAxes.Uniaxial);
+        Check(two.Select(p => p.Name).SequenceEqual(["n ordinary", "n extraordinary", "k ordinary"]), $"a uniaxial crystal plots n per axis and the k that is not zero ({string.Join(", ", two.Select(p => p.Name))})");
+    }
+
 
     private static void ResponseAndChecks()
     {

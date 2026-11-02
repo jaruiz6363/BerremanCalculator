@@ -26,7 +26,29 @@ public sealed class LawField(string key, string text, string[]? columns = null)
     /// <summary>Non-null for a list: the column names, one row per line.</summary>
     public string[]? Columns { get; } = columns;
     public bool IsRows => Columns is not null;
-    public string Title => IsRows ? $"{Key} ({string.Join(", ", Columns!)}), one row per line" : Key;
+    public string Title => IsRows ? $"{Name(Key)} ({string.Join(", ", Columns!)}), one row per line" : Name(Key);
+
+    /// <summary>A parameter's name for people; the file's key when it is already plain.</summary>
+    private static string Name(string key) => key switch
+    {
+        
+        "catalog" => "catalogue",
+        "name" => "glass",
+        "eps_inf" => "ε∞",
+        "e0" => "E0 (peak)",
+        "eg" => "Eg (band gap)",
+        
+        "range" => "valid from, to",
+        
+        
+        "data" => "rows",
+        
+        "gamma" => "γ (damping)",
+        "center" => "centre",
+        "plasma" => "plasma frequency",
+        "sigma_s_per_m" => "σ (S/m)",
+        _ => key,
+    };
 }
 
 public static class MaterialEditing
@@ -331,6 +353,145 @@ public static class MaterialEditing
         return o;
     }
 
+    // ---- the plain form --------------------------------------------------------------------------
+
+    /// <summary>How many principal values the plain form gives: one for every direction, ordinary and extraordinary, or x, y and z.</summary>
+    public enum PlainAxes { Same, Uniaxial, Biaxial }
+
+    /// <summary>One principal value: a constant n + ik (Law null), or a law with its parameters.</summary>
+    public sealed record PlainValue(string? Law, JsonObject? Parameters, double N = 1.5, double K = 0);
+
+    /// <summary>
+    /// The Material page's form: a constant or one dispersion law per principal axis. It is the
+    /// short forms of the file (n; no, ne; nx, ny, nz; a law; uniaxial; biaxial) and nothing else,
+    /// so what it writes is what the file would say anyway.
+    /// </summary>
+    public sealed record PlainForm(PlainAxes Axes, PlainValue[] Values);
+
+    /// <summary>
+    /// The laws the plain form offers, with their names for people. Each gives a whole ε on its own;
+    /// a Lorentz or Drude law, or a conductivity, is only a contribution (it has no background ε),
+    /// so a material made of one is shown on Advanced as terms.
+    /// </summary>
+    public static readonly (string? Law, string Title)[] PlainChoices =
+    [
+        (null, "Constant n, k"),
+        ("glass", "Catalogue glass"),
+        ("sellmeier", "Sellmeier formula"),
+        ("cauchy", "Cauchy formula"),
+        ("table", "Table of measured values"),
+        ("tauc_lorentz", "Tauc–Lorentz (amorphous semiconductor)"),
+        ("phonon", "Phonons, TO–LO product form"),
+        ("phonon_additive", "Phonons, sum of oscillators"),
+    ];
+
+    /// <summary>What a plain choice means, for the line under it.</summary>
+    public static string PlainFormula(string? law) => law switch
+    {
+        null => "n + ik, the same at every wavelength. k > 0 absorbs.",
+        "glass" => "n from the vendor's catalogue, k = 0. Refused outside the catalogue's wavelength range.",
+        "sellmeier" => "n² = 1 + a + Σ b λ²/(λ² − c2), λ in the unit. One line per term: b and c2.",
+        "cauchy" => "n = a + b/λ² + c/λ⁴, λ in the unit; k = 0.",
+        "table" => "Rows of wavelength (in the unit), n and k, interpolated linearly. Refused outside the rows.",
+        "tauc_lorentz" => "ε = ε∞ + χ(E), absorbing only above the band gap Eg (Jellison and Modine 1996). Energies in the unit, eV usually.",
+        "phonon" => "ε = ε∞ Π (ω_L² − ω² − iγ_L ω)/(ω_T² − ω² − iγ_T ω). One line per TO–LO pair, in the unit.",
+        "phonon_additive" => "ε = ε∞ [1 + Σ (ω_T² − ω_L²)/(ω² − ω_T² + iγω)]. One line per mode, in the unit.",
+        _ => LawFormula(law),
+    };
+
+    /// <summary>The principal values' names for each choice of axes.</summary>
+    public static string[] PlainAxisNames(PlainAxes axes) => axes switch
+    {
+        PlainAxes.Same => [""],
+        PlainAxes.Uniaxial => ["Ordinary (x and y)", "Extraordinary (z, the optic axis)"],
+        _ => ["Along x", "Along y", "Along z"],
+    };
+
+    /// <summary>The material as a plain form, or null when it is anything else (terms, a model, a tensor, μ).</summary>
+    public static PlainForm? AsPlain(JsonObject spec)
+    {
+        if (AsSimple(spec) is { } s)
+        {
+            PlainValue V(int i) => new(null, null, s.N[i], s.K[i]);
+            return s.Kind switch
+            {
+                SimpleKind.Isotropic => new PlainForm(PlainAxes.Same, [V(0)]),
+                SimpleKind.Uniaxial => new PlainForm(PlainAxes.Uniaxial, [V(0), V(2)]),
+                _ => new PlainForm(PlainAxes.Biaxial, [V(0), V(1), V(2)]),
+            };
+        }
+        var keys = spec.Select(p => p.Key).Where(k => k is not ("source" or "notes")).ToList();
+        if (keys.Count != 1) return null;
+        if (keys[0] is "uniaxial" or "biaxial")
+        {
+            var names = keys[0] == "uniaxial" ? new[] { "ordinary", "extraordinary" } : ["x", "y", "z"];
+            if (spec[keys[0]] is not JsonObject o || o.Count != names.Length || !names.All(o.ContainsKey)) return null;
+            var values = names.Select(n => o[n] is JsonObject v ? Value(v) : null).ToArray();
+            return values.Any(v => v is null) ? null : new PlainForm(keys[0] == "uniaxial" ? PlainAxes.Uniaxial : PlainAxes.Biaxial, values!);
+        }
+        return Value(spec) is { } one && one.Law is not null ? new PlainForm(PlainAxes.Same, [one]) : null;
+
+        static PlainValue? Value(JsonObject o)
+        {
+            var k = o.Select(p => p.Key).Where(k => k is not ("source" or "notes")).ToList();
+            if (k.Count != 1) return null;
+            if (k[0] == "n")
+            {
+                if (AsNumber(o["n"]) is { } n) return new PlainValue(null, null, n, 0);
+                if (o["n"] is JsonArray a && a.Count == 2 && AsNumber(a[0]) is { } re && AsNumber(a[1]) is { } im) return new PlainValue(null, null, re, im);
+                return null;
+            }
+            return PlainChoices.Any(c => c.Law == k[0]) && o[k[0]] is JsonObject p ? new PlainValue(k[0], p) : null;
+        }
+    }
+
+    /// <summary>The spec of a plain form, in the file's shortest way of saying it (keeping the old spec's source and notes).</summary>
+    public static JsonObject FromPlain(PlainForm f, JsonObject? old = null)
+    {
+        int count = f.Axes switch { PlainAxes.Same => 1, PlainAxes.Uniaxial => 2, _ => 3 };
+        if (f.Values.Length != count) throw new ArgumentException($"{f.Axes} takes {count} values");
+        if (f.Values.All(v => v.Law is null))
+        {
+            var v = f.Values;
+            return f.Axes switch
+            {
+                PlainAxes.Same => FromSimple(new SimpleForm(SimpleKind.Isotropic, [v[0].N, v[0].N, v[0].N], [v[0].K, v[0].K, v[0].K]), old),
+                PlainAxes.Uniaxial => FromSimple(new SimpleForm(SimpleKind.Uniaxial, [v[0].N, v[0].N, v[1].N], [v[0].K, v[0].K, v[1].K]), old),
+                _ => FromSimple(new SimpleForm(SimpleKind.Biaxial, [v[0].N, v[1].N, v[2].N], [v[0].K, v[1].K, v[2].K]), old),
+            };
+        }
+        static JsonObject Value(PlainValue v) => v.Law is null
+            ? new JsonObject { ["n"] = v.K == 0 ? JsonValue.Create(v.N) : new JsonArray(v.N, v.K) }
+            : new JsonObject { [v.Law] = (v.Parameters ?? DefaultLaw(v.Law)).DeepClone() };
+        var o = f.Axes switch
+        {
+            PlainAxes.Same => Value(f.Values[0]),
+            PlainAxes.Uniaxial => new JsonObject { ["uniaxial"] = new JsonObject { ["ordinary"] = Value(f.Values[0]), ["extraordinary"] = Value(f.Values[1]) } },
+            _ => new JsonObject { ["biaxial"] = new JsonObject { ["x"] = Value(f.Values[0]), ["y"] = Value(f.Values[1]), ["z"] = Value(f.Values[2]) } },
+        };
+        foreach (var k in new[] { "source", "notes" })
+            if (old?[k] is { } kept) o[k] = kept.DeepClone();
+        return o;
+    }
+
+    /// <summary>
+    /// Why a material is not a plain form, in a sentence for the Material page: what it is
+    /// written as, so the user knows what the Advanced tab will show.
+    /// </summary>
+    public static string WhyNotPlain(JsonObject spec)
+    {
+        if (spec["terms"] is JsonArray t) return $"It is written as a list of {t.Count} terms, each a law times a 6×6 shape, which is how a crystal whose axes turn with wavelength, or a magneto-optic, chiral or magnetic material, is written.";
+        if (spec["model"] is { } m) return $"It is the {m.GetValue<string>().Replace('_', ' ')} model, computed at each frequency.";
+        if (spec.ContainsKey("mu") || spec.ContainsKey("mu_r")) return "It has a magnetic permeability μ as well as ε.";
+        if (spec.ContainsKey("rho") || spec.ContainsKey("rho_prime")) return "It couples the electric and magnetic fields (ρ, ρ′).";
+        if (spec["eps"] is JsonArray) return "It is a 3×3 ε tensor given element by element.";
+        if (spec.ContainsKey("eps") || spec.ContainsKey("eps_r")) return "It is given as ε rather than n.";
+        if (spec.ContainsKey("convention")) return "Its values are in the engineering exp(+jωt) convention.";
+        if (MaterialParser.DispersionKeys.FirstOrDefault(spec.ContainsKey) is { } law)
+            return $"It is a single {law} law, which is a contribution to ε with no background, so it is shown as a term.";
+        return "It is written in a form the Material page does not show.";
+    }
+
     /// <summary>The spec written as terms, keeping its source and notes.</summary>
     public static JsonObject AsTerms(JsonObject spec)
     {
@@ -453,6 +614,40 @@ public static class MaterialResponse
                 new PlotSeries($"tilt from z, {names[c]}", x, ys[3 + c], Palette[c], Dashed: true),
             }).ToList(),
         };
+    }
+
+    /// <summary>
+    /// n and k of a plain form's principal values (the diagonal of ε, which is diagonal in the
+    /// material's own axes): one pair for an isotropic material, ordinary and extraordinary, or
+    /// x, y and z. A k that is zero everywhere is left out, so a clear glass is one curve.
+    /// </summary>
+    public static List<PlotSeries> IndexCurves(Material m, double[] x, string unit, MaterialEditing.PlainAxes axes)
+    {
+        var (names, diag) = axes switch
+        {
+            MaterialEditing.PlainAxes.Same => (new[] { "" }, new[] { 0 }),
+            MaterialEditing.PlainAxes.Uniaxial => (new[] { " ordinary", " extraordinary" }, new[] { 0, 2 }),
+            _ => (new[] { " x", " y", " z" }, new[] { 0, 1, 2 }),
+        };
+        var n = names.Select(_ => Enumerable.Repeat(double.NaN, x.Length).ToArray()).ToArray();
+        var k = names.Select(_ => Enumerable.Repeat(double.NaN, x.Length).ToArray()).ToArray();
+        for (int p = 0; p < x.Length; ++p)
+        {
+            MaterialMatrix M;
+            try { M = m.At(Units.ToWavelengthNm(x[p], unit), 100); }
+            catch (StackFormatException) { continue; }
+            for (int c = 0; c < names.Length; ++c)
+            {
+                var ix = Complex.Sqrt(M[diag[c], diag[c]]);
+                if (ix.Imaginary < 0) ix = -ix;
+                n[c][p] = ix.Real; k[c][p] = ix.Imaginary;
+            }
+        }
+        var series = new List<PlotSeries>();
+        for (int c = 0; c < names.Length; ++c) series.Add(new($"n{names[c]}", x, n[c], Palette[c]));
+        for (int c = 0; c < names.Length; ++c)
+            if (k[c].Any(v => v > 1e-12)) series.Add(new($"k{names[c]}", x, k[c], Palette[c], Dashed: true, Axis: "k"));
+        return series;
     }
 
     /// <summary>Passivity and reciprocity over the range, in a sentence each (docs/material-model.md, "Checks").</summary>

@@ -177,34 +177,46 @@ material is used.
   A crystal listed as (o) and (e) is also offered as one uniaxial material.
 - **Save to my materials** keeps the selected material, in any form, for use in other stacks.
 
-The selected material has four views. Every change in them is one undoable edit, and a material
-that would not evaluate is refused, with the reason in the status line.
+The selected material has two pages. Every change on them is one undoable edit: **Apply** puts
+what you typed into the stack, and the **Undo** beside it takes back the last change (as Ctrl+Z
+does). A material that would not evaluate is refused, with the reason in the status line.
 
-- **Simple.** A constant n and k along each principal axis: isotropic, uniaxial (the optic axis is
-  the material's z) or biaxial. A material that is not constant opens on Terms instead. **Replace
-  with a constant n, k material** freezes its diagonal at the stack's first spectral point.
-- **Terms.** The material as a list of terms, each a dispersion law times a 6×6 shape
-  ([material-model.md](material-model.md)). This is how a monoclinic crystal is written: each
-  oscillator along its own direction, so the principal axes turn with wavelength. Any element of
-  the 6×6 matrix can disperse.
-  - **Laws.** Choose a law, then type its parameters into its fields. A list, such as Sellmeier
-    terms, phonon modes or the rows of a table, is typed as lines of numbers under its column
-    names.
-  - **Shape.** A direction (by angles or by a vector), or the 6×6 matrix cell by cell. Type a
-    complex cell as `2`, `-0.08`, `0.1i` or `2+0.1i`.
-  - **Apply term** puts the term in the material.
-  - **A material in a short form** (a Sellmeier glass, a uniaxial crystal, a ferrite) is shown as
-    the terms it stands for. Any change made here writes it as terms, with the same numbers.
-- **Response.** The material across a range, which defaults to the stack's spectral range:
-  - n and k along its principal axes;
-  - any one element of M, real and imaginary;
-  - the directions of its principal axes, as an azimuth from x and a tilt from z. Each axis is
-    followed from point to point, so a crossing of two values does not swap them.
+- **Material.** The material as an index per direction:
+  - **Directions:** the same in every direction (isotropic); ordinary and extraordinary
+    (uniaxial, with the optic axis along the material's z); or different along x, y and z
+    (biaxial). A layer's Euler angles turn the material.
+  - **Defined by,** for each direction: a constant n and k, a catalogue glass, a Sellmeier or
+    Cauchy formula, a table of measured values, a Tauc–Lorentz law, or phonons. A line under the
+    choice gives the formula, and its parameters are typed into fields. A list, such as Sellmeier
+    terms or the rows of a table, is typed as lines of numbers.
+  - **The plot** shows n and k over the stack's spectral range (k only where it is not zero), and
+    under it whether the material is passive and reciprocal.
 
-  Above the plot it says whether the material is passive (no gain for any field) and reciprocal.
-  Neither is required: a magneto-optic medium is not reciprocal, and a fit sometimes shows gain.
-  Below the plot it prints the 6×6 M at one point.
-- **Text.** The material as the stack file writes it ([the forms](stack-format.md#materials)).
+  A material that is more than an index per direction (a list of terms, a model, an ε tensor, a
+  magnetic or magneto-optic material) says what it is and is edited on Advanced; the plot still
+  shows n and k along its principal axes. **Replace with a constant n, k** freezes its diagonal at
+  the stack's first spectral point.
+- **Advanced** has three views:
+  - **Terms.** The material as a list of terms, each a dispersion law times a 6×6 shape
+    ([material-model.md](material-model.md)). This is how a monoclinic crystal is written: each
+    oscillator along its own direction, so the principal axes turn with wavelength. Any element of
+    the 6×6 matrix can disperse.
+    - **Laws.** Choose a law, then type its parameters into its fields.
+    - **Shape.** A direction (by angles or by a vector), or the 6×6 matrix cell by cell. Type a
+      complex cell as `2`, `-0.08`, `0.1i` or `2+0.1i`.
+    - **Apply term** puts the term in the material.
+    - **A material in a short form** (a Sellmeier glass, a uniaxial crystal, a ferrite) is shown
+      as the terms it stands for. Any change made here writes it as terms, with the same numbers.
+  - **Response.** The material across a range, which defaults to the stack's spectral range:
+    - n and k along its principal axes;
+    - any one element of M, real and imaginary;
+    - the directions of its principal axes, as an azimuth from x and a tilt from z. Each axis is
+      followed from point to point, so a crossing of two values does not swap them.
+
+    Above the plot it says whether the material is passive (no gain for any field) and
+    reciprocal. Neither is required: a magneto-optic medium is not reciprocal, and a fit sometimes
+    shows gain. Below the plot it prints the 6×6 M at one point.
+  - **Text.** The material as the stack file writes it ([the forms](stack-format.md#materials)).
 
 The status line reports what the last edit did. The time an evaluation took is shown beside the
 layer count, so it does not replace an error message.
@@ -212,9 +224,9 @@ layer count, so it does not replace an error message.
 ### The File tab
 
 The stack exactly as it is saved. Edits made in the tables show here at once; an edit made here
-is taken by **Apply**, as one undoable change. The file is written in a standard layout: comments
-in a hand-written file are not kept (the notes field is the place for them), and keys this
-version does not know are.
+is taken by **Apply**, as one undoable change, and **Undo** beside it takes back the last change.
+The file is written in a standard layout: comments in a hand-written file are not kept (the notes
+field is the place for them), and keys this version does not know are.
 
 ### Results
 
