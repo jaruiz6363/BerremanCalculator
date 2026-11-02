@@ -150,7 +150,7 @@ public static class WindowTests
             foreach (var name in new[] { "LayerGrid", "IncidentBox", "ExitBox", "SpectralStartBox", "SpectralEndBox", "SpectralStepBox", "AngleStartBox", "AngleEndBox", "AngleStepBox", "AzimuthBox",
                                          "LengthUnitBox", "SpectralUnitBox",
                                          "InsertButton", "DeleteButton", "UpButton", "DownButton", "PropertiesButton",
-                                         "DesignStringButton", "UndoButton", "RedoButton", "MaterialList", "MaterialSpecBox",
+                                         "UndoButton", "RedoButton", "MaterialList", "MaterialSpecBox",
                                          "Editor", "Plot", "StatusText", "SummaryText", "EvaluateButton" })
                 h.Expect(w.FindControl<Control>(name) is not null, $"{name} exists");
             h.Expect(Rows(w).Count == 1 && Rows(w)[0].ThicknessText == "100", "one 100 nm layer to start");
@@ -255,32 +255,6 @@ public static class WindowTests
             h.Expect(Rows(w)[1].AxisText == "tilt 30°, az 45°" && Rows(w)[1].TwistText == "300 nm right", $"which the table shows ({Rows(w)[1].AxisText}; {Rows(w)[1].TwistText})");
             Click(w, Find<Button>(w, "UndoButton"));
             h.Expect(w.Workspace.Model.Layers[1].Twist is null, "and one Undo takes it all back");
-        });
-    }
-
-    public static void ADesignStringBuildsLayers(Harness h, HeadlessUnitTestSession session)
-    {
-        h.Section("Design string… builds the layers from (HL)n");
-        WithWindow(session, w =>
-        {
-            w.Workspace.Edit(m => m.Materials.Add(new NamedMaterial("TiO2", new System.Text.Json.Nodes.JsonObject { ["n"] = 2.35 })));
-            Pump(w);
-            Click(w, Find<Button>(w, "DesignStringButton"));
-            var d = Dialog<DesignStringDialog>(w);
-            h.Expect(d is not null, "the dialog opens");
-            if (d is null) return;
-            Find<TextBox>(d, "StringBox").Text = "(HL)5 H";
-            Pump(d);
-            Find<TextBox>(d, "ThicknessH").Text = "58.5";
-            Find<TextBox>(d, "ThicknessL").Text = "120";
-            Find<ComboBox>(d, "ReplaceBox").SelectedIndex = 0;
-            Click(d, Find<Button>(d, "OkButton"));
-            Pump(w);
-            var layers = w.Workspace.Model.Layers;
-            h.Expect(layers.Count == 11 && layers[0].Material == "TiO2" && layers[1].Material == "air",
-                     $"eleven layers, H guessed as TiO2 and L as the lowest index ({string.Join(" ", layers.Select(l => l.Material))})");
-            h.Expect(layers.Where(l => l.Material == "TiO2").All(l => l.Thickness == 58.5) && layers.Where(l => l.Material == "air").All(l => l.Thickness == 120),
-                     "each with the thickness given for its letter");
         });
     }
 

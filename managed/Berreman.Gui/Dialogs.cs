@@ -1,6 +1,6 @@
-// Dialogs.cs — the small dialogs, built in code: a question with buttons, the layer properties and
-// the design string. Each returns what it decided and changes nothing itself; the window applies
-// the result through the workspace, so it is one undoable edit.
+// Dialogs.cs — the small dialogs, built in code: a question with buttons, the layer properties, the
+// library, the samples and coating import. Each returns what it decided and changes nothing itself;
+// the window applies the result through the workspace, so it is one undoable edit.
 
 using System.Globalization;
 using Avalonia;
@@ -200,96 +200,6 @@ public sealed class LayerPropertiesDialog : Window
                 return true;
             }
             catch (StackFormatException e) { error.Text = e.Message; return false; }
-        }
-    }
-}
-
-public sealed record DesignStringResult(List<LayerModel> Layers, bool Replace);
-
-/// <summary>
-/// Input design string: "(HL)8 H" with a material and a physical thickness for each letter
-/// (ThinFilmDesigner's notation, with thicknesses instead of quarter waves).
-/// </summary>
-public sealed class DesignStringDialog : Window
-{
-    private sealed record Letter(ComboBox Material, TextBox Thickness, StackPanel Row);
-
-    public DesignStringDialog(StackModel model, int selected)
-    {
-        Title = "Input design string";
-        Width = 600;
-        SizeToContent = SizeToContent.Height;
-        CanResize = false;
-        WindowStartupLocation = WindowStartupLocation.CenterOwner;
-
-        string lu = model.LengthUnit == "um" ? "µm" : model.LengthUnit;
-        var names = model.Materials.Select(m => m.Name).ToList();
-        var index = names.Select(model.RankingIndex).ToList();
-        var text = new TextBox { Name = "StringBox", Text = "(HL)4 H", Watermark = "e.g. (HL)8 H, or 0.5L (HL)6 H 0.5L" };
-        var end = new ComboBox { ItemsSource = new[] { "the incident medium", "the exit medium" }, SelectedIndex = 0, Width = 180 };
-        var replace = new ComboBox
-        {
-            Name = "ReplaceBox",
-            ItemsSource = new[] { "replace every layer", selected >= 0 ? $"insert after layer {selected + 1}" : "add after the last layer" },
-            SelectedIndex = model.Layers.Count == 0 ? 0 : 1, Width = 200,
-        };
-        var letters = new StackPanel { Spacing = 4 };
-        var rows = new Dictionary<char, Letter>();
-        var preview = Dialogs.Hint("");
-        var error = new TextBlock { Name = "ErrorText", Foreground = Brushes.Firebrick, TextWrapping = TextWrapping.Wrap };
-
-        void Update()
-        {
-            var used = DesignString.Letters(text.Text);
-            foreach (var c in used.Where(c => !rows.ContainsKey(c)))
-            {
-                var mat = new ComboBox { Name = $"Material{c}", ItemsSource = names, SelectedItem = DesignString.Guess(names, index, c), MinWidth = 200 };
-                var t = Dialogs.Number(100, 90);
-                t.Name = $"Thickness{c}";
-                rows[c] = new Letter(mat, t, Dialogs.Row(Dialogs.Label($"{c} is", 40), mat, t, Dialogs.Label(lu)));
-            }
-            letters.Children.Clear();
-            foreach (var c in used) letters.Children.Add(rows[c].Row);
-            try
-            {
-                preview.Text = DesignString.Describe(DesignString.Expand(text.Text));
-                error.Text = "";
-            }
-            catch (FormatException e) { preview.Text = ""; error.Text = e.Message; }
-        }
-        text.TextChanged += (_, _) => Update();
-        Update();
-
-        Content = new StackPanel
-        {
-            Margin = new Thickness(16), Spacing = 8,
-            Children =
-            {
-                Dialogs.Row(Dialogs.Label("Design string", 110), new Border { Width = 420, Child = text }),
-                preview,
-                Dialogs.Row(Dialogs.Label("The leftmost layer is next to", 200), end),
-                Dialogs.Row(Dialogs.Label("The layers", 110), replace),
-                new TextBlock { Text = "Each letter", FontWeight = FontWeight.SemiBold, Margin = new Thickness(0, 6, 0, 0) },
-                letters,
-                Dialogs.Hint("A letter is one layer of its material and thickness; a number before it multiplies the thickness, so 0.5H is half of H. H is guessed as the highest-index material at the first wavelength of the sweep, L the lowest and M the middle one; any other letter as the first material whose name starts with it."),
-                error,
-                Dialogs.Buttons(this, Ok),
-            },
-        };
-
-        bool Ok()
-        {
-            try
-            {
-                var map = new Dictionary<char, (string, double)>();
-                foreach (var c in DesignString.Letters(text.Text))
-                    map[c] = (rows[c].Material.SelectedItem as string ?? throw new StackFormatException($"choose a material for {c}"),
-                              Dialogs.Read(rows[c].Thickness, $"the thickness of {c}"));
-                var layers = model.LayersFromString(text.Text ?? "", map, firstNextToExit: end.SelectedIndex == 1);
-                Close(new DesignStringResult(layers, replace.SelectedIndex == 0));
-                return true;
-            }
-            catch (Exception e) when (e is StackFormatException or FormatException) { error.Text = e.Message; return false; }
         }
     }
 }

@@ -76,8 +76,6 @@ public partial class MainWindow : Window
         DownButton.Click += (_, _) => MoveLayer(+1);
         PropertiesItem.Click += async (_, _) => await LayerProperties(SelectedRow);
         PropertiesButton.Click += async (_, _) => await LayerProperties(SelectedRow);
-        DesignStringItem.Click += async (_, _) => await InputDesignString();
-        DesignStringButton.Click += async (_, _) => await InputDesignString();
         ReverseItem.Click += (_, _) => Try(() => _ws.Edit(m => m.ReverseLayers(withMedia: false)), "Layers reversed.");
         ReverseMediaItem.Click += (_, _) => Try(() => _ws.Edit(m => m.ReverseLayers(withMedia: true)), "Layers and media reversed: the light now arrives from the other side.");
         DeleteAllItem.Click += async (_, _) =>
@@ -405,18 +403,6 @@ public partial class MainWindow : Window
         var dialog = new LayerPropertiesDialog(_ws.Model, row);
         if (await dialog.ShowDialog<LayerModel?>(this) is { } layer)
             Try(() => _ws.Edit(m => m.Layers[row] = layer), $"Layer {row + 1} updated.");
-    }
-
-    private async Task InputDesignString()
-    {
-        var dialog = new DesignStringDialog(_ws.Model, SelectedRow);
-        if (await dialog.ShowDialog<DesignStringResult?>(this) is not { } r) return;
-        Try(() => _ws.Edit(m =>
-        {
-            if (r.Replace) m.Layers.Clear();
-            int at = r.Replace ? 0 : (SelectedRow >= 0 ? SelectedRow + 1 : m.Layers.Count);
-            m.Layers.InsertRange(at, r.Layers);
-        }), $"{r.Layers.Count} layers from the design string {(r.Replace ? "replace the stack" : "inserted")}.");
     }
 
     // ---- files ---------------------------------------------------------------------------------

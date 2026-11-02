@@ -143,11 +143,6 @@ evaluates on demand. Every edit can be undone (**Ctrl+Z**) and redone (**Ctrl+Y*
   - the Euler angles, or the direction of the optic axis (tilt and azimuth), which fills them in;
   - a twist about z through the layer: pitch, handedness, starting angle, and how many uniform
     sublayers it is evaluated as.
-- **Design string…** builds layers from text, in ThinFilmDesigner's notation: `(HL)8 H`,
-  `0.5L (HL)6 H 0.5L`. Each letter is given a material and a physical thickness, and a number
-  before a letter multiplies the thickness: with H = 60 nm, `0.5H` is 30 nm. The layers replace
-  the stack or are inserted after the selected layer, and the leftmost layer can face either
-  medium.
 - **The sweep** sets which wavelengths, angles and azimuths are evaluated.
   - **Spectral.** Give a **start**, an **end** and a **step**, in the unit chosen under *Spectral
     axis in*. The unit is shown beside the step, and the number of points beside that.
