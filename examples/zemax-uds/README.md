@@ -105,8 +105,8 @@ Transmitted intensity through the cholesteric file, from OpticStudio's polarizat
 ## Installing
 
 The Windows installer includes the built DLL. It is in `examples\zemax-uds\` in the install
-folder, together with this page, the source and the two lens files. The Start menu also has a
-shortcut to that folder: *OpticStudio surface example*.
+folder, together with this page, the source, the Visual Studio project and the two lens files. The
+Start menu also has a shortcut to that folder: *OpticStudio surface example*.
 
 1. Copy `US_BERREMAN.dll` into OpticStudio's `Documents\Zemax\DLL\Surfaces` folder. Its exact
    place is under Setup › Project Preferences › Folders.
@@ -115,19 +115,58 @@ shortcut to that folder: *OpticStudio surface example*.
 The DLL is self-contained. It has the engine compiled in and the C runtime linked statically, so
 nothing else needs to be installed.
 
-## Building
+## Changing the film
 
-The DLL is a target of the main CMake build:
+All the optics of the film are in `us_berreman.cpp`. The engine (`bc_evaluate.cpp` and the files
+it includes) knows nothing about O-plates or cholesterics: it is given, for one ray, a list of
+layers, each a 6×6 material matrix M and a thickness, between two isotropic media, and returns
+the Jones matrices. So a different film means changing `us_berreman.cpp` only:
+- `Transmission()` decides how many layers there are and the thickness of each;
+- `Uniaxial()` writes one layer's M from nₒ, nₑ and the optic axis. A biaxial, absorbing or
+  magneto-optic layer is another such function: ε goes in the top-left 3×3 of M, μ in the
+  bottom-right (1 on its diagonal for a non-magnetic film), and ρ, ρ′ in the other two blocks
+  (`docs/contract.md`, Section 2, gives the layout);
+- the parameter names OpticStudio shows are in `UserDefinedSurface5`, case 1, and the starting
+  values in case 7.
+
+Leave the engine's files as they are.
+
+## Building in Visual Studio
+
+You need Visual Studio 2022 or later, with the workload **Desktop development with C++** (chosen
+in the Visual Studio Installer). Nothing else.
+
+1. Copy the whole `examples\zemax-uds` folder somewhere you can write, such as Documents. The copy
+   in the install folder is read-only. Keep its `engine` folder with it: the project finds the
+   engine there.
+2. Double-click `us_berreman.sln`. Visual Studio opens it.
+3. In the toolbar, set the two drop-down boxes to **Release** and **x64**.
+4. Choose Build › Build Solution (Ctrl+Shift+B). The Output window ends with
+   `1 succeeded, 0 failed`.
+5. The DLL is `bin\Release\US_BERREMAN.dll`, beside the solution. Copy it into OpticStudio's
+   `Documents\Zemax\DLL\Surfaces` folder, replacing the one there. Close OpticStudio first, since
+   it keeps a loaded DLL open.
+
+In the Solution Explorer, Source Files holds `us_berreman.cpp`, the file to change, and the
+engine's two `.cpp` files. **Debug** builds `bin\Debug\US_BERREMAN.dll`, which is slower but can
+be stepped through in the debugger with OpticStudio attached (Debug › Attach to Process).
+
+Every compiler warning is treated as an error, as in the engine's own build, so a mistake shows
+up at once.
+
+## Building with CMake
+
+The DLL is also a target of the main CMake build, which is how the release is built and tested:
 
 ```
-cmake -S . -B build
+cmake -S . -B build -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
 cmake --build build --config Release --target us_berreman
 ```
 
-This gives `build/Release/US_BERREMAN.dll`. Copy it into OpticStudio's
-`Documents\Zemax\DLL\Surfaces` folder, choose the surface type **User Defined** with that DLL, and
-turn polarization on in the System Explorer.
+This gives `build/Release/US_BERREMAN.dll`. Choose the surface type **User Defined** with that
+DLL, and turn polarization on in the System Explorer.
 
+The Visual Studio project and CMake compile the same three files; a test checks that they do.
 `uds_abi.h` declares the two structures OpticStudio passes, in the layout OpticStudio's own
 `usersurf.h` gives, so the example builds without it.
 

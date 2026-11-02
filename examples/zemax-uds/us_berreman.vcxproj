@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  US_BERREMAN.dll, the OpticStudio surface, for Visual Studio: open us_berreman.sln, choose
+  Release and x64, and Build > Build Solution. The DLL is written to bin\Release.
+
+  The engine's sources are in the folder "engine" beside this file when it comes from the
+  installer, and in ..\..\native in the source repository; the project uses whichever is there.
+  It compiles the same three files as the CMake build (CMakeLists.txt, target us_berreman), and a
+  test checks that the two lists stay the same.
+-->
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{E58F73CD-86CC-4EE1-8106-04B99854B5EF}</ProjectGuid>
+    <RootNamespace>us_berreman</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+
+  <!-- Where the engine is: beside this file (installed), or two folders up (source repository). -->
+  <PropertyGroup>
+    <EngineDir Condition="Exists('$(MSBuildThisFileDirectory)engine\src\bc_evaluate.cpp')">$(MSBuildThisFileDirectory)engine\</EngineDir>
+    <EngineDir Condition="'$(EngineDir)' == ''">$(MSBuildThisFileDirectory)..\..\native\</EngineDir>
+  </PropertyGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+
+  <!-- Whatever C++ tools this Visual Studio has, so the project opens without being retargeted. -->
+  <PropertyGroup Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'" Label="Configuration">
+    <UseDebugLibraries>true</UseDebugLibraries>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'" Label="Configuration">
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+
+  <PropertyGroup>
+    <TargetName>US_BERREMAN</TargetName>
+    <OutDir>$(MSBuildThisFileDirectory)bin\$(Configuration)\</OutDir>
+    <IntDir>$(MSBuildThisFileDirectory)obj\$(Configuration)\</IntDir>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(EngineDir)include;$(EngineDir)src;$(MSBuildThisFileDirectory);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <!-- As the CMake build: every warning is an error. -->
+      <WarningLevel>Level4</WarningLevel>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <SDLCheck>false</SDLCheck>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
+  <!-- The C runtime is linked in, so OpticStudio needs nothing but the one DLL. -->
+  <ItemDefinitionGroup Condition="'$(Configuration)' == 'Debug'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)' == 'Release'">
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <!-- The surface, and the engine compiled into it. -->
+  <ItemGroup>
+    <ClCompile Include="us_berreman.cpp" />
+    <ClCompile Include="$(EngineDir)src\bc_plan.cpp" />
+    <ClCompile Include="$(EngineDir)src\bc_evaluate.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="uds_abi.h" />
+    <ClInclude Include="$(EngineDir)include\berreman.h" />
+    <ClInclude Include="$(EngineDir)src\bc_complex.h" />
+    <ClInclude Include="$(EngineDir)src\bc_delta.h" />
+    <ClInclude Include="$(EngineDir)src\bc_internal.h" />
+    <ClInclude Include="$(EngineDir)src\bc_linalg.h" />
+    <ClInclude Include="$(EngineDir)src\bc_outer.h" />
+    <ClInclude Include="$(EngineDir)src\bc_schur.h" />
+    <ClInclude Include="$(EngineDir)src\bc_sweep.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="README.md" />
+    <None Include="us_berreman_cholesteric.zmx" />
+    <None Include="us_berreman_oplate.zmx" />
+  </ItemGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+</Project>

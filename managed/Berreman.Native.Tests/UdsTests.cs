@@ -19,9 +19,11 @@
 //   3. The same O-plate, the ray going the other way (-z): the film is fixed to the surface.
 //   4. A cholesteric, right- and left-handed, inside and outside its reflection band.
 //   5. Geometry: the intercept and normal on a sphere.
+//   6. The Visual Studio project (us_berreman.vcxproj) compiles the same files as CMake.
 
 using System.Numerics;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using Berreman.Api;
 
 namespace Berreman.Native.Tests;
@@ -230,5 +232,40 @@ internal static unsafe class UdsTests
             double normalErr = Math.Abs(r[6] - radial[0]) + Math.Abs(r[7] - radial[1]) + Math.Abs(r[8] - radial[2]);
             Check(st == 0 && onSphere < 1e-10 && normalErr < 1e-12, $"on a sphere the intercept is on it and the normal radial ({onSphere:G3}, {normalErr:G3})");
         }
+
+        ProjectMatchesCMake();
+    }
+
+    /// <summary>
+    /// 6. The Visual Studio project for optical engineers and the CMake build that is tested and
+    /// shipped compile the same .cpp files, and every header the project lists exists.
+    /// </summary>
+    private static void ProjectMatchesCMake()
+    {
+        var root = new DirectoryInfo(AppContext.BaseDirectory);
+        while (root is not null && !File.Exists(Path.Combine(root.FullName, "CMakeLists.txt"))) root = root.Parent;
+        if (root is null) { Check(false, "the source repository (CMakeLists.txt) is found above the test"); return; }
+
+        var cmake = File.ReadAllText(Path.Combine(root.FullName, "CMakeLists.txt"));
+        var bcSources = Regex.Match(cmake, @"set\(BC_SOURCES([^)]*)\)").Groups[1].Value
+            .Split((char[])[' ', '\n', '\r', '\t'], StringSplitOptions.RemoveEmptyEntries);
+        var target = Regex.Match(cmake, @"add_library\(us_berreman SHARED([^)]*)\)").Groups[1].Value
+            .Split((char[])[' ', '\n', '\r', '\t'], StringSplitOptions.RemoveEmptyEntries)
+            .SelectMany(t => t == "${BC_SOURCES}" ? bcSources : [t]);
+        var fromCMake = target.Select(p => p.Replace('\\', '/')).OrderBy(p => p, StringComparer.Ordinal).ToList();
+
+        /* The project's paths, as the source repository resolves them: $(EngineDir) is native/. */
+        var project = File.ReadAllText(Path.Combine(root.FullName, "examples", "zemax-uds", "us_berreman.vcxproj"));
+        string Resolve(string p) => (p.StartsWith("$(EngineDir)") ? "native/" + p["$(EngineDir)".Length..] : "examples/zemax-uds/" + p).Replace('\\', '/');
+        var compiled = Regex.Matches(project, "<ClCompile Include=\"([^\"]+)\"").Select(m => Resolve(m.Groups[1].Value)).OrderBy(p => p, StringComparer.Ordinal).ToList();
+        Check(compiled.Count > 0 && compiled.SequenceEqual(fromCMake),
+              $"the Visual Studio project compiles what CMake compiles ({string.Join(", ", compiled)} | {string.Join(", ", fromCMake)})");
+
+        var headers = Regex.Matches(project, "<ClInclude Include=\"([^\"]+)\"").Select(m => Resolve(m.Groups[1].Value)).ToList();
+        var missing = headers.Where(h => !File.Exists(Path.Combine(root.FullName, h))).ToList();
+        var unlisted = Directory.GetFiles(Path.Combine(root.FullName, "native", "src"), "*.h")
+            .Select(h => "native/src/" + Path.GetFileName(h)).Where(h => !headers.Contains(h)).ToList();
+        Check(missing.Count == 0 && unlisted.Count == 0,
+              $"and lists the engine's headers, every one of them and nothing else (missing: {string.Join(", ", missing)}; not listed: {string.Join(", ", unlisted)})");
     }
 }
